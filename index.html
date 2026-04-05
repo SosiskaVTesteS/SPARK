@@ -20,8 +20,8 @@
     --font-body: 'DM Sans', sans-serif;
   }
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  a, button, [role="button"], .idea-card, .trend-item, .leader-item, .mob-tab, .filter-btn, .tag-chip, .page-btn {
+  *, *::before, *::after {
+    box-sizing: border-box; margin: 0; padding: 0;
     -webkit-tap-highlight-color: transparent;
     tap-highlight-color: transparent;
   }
@@ -36,630 +36,183 @@
     overflow-x: hidden;
   }
 
-  /* subtle grid bg */
   body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
+    content: ''; position: fixed; inset: 0;
     background-image:
       linear-gradient(rgba(232,197,90,0.03) 1px, transparent 1px),
       linear-gradient(90deg, rgba(232,197,90,0.03) 1px, transparent 1px);
     background-size: 48px 48px;
-    pointer-events: none;
-    z-index: 0;
+    pointer-events: none; z-index: 0;
   }
 
-  /* glow blobs */
-  .blob {
-    position: fixed;
-    border-radius: 50%;
-    filter: blur(120px);
-    pointer-events: none;
-    z-index: 0;
-    opacity: 0.18;
-  }
+  .blob { position: fixed; border-radius: 50%; filter: blur(120px); pointer-events: none; z-index: 0; opacity: 0.18; }
   .blob-1 { width: 600px; height: 600px; background: #e8c55a; top: -200px; left: -100px; }
   .blob-2 { width: 500px; height: 500px; background: #5ae8c5; bottom: -150px; right: -100px; }
 
-  /* ── HEADER ── */
-  header {
-    position: relative; z-index: 10;
-    display: flex; align-items: center; gap: 16px;
-    padding: 0 32px;
-    height: 60px;
-    border-bottom: 1px solid var(--border);
-    background: rgba(8,8,15,0.85);
-    backdrop-filter: blur(12px);
-  }
-
-  .logo {
-    font-family: var(--font-head);
-    font-size: 20px;
-    font-weight: 800;
-    letter-spacing: 0.12em;
-    color: var(--accent);
-    margin-right: auto;
-  }
-
-  .wallet-badge {
-    display: flex; align-items: center; gap: 8px;
-    padding: 6px 14px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: var(--surface);
-    font-size: 13px;
-  }
+  /* HEADER */
+  header { position: relative; z-index: 10; display: flex; align-items: center; gap: 16px; padding: 0 32px; height: 60px; border-bottom: 1px solid var(--border); background: rgba(8,8,15,0.85); backdrop-filter: blur(12px); }
+  .logo { font-family: var(--font-head); font-size: 20px; font-weight: 800; letter-spacing: 0.12em; color: var(--accent); margin-right: auto; }
+  .wallet-badge { display: flex; align-items: center; gap: 8px; padding: 6px 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); font-size: 13px; }
   .wallet-badge .spk { font-weight: 600; color: var(--accent); }
   .wallet-badge .label { color: var(--muted); font-size: 11px; }
-
-  .user-block {
-    display: flex; align-items: center; gap: 10px;
-    font-size: 13px;
-  }
-  .avatar {
-    width: 32px; height: 32px; border-radius: 50%;
-    background: linear-gradient(135deg, #e8c55a, #5ae8c5);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 12px; font-weight: 700; color: #08080f;
-    flex-shrink: 0;
-  }
+  .user-block { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg,#e8c55a,#5ae8c5); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #08080f; flex-shrink: 0; }
   .user-block .name { font-weight: 500; }
-  .user-block .badge {
-    font-size: 10px; color: var(--accent2);
-    border: 1px solid rgba(90,232,197,0.3);
-    border-radius: 4px; padding: 1px 6px;
-    text-transform: uppercase; letter-spacing: 0.05em;
-  }
-
-  .btn-post {
-    display: flex; align-items: center; gap-: 6px;
-    padding: 8px 18px;
-    border-radius: 8px;
-    border: none;
-    background: var(--accent);
-    color: #08080f;
-    font-family: var(--font-head);
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    cursor: pointer;
-    transition: opacity 0.15s, transform 0.15s;
-  }
+  .user-block .badge { font-size: 10px; color: var(--accent2); border: 1px solid rgba(90,232,197,0.3); border-radius: 4px; padding: 1px 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .btn-post { padding: 8px 18px; border-radius: 8px; border: none; background: var(--accent); color: #08080f; font-family: var(--font-head); font-size: 13px; font-weight: 700; letter-spacing: 0.04em; cursor: pointer; transition: opacity 0.15s, transform 0.15s; }
   .btn-post:hover { opacity: 0.88; transform: translateY(-1px); }
 
-  /* ── LAYOUT ── */
-  .layout {
-    position: relative; z-index: 1;
-    display: grid;
-    grid-template-columns: 240px 1fr 260px;
-    gap: 0;
-    height: calc(100vh - 60px);
-    overflow: hidden;
-  }
+  /* LAYOUT */
+  .layout { position: relative; z-index: 1; display: grid; grid-template-columns: 240px 1fr 260px; height: calc(100vh - 60px); overflow: hidden; }
 
-  /* ── SIDEBAR shared ── */
-  .sidebar {
-    padding: 24px 20px;
-    border-right: 1px solid var(--border);
-    overflow-y: auto;
-    scrollbar-width: none;
-  }
+  /* SIDEBARS */
+  .sidebar { padding: 24px 20px; border-right: 1px solid var(--border); overflow-y: auto; scrollbar-width: none; }
   .sidebar:last-child { border-right: none; border-left: 1px solid var(--border); }
-  .sidebar-title {
-    font-family: var(--font-head);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 16px;
-  }
+  .sidebar-title { font-family: var(--font-head); font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
 
-  /* TRENDS */
-  .trend-item {
-    display: flex; align-items: center; gap: 10px;
-    padding: 10px 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background 0.15s;
-    margin-bottom: 4px;
-  }
+  .trend-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: background 0.15s; margin-bottom: 4px; }
   .trend-item:hover { background: var(--surface2); }
-  .trend-rank {
-    font-family: var(--font-head);
-    font-size: 11px;
-    color: var(--muted);
-    width: 16px;
-    flex-shrink: 0;
-  }
-  .trend-tag {
-    font-size: 13px;
-    font-weight: 500;
-    flex: 1;
-  }
-  .trend-count {
-    font-size: 11px;
-    color: var(--muted);
-  }
-  .trend-hot {
-    font-size: 10px;
-    color: var(--accent);
-    background: rgba(232,197,90,0.1);
-    border-radius: 4px;
-    padding: 1px 5px;
-  }
+  .trend-rank { font-family: var(--font-head); font-size: 11px; color: var(--muted); width: 16px; flex-shrink: 0; }
+  .trend-tag { font-size: 13px; font-weight: 500; flex: 1; }
+  .trend-count { font-size: 11px; color: var(--muted); }
+  .trend-hot { font-size: 10px; color: var(--accent); background: rgba(232,197,90,0.1); border-radius: 4px; padding: 1px 5px; }
 
-  /* ── FEED ── */
-  .feed {
-    overflow-y: auto;
-    padding: 0;
-    scrollbar-width: thin;
-    scrollbar-color: var(--surface2) transparent;
-    display: flex;
-    flex-direction: column;
-  }
-
-  /* Filter bar */
-  .filter-bar {
-    position: sticky;
-    top: 0;
-    z-index: 5;
-    background: rgba(8,8,15,0.92);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border);
-    padding: 14px 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .search-wrap {
-    position: relative;
-  }
-  .search-wrap svg {
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--muted);
-    pointer-events: none;
-  }
-  .search-input {
-    width: 100%;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 9px 12px 9px 36px;
-    color: var(--text);
-    font-family: var(--font-body);
-    font-size: 13px;
-    outline: none;
-    transition: border-color 0.15s;
-  }
-  .search-input::placeholder { color: var(--muted); }
-  .search-input:focus { border-color: rgba(232,197,90,0.35); }
-
-  .filter-row {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-  .filter-label {
-    font-size: 11px;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-right: 4px;
-    flex-shrink: 0;
-  }
-  .filter-btn {
-    padding: 5px 12px;
-    border-radius: 6px;
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--muted);
-    font-family: var(--font-body);
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.15s;
-    white-space: nowrap;
-  }
-  .filter-btn:hover { border-color: rgba(232,197,90,0.3); color: var(--text); }
-  .filter-btn.active {
-    border-color: var(--accent);
-    background: rgba(232,197,90,0.1);
-    color: var(--accent);
-    font-weight: 600;
-  }
-
-  .tag-row {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-    align-items: center;
-  }
-  .tag-chip {
-    padding: 4px 10px;
-    border-radius: 20px;
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--muted);
-    font-size: 11px;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-  .tag-chip:hover { border-color: rgba(232,197,90,0.3); color: var(--text); }
-  .tag-chip.active {
-    border-color: var(--accent2);
-    background: rgba(90,232,197,0.08);
-    color: var(--accent2);
-  }
-
-  /* cards container */
-  .cards-list {
-    padding: 20px 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    flex: 1;
-  }
-
-  /* Pagination */
-  .pagination {
-    padding: 16px 24px 24px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 4px;
-  }
-  .page-btn {
-    min-width: 32px;
-    height: 32px;
-    padding: 0 8px;
-    border-radius: 7px;
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--muted);
-    font-family: var(--font-head);
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .page-btn:hover:not(:disabled) { border-color: rgba(232,197,90,0.3); color: var(--text); }
-  .page-btn.active {
-    border-color: var(--accent);
-    background: rgba(232,197,90,0.12);
-    color: var(--accent);
-  }
-  .page-btn:disabled { opacity: 0.25; cursor: default; }
-  .page-sep { color: var(--muted); font-size: 12px; padding: 0 2px; }
-
-  /* Idea Card */
-  .idea-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 20px;
-    transition: border-color 0.2s, transform 0.2s;
-    cursor: pointer;
-    animation: fadeUp 0.4s ease both;
-  }
-  .idea-card:hover { border-color: rgba(232,197,90,0.25); transform: translateY(-2px); }
-
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  .idea-card:nth-child(1) { animation-delay: 0.04s; }
-  .idea-card:nth-child(2) { animation-delay: 0.10s; }
-  .idea-card:nth-child(3) { animation-delay: 0.16s; }
-  .idea-card:nth-child(4) { animation-delay: 0.22s; }
-  .idea-card:nth-child(5) { animation-delay: 0.28s; }
-
-  .card-header {
-    display: flex; align-items: center; gap: 10px;
-    margin-bottom: 14px;
-  }
-  .card-avatar {
-    width: 36px; height: 36px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 13px; font-weight: 700; flex-shrink: 0;
-  }
-  .card-meta { flex: 1; }
-  .card-username { font-size: 13px; font-weight: 600; }
-  .card-time { font-size: 11px; color: var(--muted); }
-  .card-menu {
-    width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
-    border-radius: 6px; color: var(--muted); cursor: pointer;
-    transition: background 0.15s;
-  }
-  .card-menu:hover { background: var(--surface2); color: var(--text); }
-
-  .card-title {
-    font-family: var(--font-head);
-    font-size: 18px;
-    font-weight: 700;
-    line-height: 1.3;
-    margin-bottom: 8px;
-    letter-spacing: -0.01em;
-  }
-  .card-body {
-    font-size: 13px;
-    color: #9999b0;
-    line-height: 1.6;
-    margin-bottom: 16px;
-  }
-
-  /* Mini Chart */
-  .chart-wrap {
-    background: var(--bg);
-    border-radius: 10px;
-    padding: 12px 14px 8px;
-    margin-bottom: 14px;
-    position: relative;
-    overflow: hidden;
-  }
-  .chart-labels {
-    display: flex; justify-content: space-between;
-    font-size: 10px; color: var(--muted);
-    margin-bottom: 6px;
-  }
-  svg.chart { width: 100%; height: 64px; display: block; }
-  .chart-footer {
-    display: flex; justify-content: space-between; align-items: center;
-    margin-top: 6px;
-    font-size: 11px; color: var(--muted);
-  }
-  .chart-footer .investors { display: flex; align-items: center; gap: 5px; }
-  .chart-footer .investors span { color: var(--text); font-weight: 500; }
-  .chart-footer .pool { color: var(--accent); font-weight: 600; }
-  .chart-footer .countdown {
-    font-family: var(--font-head);
-    font-size: 12px;
-    color: var(--accent2);
-    letter-spacing: 0.04em;
-  }
-
-  .card-actions {
-    display: flex; gap: 8px;
-  }
-  .btn-invest {
-    flex: 1;
-    padding: 10px;
-    border-radius: 8px;
-    border: 1px solid var(--accent);
-    background: rgba(232,197,90,0.08);
-    color: var(--accent);
-    font-family: var(--font-head);
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background 0.15s, transform 0.15s;
-    letter-spacing: 0.03em;
-  }
-  .btn-invest:hover { background: rgba(232,197,90,0.18); transform: translateY(-1px); }
-
-  .btn-critique {
-    flex: 1;
-    padding: 10px;
-    border-radius: 8px;
-    border: 1px solid rgba(232,90,122,0.4);
-    background: rgba(232,90,122,0.06);
-    color: #e85a7a;
-    font-family: var(--font-head);
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background 0.15s, transform 0.15s;
-    letter-spacing: 0.03em;
-  }
-  .btn-critique:hover { background: rgba(232,90,122,0.14); transform: translateY(-1px); }
-
-  /* LEADERBOARD */
-  .leader-item {
-    display: flex; align-items: center; gap: 12px;
-    padding: 10px 8px;
-    border-radius: 10px;
-    transition: background 0.15s;
-    cursor: pointer;
-    margin-bottom: 4px;
-  }
-  .leader-item:hover { background: var(--surface2); }
-  .leader-rank {
-    font-family: var(--font-head);
-    font-size: 13px;
-    font-weight: 800;
-    width: 20px;
-    text-align: center;
-    flex-shrink: 0;
-  }
-  .leader-rank.gold   { color: #ffd700; }
-  .leader-rank.silver { color: #c0c0c0; }
-  .leader-rank.bronze { color: #cd7f32; }
-
-  .leader-avatar {
-    width: 36px; height: 36px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 13px; font-weight: 700; flex-shrink: 0;
-  }
-  .leader-info { flex: 1; min-width: 0; }
-  .leader-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .leader-ideas { font-size: 11px; color: var(--muted); }
-
-  .leader-profit {
-    font-family: var(--font-head);
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--accent2);
-    flex-shrink: 0;
-  }
-
-  .divider { height: 1px; background: var(--border); margin: 16px 0; }
-
-  .stats-row {
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    margin-top: 16px;
-  }
-  .stat-box {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px;
-  }
-  .stat-box .val {
-    font-family: var(--font-head);
-    font-size: 18px;
-    font-weight: 800;
-    color: var(--accent);
-    display: block;
-  }
-  .stat-box .key {
-    font-size: 10px;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-  }
-
-  /* scrollbar */
+  /* FEED */
+  .feed { overflow-y: auto; padding: 0; scrollbar-width: thin; scrollbar-color: var(--surface2) transparent; display: flex; flex-direction: column; }
   .feed::-webkit-scrollbar { width: 4px; }
   .feed::-webkit-scrollbar-track { background: transparent; }
   .feed::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 4px; }
 
-  /* ── MOBILE NAV DRAWER ── */
-  .mob-nav-toggle {
-    display: none;
-    width: 36px; height: 36px;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--text);
-    cursor: pointer;
-    align-items: center; justify-content: center;
-    flex-shrink: 0;
-  }
+  .filter-bar { position: sticky; top: 0; z-index: 5; background: rgba(8,8,15,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; flex-direction: column; gap: 10px; }
+  .search-wrap { position: relative; }
+  .search-wrap svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+  .search-input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px 9px 36px; color: var(--text); font-family: var(--font-body); font-size: 13px; outline: none; transition: border-color 0.15s; }
+  .search-input::placeholder { color: var(--muted); }
+  .search-input:focus { border-color: rgba(232,197,90,0.35); }
+  .filter-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .filter-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-right: 4px; flex-shrink: 0; }
+  .filter-btn { padding: 5px 12px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-family: var(--font-body); font-size: 12px; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .filter-btn:hover { border-color: rgba(232,197,90,0.3); color: var(--text); }
+  .filter-btn.active { border-color: var(--accent); background: rgba(232,197,90,0.1); color: var(--accent); font-weight: 600; }
+  .tag-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .tag-chip { padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 11px; cursor: pointer; transition: all 0.15s; }
+  .tag-chip:hover { border-color: rgba(232,197,90,0.3); color: var(--text); }
+  .tag-chip.active { border-color: var(--accent2); background: rgba(90,232,197,0.08); color: var(--accent2); }
 
-  /* bottom tab bar for mobile */
-  .mob-tabs {
-    display: none;
-    position: fixed;
-    bottom: 0; left: 0; right: 0;
-    z-index: 50;
-    background: rgba(8,8,15,0.97);
-    backdrop-filter: blur(12px);
-    border-top: 1px solid var(--border);
-    height: 58px;
-    padding: 0;
-    align-items: stretch;
-  }
-  .mob-tab {
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
-    flex: 1;
-    border: none; background: transparent;
-    color: var(--muted);
-    font-family: var(--font-body);
-    font-size: 10px;
-    letter-spacing: 0.02em;
-    cursor: pointer;
-    transition: color 0.15s;
-    -webkit-tap-highlight-color: transparent;
-    tap-highlight-color: transparent;
-  }
+  .cards-list { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; flex: 1; }
+
+  .pagination { padding: 16px 24px 24px; display: flex; justify-content: center; align-items: center; gap: 4px; }
+  .page-btn { min-width: 32px; height: 32px; padding: 0 8px; border-radius: 7px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-family: var(--font-head); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; }
+  .page-btn:hover:not(:disabled) { border-color: rgba(232,197,90,0.3); color: var(--text); }
+  .page-btn.active { border-color: var(--accent); background: rgba(232,197,90,0.12); color: var(--accent); }
+  .page-btn:disabled { opacity: 0.25; cursor: default; }
+  .page-sep { color: var(--muted); font-size: 12px; padding: 0 2px; }
+
+  /* CARDS */
+  .idea-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; transition: border-color 0.2s, transform 0.2s; cursor: pointer; animation: fadeUp 0.4s ease both; }
+  .idea-card:hover { border-color: rgba(232,197,90,0.25); transform: translateY(-2px); }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+  .idea-card:nth-child(1){animation-delay:.04s}.idea-card:nth-child(2){animation-delay:.10s}.idea-card:nth-child(3){animation-delay:.16s}.idea-card:nth-child(4){animation-delay:.22s}.idea-card:nth-child(5){animation-delay:.28s}
+
+  .card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .card-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+  .card-meta { flex: 1; }
+  .card-username { font-size: 13px; font-weight: 600; }
+  .card-time { font-size: 11px; color: var(--muted); }
+  .card-menu { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 6px; color: var(--muted); cursor: pointer; transition: background 0.15s; }
+  .card-menu:hover { background: var(--surface2); color: var(--text); }
+  .card-title { font-family: var(--font-head); font-size: 18px; font-weight: 700; line-height: 1.3; margin-bottom: 8px; letter-spacing: -0.01em; }
+  .card-body { font-size: 13px; color: #9999b0; line-height: 1.6; margin-bottom: 16px; }
+
+  .chart-wrap { background: var(--bg); border-radius: 10px; padding: 12px 14px 8px; margin-bottom: 14px; overflow: hidden; }
+  .chart-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); margin-bottom: 6px; }
+  svg.chart { width: 100%; height: 64px; display: block; }
+  .chart-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 11px; color: var(--muted); }
+  .chart-footer .investors { display: flex; align-items: center; gap: 5px; }
+  .chart-footer .investors span { color: var(--text); font-weight: 500; }
+  .chart-footer .pool { color: var(--accent); font-weight: 600; }
+  .chart-footer .countdown { font-family: var(--font-head); font-size: 12px; color: var(--accent2); letter-spacing: 0.04em; }
+
+  .card-actions { display: flex; gap: 8px; }
+  .btn-invest { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--accent); background: rgba(232,197,90,0.08); color: var(--accent); font-family: var(--font-head); font-size: 13px; font-weight: 700; cursor: pointer; transition: background 0.15s, transform 0.15s; letter-spacing: 0.03em; }
+  .btn-invest:hover { background: rgba(232,197,90,0.18); transform: translateY(-1px); }
+  .btn-critique { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid rgba(232,90,122,0.4); background: rgba(232,90,122,0.06); color: #e85a7a; font-family: var(--font-head); font-size: 13px; font-weight: 700; cursor: pointer; transition: background 0.15s, transform 0.15s; letter-spacing: 0.03em; }
+  .btn-critique:hover { background: rgba(232,90,122,0.14); transform: translateY(-1px); }
+
+  /* LEADERBOARD */
+  .leader-item { display: flex; align-items: center; gap: 12px; padding: 10px 8px; border-radius: 10px; transition: background 0.15s; cursor: pointer; margin-bottom: 4px; }
+  .leader-item:hover { background: var(--surface2); }
+  .leader-rank { font-family: var(--font-head); font-size: 13px; font-weight: 800; width: 20px; text-align: center; flex-shrink: 0; }
+  .leader-rank.gold { color: #ffd700; } .leader-rank.silver { color: #c0c0c0; } .leader-rank.bronze { color: #cd7f32; }
+  .leader-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+  .leader-info { flex: 1; min-width: 0; }
+  .leader-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .leader-ideas { font-size: 11px; color: var(--muted); }
+  .leader-profit { font-family: var(--font-head); font-size: 14px; font-weight: 700; color: var(--accent2); flex-shrink: 0; }
+
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+  .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+  .stat-box .val { font-family: var(--font-head); font-size: 18px; font-weight: 800; color: var(--accent); display: block; }
+  .stat-box .key { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+
+  /* LANGUAGE DROPDOWN */
+  .lang-row { position: relative; display: flex; align-items: center; justify-content: space-between; padding: 12px 8px; border-radius: 8px; cursor: pointer; transition: background 0.15s; user-select: none; }
+  .lang-row:hover { background: var(--surface2); }
+  .lang-current { font-size: 13px; font-weight: 600; color: var(--accent); }
+  .lang-dropdown { display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; z-index: 200; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+  .lang-dropdown.open { display: block; }
+  .lang-option { padding: 11px 14px; font-size: 13px; cursor: pointer; transition: background 0.12s; display: flex; align-items: center; gap: 8px; }
+  .lang-option:hover { background: rgba(232,197,90,0.08); }
+  .lang-option.selected { color: var(--accent); font-weight: 600; }
+  .lang-flag { font-size: 16px; line-height: 1; }
+
+  /* MOBILE NAV */
+  .mob-tabs { display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; background: rgba(8,8,15,0.97); backdrop-filter: blur(12px); border-top: 1px solid var(--border); height: 58px; align-items: stretch; }
+  .mob-tab { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; border: none; background: transparent; color: var(--muted); font-family: var(--font-body); font-size: 10px; letter-spacing: 0.02em; cursor: pointer; transition: color 0.15s; }
   .mob-tab svg { flex-shrink: 0; }
   .mob-tab.active { color: var(--accent); }
 
-  /* mobile panel overlay */
-  .mob-panel {
-    display: none;
-    position: fixed;
-    inset: 60px 0 58px 0;
-    z-index: 40;
-    background: var(--bg);
-    overflow-y: auto;
-    padding: 20px 16px;
-    transform: translateX(-100%);
-    transition: transform 0.25s ease;
-  }
+  .mob-panel { display: none; position: fixed; inset: 60px 0 58px 0; z-index: 40; background: var(--bg); overflow-y: auto; padding: 20px 16px; transform: translateX(-100%); transition: transform 0.25s ease; }
   .mob-panel.right { transform: translateX(100%); }
   .mob-panel.open  { transform: translateX(0); }
 
-  /* ── RESPONSIVE ── */
+  /* RESPONSIVE */
   @media (max-width: 768px) {
-
-    /* viewport body — allow natural scroll */
-    html, body { height: auto; overflow-x: hidden; }
-
-    /* hide desktop blobs (performance) */
+    html, body { height: auto; }
     .blob { display: none; }
 
-    /* ── HEADER ── */
-    header {
-      padding: 0 16px;
-      gap: 10px;
-      position: sticky; top: 0; z-index: 100;
-    }
-    /* hide text labels in wallet on mobile */
+    header { padding: 0 16px; gap: 10px; position: sticky; top: 0; z-index: 100; }
     .wallet-badge .label { display: none; }
     .wallet-badge { padding: 6px 10px; gap: 6px; }
-    /* hide full user text, keep avatar */
-    .user-block .name,
-    .user-block .badge { display: none; }
-    /* compact post button */
+    .user-block { display: none; }
     .btn-post { padding: 8px 12px; font-size: 12px; }
 
-    /* ── LAYOUT → single column ── */
-    .layout {
-      display: block;
-      height: auto;
-      overflow: visible;
-    }
-
-    /* hide desktop sidebars */
+    .layout { display: block; height: auto; overflow: visible; }
     .sidebar { display: none; }
 
-    /* feed takes full width */
-    .feed {
-      width: 100%;
-      max-width: 100%;
-      overflow-y: visible;
-      padding-bottom: 74px; /* 58px tab bar + 16px breathing room */
-    }
+    .feed { width: 100%; max-width: 100%; overflow-y: visible; padding-bottom: 74px; }
 
-    /* hide user block from header on mobile — moved to Profile tab */
-    .user-block { display: none; }
-
-    /* filter bar */
     .filter-bar { padding: 12px 16px; gap: 8px; }
     .filter-row { gap: 5px; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 2px; }
     .filter-row::-webkit-scrollbar { display: none; }
-    .tag-row    { gap: 5px; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 2px; }
+    .tag-row { gap: 5px; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 2px; }
     .tag-row::-webkit-scrollbar { display: none; }
-    .filter-label { display: none; } /* save space on mobile */
+    .filter-label { display: none; }
 
-    /* cards */
     .cards-list { padding: 16px; gap: 14px; }
-    .idea-card  { padding: 16px; border-radius: 12px; }
+    .idea-card { padding: 16px; border-radius: 12px; }
     .card-title { font-size: 16px; }
-
-    /* chart footer wrap on small screens */
     .chart-footer { flex-direction: column; align-items: flex-start; gap: 4px; }
 
-    /* pagination */
     .pagination { padding: 12px 16px 20px; gap: 3px; }
-    .page-btn   { min-width: 30px; height: 30px; font-size: 11px; }
+    .page-btn { min-width: 30px; height: 30px; font-size: 11px; }
 
-    /* show mobile tab bar */
     .mob-tabs { display: flex; }
-
-    /* show mobile panels */
     .mob-panel { display: block; }
   }
 
   @media (max-width: 400px) {
-    .btn-post { font-size: 11px; padding: 7px 10px; }
     .card-title { font-size: 15px; }
     .card-actions { flex-direction: column; }
     .btn-invest, .btn-critique { width: 100%; }
@@ -674,499 +227,469 @@
 <!-- HEADER -->
 <header>
   <div class="logo">SPARK</div>
-
   <div class="wallet-badge">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent)"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8L2 7h20l-6-4z"/></svg>
-    <div>
-      <div class="spk">4,520 SPK</div>
-      <div class="label">Wallet</div>
-    </div>
+    <div><div class="spk">4,520 SPK</div><div class="label" data-i18n="wallet">Wallet</div></div>
   </div>
-
   <div class="user-block">
     <div class="avatar">U</div>
-    <div>
-      <div class="name">@user123</div>
-      <span class="badge">✓ Verified</span>
-    </div>
+    <div><div class="name">@user123</div><span class="badge" data-i18n="verified">✓ Verified</span></div>
   </div>
-
-  <button class="btn-post">+ Post Idea</button>
+  <button class="btn-post" data-i18n="postIdea">+ Post Idea</button>
 </header>
 
 <!-- LAYOUT -->
 <div class="layout">
 
-  <!-- LEFT: TRENDS -->
+  <!-- LEFT: TRENDS (desktop only — no Your Stats) -->
   <aside class="sidebar">
-    <div class="sidebar-title">Trending Now</div>
-
-    <div class="trend-item">
-      <span class="trend-rank">1</span>
-      <span class="trend-tag">#AI Tools</span>
-      <span class="trend-count">84</span>
-      <span class="trend-hot">🔥</span>
-    </div>
-    <div class="trend-item">
-      <span class="trend-rank">2</span>
-      <span class="trend-tag">#DeFi</span>
-      <span class="trend-count">61</span>
-    </div>
-    <div class="trend-item">
-      <span class="trend-rank">3</span>
-      <span class="trend-tag">#CleanEnergy</span>
-      <span class="trend-count">55</span>
-    </div>
-    <div class="trend-item">
-      <span class="trend-rank">4</span>
-      <span class="trend-tag">#B2B SaaS</span>
-      <span class="trend-count">47</span>
-    </div>
-    <div class="trend-item">
-      <span class="trend-rank">5</span>
-      <span class="trend-tag">#Hardware</span>
-      <span class="trend-count">39</span>
-    </div>
-    <div class="trend-item">
-      <span class="trend-rank">6</span>
-      <span class="trend-tag">#Web3</span>
-      <span class="trend-count">31</span>
-    </div>
-
-    <div class="divider"></div>
-    <div class="sidebar-title">Your Stats</div>
-    <div class="stats-row">
-      <div class="stat-box"><span class="val">12</span><span class="key">Ideas</span></div>
-      <div class="stat-box"><span class="val">+84%</span><span class="key">Profit</span></div>
-      <div class="stat-box"><span class="val">38</span><span class="key">Invested</span></div>
-      <div class="stat-box"><span class="val">#41</span><span class="key">Rank</span></div>
-    </div>
+    <div class="sidebar-title" data-i18n="trendingNow">Trending Now</div>
+    <div class="trend-item"><span class="trend-rank">1</span><span class="trend-tag">#AI Tools</span><span class="trend-count">84</span><span class="trend-hot">🔥</span></div>
+    <div class="trend-item"><span class="trend-rank">2</span><span class="trend-tag">#DeFi</span><span class="trend-count">61</span></div>
+    <div class="trend-item"><span class="trend-rank">3</span><span class="trend-tag">#CleanEnergy</span><span class="trend-count">55</span></div>
+    <div class="trend-item"><span class="trend-rank">4</span><span class="trend-tag">#B2B SaaS</span><span class="trend-count">47</span></div>
+    <div class="trend-item"><span class="trend-rank">5</span><span class="trend-tag">#Hardware</span><span class="trend-count">39</span></div>
+    <div class="trend-item"><span class="trend-rank">6</span><span class="trend-tag">#Web3</span><span class="trend-count">31</span></div>
   </aside>
 
   <!-- CENTER: FEED -->
   <main class="feed">
-
-    <!-- FILTER BAR -->
     <div class="filter-bar">
       <div class="search-wrap">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input class="search-input" type="text" placeholder="Search ideas..." id="searchInput">
+        <input class="search-input" type="text" id="searchInput" data-i18n-placeholder="searchPlaceholder" placeholder="Search ideas...">
       </div>
       <div class="filter-row">
-        <span class="filter-label">Sort:</span>
-        <button class="filter-btn active" data-sort="new">🕐 New</button>
-        <button class="filter-btn" data-sort="popular">🔥 Popular</button>
-        <button class="filter-btn" data-sort="profit">📈 Profitable</button>
-        <button class="filter-btn" data-sort="ending">⏱ Ending soon</button>
+        <span class="filter-label" data-i18n="sortLabel">Sort:</span>
+        <button class="filter-btn active" data-sort="new"     data-i18n="sortNew">🕐 New</button>
+        <button class="filter-btn"        data-sort="popular" data-i18n="sortPopular">🔥 Popular</button>
+        <button class="filter-btn"        data-sort="profit"  data-i18n="sortProfit">📈 Profitable</button>
+        <button class="filter-btn"        data-sort="ending"  data-i18n="sortEnding">⏱ Ending soon</button>
       </div>
       <div class="tag-row">
-        <span class="filter-label">Tag:</span>
-        <button class="tag-chip active" data-tag="all">All</button>
-        <button class="tag-chip" data-tag="AI Tools">#AI Tools</button>
-        <button class="tag-chip" data-tag="DeFi">#DeFi</button>
-        <button class="tag-chip" data-tag="CleanEnergy">#CleanEnergy</button>
-        <button class="tag-chip" data-tag="B2B SaaS">#B2B SaaS</button>
-        <button class="tag-chip" data-tag="Hardware">#Hardware</button>
-        <button class="tag-chip" data-tag="Web3">#Web3</button>
+        <span class="filter-label" data-i18n="tagLabel">Tag:</span>
+        <button class="tag-chip active" data-tag="all"         data-i18n="tagAll">All</button>
+        <button class="tag-chip"        data-tag="AI Tools"   >#AI Tools</button>
+        <button class="tag-chip"        data-tag="DeFi"       >#DeFi</button>
+        <button class="tag-chip"        data-tag="CleanEnergy">#CleanEnergy</button>
+        <button class="tag-chip"        data-tag="B2B SaaS"   >#B2B SaaS</button>
+        <button class="tag-chip"        data-tag="Hardware"   >#Hardware</button>
+        <button class="tag-chip"        data-tag="Web3"       >#Web3</button>
       </div>
     </div>
-
-    <!-- CARDS rendered by JS -->
     <div class="cards-list" id="cardsList"></div>
-
-    <!-- PAGINATION -->
-    <div class="pagination" id="pagination"></div>
-
+    <div class="pagination"  id="pagination"></div>
   </main>
-
-  <script>
-  // ── DATA ──────────────────────────────────────────────────────────────────
-  const CHART_COLOR = '#e8c55a'; // единый цвет для всех графиков
-
-  const allIdeas = [
-    { id:1,  user:'@alex_ventures', avatar:'A', avatarBg:'linear-gradient(135deg,#e8c55a,#e87a5a)', time:'2h ago', tag:'AI Tools',     title:'AI-powered code review for solo devs',             body:'Automated PR review that learns your codebase style. Catches bugs, suggests refactors, and writes commit messages — all in under 10 seconds.', investors:320, pool:'12,500', countdown:'24h', profit:34, curve:'M0,52 C30,50 60,48 90,44 C120,40 150,38 180,32 C210,26 240,24 270,20 C300,16 330,12 360,8 C380,5 400,4 400,4' },
-    { id:2,  user:'@maria_builds',  avatar:'M', avatarBg:'linear-gradient(135deg,#5ae8c5,#5a90e8)', time:'5h ago', tag:'CleanEnergy', title:'Rooftop solar leasing — zero upfront cost',         body:'Homeowners lease their roof space, we install panels, they get 15% energy bill reduction instantly. Revenue from grid surplus.', investors:184, pool:'7,200', countdown:'11h', profit:18, curve:'M0,56 C40,54 80,52 120,48 C160,44 200,46 240,40 C280,34 320,22 360,14 C380,10 400,9 400,9' },
-    { id:3,  user:'@kirill_vc',     avatar:'K', avatarBg:'linear-gradient(135deg,#e85a7a,#c55ae8)', time:'8h ago', tag:'B2B SaaS',   title:'Async meeting summaries for Slack-heavy teams',     body:'Records voice memos in Slack, transcribes + summarises with action points, posts back to thread. No Zoom needed.', investors:97, pool:'3,400', countdown:'6h', profit:9, curve:'M0,60 C50,58 100,55 150,52 C200,49 230,50 260,46 C300,40 340,30 380,22 C390,19 400,18 400,18' },
-    { id:4,  user:'@dima_builds',   avatar:'D', avatarBg:'linear-gradient(135deg,#cd7f32,#aa5a22)', time:'10h ago',tag:'DeFi',       title:'DeFi micro-lending for SME supply chains',          body:'Businesses unlock liquidity from unpaid invoices. Smart contracts settle in 48h. No credit check, no bank.', investors:241, pool:'9,800', countdown:'18h', profit:27, curve:'M0,58 C60,56 100,53 150,48 C200,44 240,42 280,34 C320,26 360,16 400,10 L400,64 L0,64' },
-    { id:5,  user:'@sarah_angel',   avatar:'S', avatarBg:'linear-gradient(135deg,#c0c0c0,#8888aa)', time:'13h ago',tag:'Hardware',   title:'Modular keyboard with swappable OS chips',          body:'Each chip runs a different OS profile. Swap from dev mode to design mode in seconds. MagSafe-style attachment.', investors:156, pool:'5,100', countdown:'32h', profit:41, curve:'M0,60 C40,58 80,54 130,50 C180,46 220,44 270,36 C320,28 360,18 400,8 L400,64 L0,64' },
-    { id:6,  user:'@leo_founder',   avatar:'L', avatarBg:'linear-gradient(135deg,#5a90e8,#5ae8c5)', time:'16h ago',tag:'AI Tools',   title:'Voice journal that auto-detects your mood trends',  body:'Record 30-second voice notes. AI extracts sentiment, energy, stress. Weekly report shows your emotional patterns.', investors:88,  pool:'2,900', countdown:'40h', profit:15, curve:'M0,56 C50,55 90,54 140,52 C190,50 230,48 270,42 C310,36 360,26 400,16 L400,64 L0,64' },
-    { id:7,  user:'@nina_builds',   avatar:'N', avatarBg:'linear-gradient(135deg,#e8a55a,#e8c55a)', time:'20h ago',tag:'Web3',       title:'On-chain reputation score for freelancers',         body:'Client reviews stored on-chain, portable across platforms. No more starting from zero on every marketplace.', investors:203, pool:'7,700', countdown:'22h', profit:31, curve:'M0,54 C60,52 110,50 160,46 C210,42 250,40 290,34 C330,28 370,20 400,12 L400,64 L0,64' },
-    { id:8,  user:'@tom_ideas',     avatar:'T', avatarBg:'linear-gradient(135deg,#c55ae8,#e85a7a)', time:'1d ago', tag:'B2B SaaS',   title:'CRM built for indie consultants — single person',   body:'Full pipeline, invoicing, and follow-up automation. No seats, no bloat. Syncs with Gmail and Notion.', investors:67,  pool:'1,800', countdown:'48h', profit:7, curve:'M0,60 C70,59 130,57 180,54 C230,51 270,49 310,44 C350,38 380,30 400,22 L400,64 L0,64' },
-    { id:9,  user:'@vera_eco',      avatar:'V', avatarBg:'linear-gradient(135deg,#5ae8c5,#5a90e8)', time:'1d ago', tag:'CleanEnergy','title':'Community EV charging co-ops for apartment blocks', body:'Residents collectively own charging infra in their parking lot. Monthly earnings split by share. 0 upfront via grant model.', investors:119, pool:'4,200', countdown:'36h', profit:22, curve:'M0,58 C50,56 100,54 150,50 C200,46 240,44 280,38 C320,32 365,22 400,14 L400,64 L0,64' },
-    { id:10, user:'@boris_vc',      avatar:'B', avatarBg:'linear-gradient(135deg,#e8c55a,#5ae8c5)', time:'2d ago', tag:'DeFi',       title:'Yield optimizer that auto-rebalances between chains', body:'Set risk profile once. Smart contract moves your liquidity to highest-yield pools across 6 chains every 12h.', investors:178, pool:'6,500', countdown:'15h', profit:38, curve:'M0,56 C40,54 90,51 140,47 C190,43 240,41 280,34 C320,26 370,16 400,10 L400,64 L0,64' },
-    { id:11, user:'@kat_design',    avatar:'K', avatarBg:'linear-gradient(135deg,#e85a7a,#e8a55a)', time:'2d ago', tag:'AI Tools',   title:'AI brand identity kit from a single mood board',    body:'Upload 5 images. Get logo options, color palette, font pair, and brand guide PDF in 2 minutes. No designer needed.', investors:144, pool:'5,500', countdown:'28h', profit:29, curve:'M0,58 C50,56 100,52 150,48 C200,44 250,42 290,36 C330,28 375,18 400,12 L400,64 L0,64' },
-    { id:12, user:'@pete_saas',     avatar:'P', avatarBg:'linear-gradient(135deg,#5a90e8,#c55ae8)', time:'2d ago', tag:'Hardware',   title:'Posture sensor clip for remote workers',            body:'Attaches to shirt collar. Vibrates when you hunch. Weekly report shows your posture score. $29 device, $0 subscription.', investors:92,  pool:'3,100', countdown:'52h', profit:12, curve:'M0,60 C60,59 110,57 160,54 C210,51 255,49 295,44 C335,38 370,28 400,20 L400,64 L0,64' },
-    { id:13, user:'@mira_web3',     avatar:'M', avatarBg:'linear-gradient(135deg,#c55ae8,#5a90e8)', time:'3d ago', tag:'Web3',       title:'Token-gated coworking memberships in 40 cities',    body:'Hold 100 $WORK tokens, access any partner coworking space worldwide. No reservation, no fees beyond gas.', investors:231, pool:'8,900', countdown:'10h', profit:44, curve:'M0,55 C40,53 90,50 140,46 C190,42 240,39 285,32 C330,25 370,16 400,9 L400,64 L0,64' },
-    { id:14, user:'@sam_builds',    avatar:'S', avatarBg:'linear-gradient(135deg,#e8c55a,#e87a5a)', time:'3d ago', tag:'B2B SaaS',   title:'One-click privacy audit for SaaS companies',        body:'Scans your app, finds GDPR/CCPA gaps, generates remediation plan with priority order. Under 10 minutes.', investors:55,  pool:'1,500', countdown:'60h', profit:6, curve:'M0,60 C70,59 120,58 170,55 C220,52 265,50 305,46 C345,40 378,32 400,24 L400,64 L0,64' },
-    { id:15, user:'@olga_impact',   avatar:'O', avatarBg:'linear-gradient(135deg,#5ae8c5,#e8c55a)', time:'3d ago', tag:'CleanEnergy','title':'Carbon credit marketplace for urban gardeners',    body:'Measure your garden\'s CO₂ absorption with a soil sensor. Sell certified credits to corporates. Average $180/year per plot.', investors:109, pool:'3,800', countdown:'44h', profit:20, curve:'M0,57 C55,55 105,52 155,49 C205,46 245,44 285,38 C325,31 370,20 400,14 L400,64 L0,64' },
-  ];
-
-  // ── STATE ─────────────────────────────────────────────────────────────────
-  let currentPage   = 1;
-  let activeSort    = 'new';
-  let activeTag     = 'all';
-  let searchQuery   = '';
-  const PER_PAGE    = 5;
-
-  // ── HELPERS ───────────────────────────────────────────────────────────────
-  function getFiltered() {
-    let list = [...allIdeas];
-    if (activeTag !== 'all')  list = list.filter(i => i.tag === activeTag);
-    if (searchQuery)          list = list.filter(i =>
-      i.title.toLowerCase().includes(searchQuery) ||
-      i.body.toLowerCase().includes(searchQuery)  ||
-      i.tag.toLowerCase().includes(searchQuery)   ||
-      i.user.toLowerCase().includes(searchQuery)
-    );
-    if (activeSort === 'popular')  list.sort((a,b) => b.investors - a.investors);
-    if (activeSort === 'profit')   list.sort((a,b) => b.profit - a.profit);
-    if (activeSort === 'ending')   list.sort((a,b) => parseInt(a.countdown) - parseInt(b.countdown));
-    // 'new' keeps original order
-    return list;
-  }
-
-  function makeChart(id, curve) {
-    return `
-      <svg class="chart" viewBox="0 0 400 64" preserveAspectRatio="none">
-        <defs>
-          <linearGradient id="cg${id}" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="${CHART_COLOR}" stop-opacity="0.28"/>
-            <stop offset="100%" stop-color="${CHART_COLOR}" stop-opacity="0"/>
-          </linearGradient>
-        </defs>
-        <path d="${curve} L400,64 L0,64 Z" fill="url(#cg${id})"/>
-        <path d="${curve}" fill="none" stroke="${CHART_COLOR}" stroke-width="2"/>
-      </svg>`;
-  }
-
-  function makeCard(idea) {
-    return `
-    <div class="idea-card">
-      <div class="card-header">
-        <div class="card-avatar" style="background:${idea.avatarBg}">${idea.avatar}</div>
-        <div class="card-meta">
-          <div class="card-username">${idea.user}</div>
-          <div class="card-time">${idea.time} · #${idea.tag}</div>
-        </div>
-        <div class="card-menu">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
-        </div>
-      </div>
-      <div class="card-title">${idea.title}</div>
-      <div class="card-body">${idea.body}</div>
-      <div class="chart-wrap">
-        <div class="chart-labels"><span>Interest over time</span><span style="color:${CHART_COLOR}">↑ +${idea.profit}% today</span></div>
-        ${makeChart(idea.id, idea.curve)}
-        <div class="chart-footer">
-          <div class="investors">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            <span>${idea.investors}</span> investors · <span class="pool">${idea.pool} SPK</span> pool
-          </div>
-          <div class="countdown">⏱ ${idea.countdown} left</div>
-        </div>
-      </div>
-      <div class="card-actions">
-        <button class="btn-invest">Invest 10 SPK</button>
-        <button class="btn-critique">Critique</button>
-      </div>
-    </div>`;
-  }
-
-  function renderPage() {
-    const list      = getFiltered();
-    const total     = list.length;
-    const totalPages= Math.max(1, Math.ceil(total / PER_PAGE));
-    if (currentPage > totalPages) currentPage = totalPages;
-
-    const start  = (currentPage - 1) * PER_PAGE;
-    const slice  = list.slice(start, start + PER_PAGE);
-
-    const cardsList = document.getElementById('cardsList');
-    cardsList.innerHTML = slice.length
-      ? slice.map(makeCard).join('')
-      : '<div style="text-align:center;padding:48px 0;color:var(--muted);font-size:13px">No ideas match your filters</div>';
-
-    renderPagination(totalPages);
-
-    // scroll feed to top
-    document.querySelector('.feed').scrollTop = 0;
-  }
-
-  function renderPagination(totalPages) {
-    const pg  = document.getElementById('pagination');
-    if (totalPages <= 1) { pg.innerHTML = ''; return; }
-
-    const btn = (label, page, disabled, active, isNav) => {
-      const cls = ['page-btn', active ? 'active' : '', isNav ? 'nav' : ''].filter(Boolean).join(' ');
-      return `<button class="${cls}" data-page="${page}" ${disabled ? 'disabled' : ''}>${label}</button>`;
-    };
-
-    // window: show up to 5 page numbers
-    let pages = [];
-    if (totalPages <= 5) {
-      pages = Array.from({length: totalPages}, (_, i) => i + 1);
-    } else {
-      const left  = Math.max(1, currentPage - 1);
-      const right = Math.min(totalPages, currentPage + 1);
-      if (left > 2) pages.push('…l');
-      for (let p = left; p <= right; p++) pages.push(p);
-      if (right < totalPages - 1) pages.push('…r');
-    }
-
-    let html = btn('«', 1, currentPage === 1, false, true);
-    html    += btn('‹', currentPage - 1, currentPage === 1, false, true);
-
-    // always show page 1
-    if (!pages.includes(1)) {
-      html += btn('1', 1, false, false, false);
-      if (pages[0] !== '…l') html += '<span class="page-sep">…</span>';
-    }
-    pages.forEach(p => {
-      if (p === '…l' || p === '…r') html += '<span class="page-sep">…</span>';
-      else html += btn(p, p, false, p === currentPage, false);
-    });
-    // always show last page
-    if (!pages.includes(totalPages)) {
-      if (pages[pages.length-1] !== '…r') html += '<span class="page-sep">…</span>';
-      html += btn(totalPages, totalPages, false, false, false);
-    }
-
-    html += btn('›', currentPage + 1, currentPage === totalPages, false, true);
-    html += btn('»', totalPages, currentPage === totalPages, false, true);
-
-    pg.innerHTML = html;
-
-    pg.querySelectorAll('.page-btn:not([disabled])').forEach(b => {
-      b.addEventListener('click', () => {
-        currentPage = parseInt(b.dataset.page);
-        renderPage();
-      });
-    });
-  }
-
-  // ── EVENTS ────────────────────────────────────────────────────────────────
-  document.querySelectorAll('[data-sort]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('[data-sort]').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      activeSort = btn.dataset.sort;
-      currentPage = 1;
-      renderPage();
-    });
-  });
-
-  document.querySelectorAll('[data-tag]').forEach(chip => {
-    chip.addEventListener('click', () => {
-      document.querySelectorAll('[data-tag]').forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-      activeTag = chip.dataset.tag;
-      currentPage = 1;
-      renderPage();
-    });
-  });
-
-  document.getElementById('searchInput').addEventListener('input', e => {
-    searchQuery = e.target.value.toLowerCase().trim();
-    currentPage = 1;
-    renderPage();
-  });
-
-  // ── INIT ──────────────────────────────────────────────────────────────────
-  renderPage();
-  </script>
 
   <!-- RIGHT: LEADERBOARD -->
   <aside class="sidebar">
-    <div class="sidebar-title">Prophet Leaderboard</div>
-
-    <div class="leader-item">
-      <span class="leader-rank gold">1</span>
-      <div class="leader-avatar" style="background:linear-gradient(135deg,#ffd700,#e8a55a)">A</div>
-      <div class="leader-info">
-        <div class="leader-name">@alex_ventures</div>
-        <div class="leader-ideas">14 ideas · 89% hit rate</div>
-      </div>
-      <div class="leader-profit">+210%</div>
-    </div>
-
-    <div class="leader-item">
-      <span class="leader-rank silver">2</span>
-      <div class="leader-avatar" style="background:linear-gradient(135deg,#c0c0c0,#8888aa)">S</div>
-      <div class="leader-info">
-        <div class="leader-name">@sarah_angel</div>
-        <div class="leader-ideas">9 ideas · 78% hit rate</div>
-      </div>
-      <div class="leader-profit">+180%</div>
-    </div>
-
-    <div class="leader-item">
-      <span class="leader-rank bronze">3</span>
-      <div class="leader-avatar" style="background:linear-gradient(135deg,#cd7f32,#aa5a22)">D</div>
-      <div class="leader-info">
-        <div class="leader-name">@dima_builds</div>
-        <div class="leader-ideas">21 ideas · 71% hit rate</div>
-      </div>
-      <div class="leader-profit">+110%</div>
-    </div>
-
-    <div class="leader-item">
-      <span class="leader-rank" style="color:var(--muted)">4</span>
-      <div class="leader-avatar" style="background:linear-gradient(135deg,#5ae8c5,#5a90e8)">M</div>
-      <div class="leader-info">
-        <div class="leader-name">@maria_builds</div>
-        <div class="leader-ideas">7 ideas · 67% hit rate</div>
-      </div>
-      <div class="leader-profit" style="color:var(--accent)">+88%</div>
-    </div>
-
-    <div class="leader-item">
-      <span class="leader-rank" style="color:var(--muted)">5</span>
-      <div class="leader-avatar" style="background:linear-gradient(135deg,#e85a7a,#c55ae8)">K</div>
-      <div class="leader-info">
-        <div class="leader-name">@kirill_vc</div>
-        <div class="leader-ideas">11 ideas · 63% hit rate</div>
-      </div>
-      <div class="leader-profit" style="color:var(--accent)">+72%</div>
-    </div>
-
+    <div class="sidebar-title" data-i18n="leaderTitle">Prophet Leaderboard</div>
+    <div class="leader-item"><span class="leader-rank gold">1</span><div class="leader-avatar" style="background:linear-gradient(135deg,#ffd700,#e8a55a)">A</div><div class="leader-info"><div class="leader-name">@alex_ventures</div><div class="leader-ideas" data-i18n-tpl="leaderMeta" data-a="14" data-b="89">14 ideas · 89% hit rate</div></div><div class="leader-profit">+210%</div></div>
+    <div class="leader-item"><span class="leader-rank silver">2</span><div class="leader-avatar" style="background:linear-gradient(135deg,#c0c0c0,#8888aa)">S</div><div class="leader-info"><div class="leader-name">@sarah_angel</div><div class="leader-ideas" data-i18n-tpl="leaderMeta" data-a="9" data-b="78">9 ideas · 78% hit rate</div></div><div class="leader-profit">+180%</div></div>
+    <div class="leader-item"><span class="leader-rank bronze">3</span><div class="leader-avatar" style="background:linear-gradient(135deg,#cd7f32,#aa5a22)">D</div><div class="leader-info"><div class="leader-name">@dima_builds</div><div class="leader-ideas" data-i18n-tpl="leaderMeta" data-a="21" data-b="71">21 ideas · 71% hit rate</div></div><div class="leader-profit">+110%</div></div>
+    <div class="leader-item"><span class="leader-rank" style="color:var(--muted)">4</span><div class="leader-avatar" style="background:linear-gradient(135deg,#5ae8c5,#5a90e8)">M</div><div class="leader-info"><div class="leader-name">@maria_builds</div><div class="leader-ideas" data-i18n-tpl="leaderMeta" data-a="7" data-b="67">7 ideas · 67% hit rate</div></div><div class="leader-profit" style="color:var(--accent)">+88%</div></div>
+    <div class="leader-item"><span class="leader-rank" style="color:var(--muted)">5</span><div class="leader-avatar" style="background:linear-gradient(135deg,#e85a7a,#c55ae8)">K</div><div class="leader-info"><div class="leader-name">@kirill_vc</div><div class="leader-ideas" data-i18n-tpl="leaderMeta" data-a="11" data-b="63">11 ideas · 63% hit rate</div></div><div class="leader-profit" style="color:var(--accent)">+72%</div></div>
     <div class="divider"></div>
-    <div class="sidebar-title">Live Activity</div>
-
+    <div class="sidebar-title" data-i18n="liveActivity">Live Activity</div>
     <div style="display:flex;flex-direction:column;gap:8px">
       <div style="font-size:12px;color:var(--muted);line-height:1.5;padding:8px 0;border-bottom:1px solid var(--border)">
-        <span style="color:var(--accent2)">@sarah_angel</span> invested <strong style="color:var(--text)">50 SPK</strong> in AI code review
-        <div style="font-size:10px;margin-top:2px">2 min ago</div>
+        <span style="color:var(--accent2)">@sarah_angel</span> <span data-i18n="actInvested">invested</span> <strong style="color:var(--text)">50 SPK</strong> <span data-i18n="actIn">in</span> AI code review
+        <div style="font-size:10px;margin-top:2px" data-i18n="ago2">2 min ago</div>
       </div>
       <div style="font-size:12px;color:var(--muted);line-height:1.5;padding:8px 0;border-bottom:1px solid var(--border)">
-        <span style="color:var(--red)">@dima_builds</span> critiqued Solar Leasing
-        <div style="font-size:10px;margin-top:2px">7 min ago</div>
+        <span style="color:var(--red)">@dima_builds</span> <span data-i18n="actCritiqued">critiqued</span> Solar Leasing
+        <div style="font-size:10px;margin-top:2px" data-i18n="ago7">7 min ago</div>
       </div>
       <div style="font-size:12px;color:var(--muted);line-height:1.5;padding:8px 0">
-        New idea posted: <strong style="color:var(--text)">#DeFi lending for SMEs</strong>
-        <div style="font-size:10px;margin-top:2px">12 min ago</div>
+        <span data-i18n="actNewIdea">New idea posted:</span> <strong style="color:var(--text)">#DeFi lending for SMEs</strong>
+        <div style="font-size:10px;margin-top:2px" data-i18n="ago12">12 min ago</div>
       </div>
     </div>
   </aside>
 
-</div>
+</div><!-- /layout -->
 
-<!-- ── MOBILE: bottom tab bar ── -->
+<!-- MOBILE: bottom tab bar -->
 <nav class="mob-tabs" id="mobTabs">
   <button class="mob-tab" data-panel="trends" onclick="openPanel('trends')">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
-    Trends
+    <span data-i18n="tabTrends">Trends</span>
   </button>
   <button class="mob-tab active" data-panel="feed" onclick="openPanel('feed')">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-    Feed
+    <span data-i18n="tabFeed">Feed</span>
   </button>
   <button class="mob-tab" data-panel="leaders" onclick="openPanel('leaders')">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-    Leaders
+    <span data-i18n="tabLeaders">Leaders</span>
   </button>
   <button class="mob-tab" data-panel="profile" onclick="openPanel('profile')">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-    Profile
+    <span data-i18n="tabProfile">Profile</span>
   </button>
 </nav>
 
-<!-- ── MOBILE: Trends panel ── -->
+<!-- MOBILE: Trends panel (no Your Stats) -->
 <div class="mob-panel" id="panel-trends">
-  <div class="sidebar-title">Trending Now</div>
+  <div class="sidebar-title" data-i18n="trendingNow">Trending Now</div>
   <div class="trend-item"><span class="trend-rank">1</span><span class="trend-tag">#AI Tools</span><span class="trend-count">84</span><span class="trend-hot">🔥</span></div>
   <div class="trend-item"><span class="trend-rank">2</span><span class="trend-tag">#DeFi</span><span class="trend-count">61</span></div>
   <div class="trend-item"><span class="trend-rank">3</span><span class="trend-tag">#CleanEnergy</span><span class="trend-count">55</span></div>
   <div class="trend-item"><span class="trend-rank">4</span><span class="trend-tag">#B2B SaaS</span><span class="trend-count">47</span></div>
   <div class="trend-item"><span class="trend-rank">5</span><span class="trend-tag">#Hardware</span><span class="trend-count">39</span></div>
   <div class="trend-item"><span class="trend-rank">6</span><span class="trend-tag">#Web3</span><span class="trend-count">31</span></div>
-  <div class="divider"></div>
-  <div class="sidebar-title">Your Stats</div>
-  <div class="stats-row">
-    <div class="stat-box"><span class="val">12</span><span class="key">Ideas</span></div>
-    <div class="stat-box"><span class="val">+84%</span><span class="key">Profit</span></div>
-    <div class="stat-box"><span class="val">38</span><span class="key">Invested</span></div>
-    <div class="stat-box"><span class="val">#41</span><span class="key">Rank</span></div>
-  </div>
 </div>
 
-<!-- ── MOBILE: Leaderboard panel ── -->
+<!-- MOBILE: Leaderboard panel -->
 <div class="mob-panel right" id="panel-leaders">
-  <div class="sidebar-title">Prophet Leaderboard</div>
-  <div class="leader-item"><span class="leader-rank gold">1</span><div class="leader-avatar" style="background:linear-gradient(135deg,#ffd700,#e8a55a)">A</div><div class="leader-info"><div class="leader-name">@alex_ventures</div><div class="leader-ideas">14 ideas · 89% hit rate</div></div><div class="leader-profit">+210%</div></div>
-  <div class="leader-item"><span class="leader-rank silver">2</span><div class="leader-avatar" style="background:linear-gradient(135deg,#c0c0c0,#8888aa)">S</div><div class="leader-info"><div class="leader-name">@sarah_angel</div><div class="leader-ideas">9 ideas · 78% hit rate</div></div><div class="leader-profit">+180%</div></div>
-  <div class="leader-item"><span class="leader-rank bronze">3</span><div class="leader-avatar" style="background:linear-gradient(135deg,#cd7f32,#aa5a22)">D</div><div class="leader-info"><div class="leader-name">@dima_builds</div><div class="leader-ideas">21 ideas · 71% hit rate</div></div><div class="leader-profit">+110%</div></div>
-  <div class="leader-item"><span class="leader-rank" style="color:var(--muted)">4</span><div class="leader-avatar" style="background:linear-gradient(135deg,#5ae8c5,#5a90e8)">M</div><div class="leader-info"><div class="leader-name">@maria_builds</div><div class="leader-ideas">7 ideas · 67% hit rate</div></div><div class="leader-profit" style="color:var(--accent)">+88%</div></div>
-  <div class="leader-item"><span class="leader-rank" style="color:var(--muted)">5</span><div class="leader-avatar" style="background:linear-gradient(135deg,#e85a7a,#c55ae8)">K</div><div class="leader-info"><div class="leader-name">@kirill_vc</div><div class="leader-ideas">11 ideas · 63% hit rate</div></div><div class="leader-profit" style="color:var(--accent)">+72%</div></div>
+  <div class="sidebar-title" data-i18n="leaderTitle">Prophet Leaderboard</div>
+  <div class="leader-item"><span class="leader-rank gold">1</span><div class="leader-avatar" style="background:linear-gradient(135deg,#ffd700,#e8a55a)">A</div><div class="leader-info"><div class="leader-name">@alex_ventures</div><div class="leader-ideas" data-i18n-tpl="leaderMeta" data-a="14" data-b="89">14 ideas · 89% hit rate</div></div><div class="leader-profit">+210%</div></div>
+  <div class="leader-item"><span class="leader-rank silver">2</span><div class="leader-avatar" style="background:linear-gradient(135deg,#c0c0c0,#8888aa)">S</div><div class="leader-info"><div class="leader-name">@sarah_angel</div><div class="leader-ideas" data-i18n-tpl="leaderMeta" data-a="9" data-b="78">9 ideas · 78% hit rate</div></div><div class="leader-profit">+180%</div></div>
+  <div class="leader-item"><span class="leader-rank bronze">3</span><div class="leader-avatar" style="background:linear-gradient(135deg,#cd7f32,#aa5a22)">D</div><div class="leader-info"><div class="leader-name">@dima_builds</div><div class="leader-ideas" data-i18n-tpl="leaderMeta" data-a="21" data-b="71">21 ideas · 71% hit rate</div></div><div class="leader-profit">+110%</div></div>
+  <div class="leader-item"><span class="leader-rank" style="color:var(--muted)">4</span><div class="leader-avatar" style="background:linear-gradient(135deg,#5ae8c5,#5a90e8)">M</div><div class="leader-info"><div class="leader-name">@maria_builds</div><div class="leader-ideas" data-i18n-tpl="leaderMeta" data-a="7" data-b="67">7 ideas · 67% hit rate</div></div><div class="leader-profit" style="color:var(--accent)">+88%</div></div>
+  <div class="leader-item"><span class="leader-rank" style="color:var(--muted)">5</span><div class="leader-avatar" style="background:linear-gradient(135deg,#e85a7a,#c55ae8)">K</div><div class="leader-info"><div class="leader-name">@kirill_vc</div><div class="leader-ideas" data-i18n-tpl="leaderMeta" data-a="11" data-b="63">11 ideas · 63% hit rate</div></div><div class="leader-profit" style="color:var(--accent)">+72%</div></div>
   <div class="divider"></div>
-  <div class="sidebar-title">Live Activity</div>
+  <div class="sidebar-title" data-i18n="liveActivity">Live Activity</div>
   <div style="display:flex;flex-direction:column;gap:8px">
-    <div style="font-size:12px;color:var(--muted);line-height:1.5;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--accent2)">@sarah_angel</span> invested <strong style="color:var(--text)">50 SPK</strong> in AI code review<div style="font-size:10px;margin-top:2px">2 min ago</div></div>
-    <div style="font-size:12px;color:var(--muted);line-height:1.5;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--red)">@dima_builds</span> critiqued Solar Leasing<div style="font-size:10px;margin-top:2px">7 min ago</div></div>
-    <div style="font-size:12px;color:var(--muted);line-height:1.5;padding:8px 0">New idea posted: <strong style="color:var(--text)">#DeFi lending for SMEs</strong><div style="font-size:10px;margin-top:2px">12 min ago</div></div>
+    <div style="font-size:12px;color:var(--muted);line-height:1.5;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--accent2)">@sarah_angel</span> <span data-i18n="actInvested">invested</span> <strong style="color:var(--text)">50 SPK</strong> <span data-i18n="actIn">in</span> AI code review<div style="font-size:10px;margin-top:2px" data-i18n="ago2">2 min ago</div></div>
+    <div style="font-size:12px;color:var(--muted);line-height:1.5;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--red)">@dima_builds</span> <span data-i18n="actCritiqued">critiqued</span> Solar Leasing<div style="font-size:10px;margin-top:2px" data-i18n="ago7">7 min ago</div></div>
+    <div style="font-size:12px;color:var(--muted);line-height:1.5;padding:8px 0"><span data-i18n="actNewIdea">New idea posted:</span> <strong style="color:var(--text)">#DeFi lending for SMEs</strong><div style="font-size:10px;margin-top:2px" data-i18n="ago12">12 min ago</div></div>
   </div>
 </div>
 
-<!-- ── MOBILE: Profile panel ── -->
+<!-- MOBILE: Profile panel -->
 <div class="mob-panel right" id="panel-profile">
   <div style="display:flex;flex-direction:column;align-items:center;padding:24px 0 20px">
     <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#e8c55a,#5ae8c5);display:flex;align-items:center;justify-content:center;font-family:var(--font-head);font-size:28px;font-weight:800;color:#08080f;margin-bottom:12px">U</div>
     <div style="font-family:var(--font-head);font-size:18px;font-weight:700;margin-bottom:4px">@user123</div>
-    <span style="font-size:10px;color:var(--accent2);border:1px solid rgba(90,232,197,0.3);border-radius:4px;padding:2px 8px;text-transform:uppercase;letter-spacing:0.05em">✓ Verified Investor</span>
+    <span style="font-size:10px;color:var(--accent2);border:1px solid rgba(90,232,197,0.3);border-radius:4px;padding:2px 8px;text-transform:uppercase;letter-spacing:0.05em" data-i18n="verifiedInvestor">✓ Verified Investor</span>
   </div>
-  <div class="stats-row" style="margin-top:0;margin-bottom:20px">
-    <div class="stat-box"><span class="val">12</span><span class="key">Ideas</span></div>
-    <div class="stat-box"><span class="val">+84%</span><span class="key">Profit</span></div>
-    <div class="stat-box"><span class="val">38</span><span class="key">Invested</span></div>
-    <div class="stat-box"><span class="val">#41</span><span class="key">Rank</span></div>
+
+  <div class="stats-row" style="margin-bottom:20px">
+    <div class="stat-box"><span class="val">12</span><span class="key" data-i18n="statIdeas">Ideas</span></div>
+    <div class="stat-box"><span class="val">+84%</span><span class="key" data-i18n="statProfit">Profit</span></div>
+    <div class="stat-box"><span class="val">38</span><span class="key" data-i18n="statInvested">Invested</span></div>
+    <div class="stat-box"><span class="val">#41</span><span class="key" data-i18n="statRank">Rank</span></div>
   </div>
+
   <div class="divider"></div>
-  <div class="sidebar-title" style="margin-top:16px">Wallet</div>
+  <div class="sidebar-title" style="margin-top:16px" data-i18n="walletTitle">Wallet</div>
   <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px">
     <div>
       <div style="font-family:var(--font-head);font-size:24px;font-weight:800;color:var(--accent)">4,520 <span style="font-size:14px">SPK</span></div>
-      <div style="font-size:11px;color:var(--muted);margin-top:2px">Available balance</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px" data-i18n="availableBalance">Available balance</div>
     </div>
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--accent);opacity:0.6"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8L2 7h20l-6-4z"/></svg>
   </div>
+
   <div class="divider"></div>
-  <div class="sidebar-title" style="margin-top:16px">Settings</div>
+  <div class="sidebar-title" style="margin-top:16px" data-i18n="settingsTitle">Settings</div>
   <div style="display:flex;flex-direction:column;gap:2px">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 8px;border-radius:8px;cursor:pointer" onclick="this.style.background='var(--surface2)';setTimeout(()=>this.style.background='',200)">
-      <span style="font-size:13px">Notifications</span>
+
+    <!-- Language selector -->
+    <div class="lang-row" onclick="toggleLangDropdown(event)">
+      <span style="font-size:13px" data-i18n="langLabel">Language</span>
+      <span class="lang-current" id="langCurrent">EN</span>
+      <div class="lang-dropdown" id="langDropdown">
+        <div class="lang-option" data-lang="en" onclick="setLang('en',event)"><span class="lang-flag">🇬🇧</span> English</div>
+        <div class="lang-option" data-lang="ru" onclick="setLang('ru',event)"><span class="lang-flag">🇷🇺</span> Русский</div>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 8px;border-radius:8px;cursor:pointer" onclick="this.style.background='var(--surface2)';setTimeout(()=>this.style.background='',180)">
+      <span style="font-size:13px" data-i18n="settingNotifications">Notifications</span>
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--muted)"><polyline points="9 18 15 12 9 6"/></svg>
     </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 8px;border-radius:8px;cursor:pointer" onclick="this.style.background='var(--surface2)';setTimeout(()=>this.style.background='',200)">
-      <span style="font-size:13px">Privacy</span>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 8px;border-radius:8px;cursor:pointer" onclick="this.style.background='var(--surface2)';setTimeout(()=>this.style.background='',180)">
+      <span style="font-size:13px" data-i18n="settingPrivacy">Privacy</span>
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--muted)"><polyline points="9 18 15 12 9 6"/></svg>
     </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 8px;border-radius:8px;cursor:pointer" onclick="this.style.background='var(--surface2)';setTimeout(()=>this.style.background='',200)">
-      <span style="font-size:13px;color:var(--red)">Log out</span>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 8px;border-radius:8px;cursor:pointer" onclick="this.style.background='var(--surface2)';setTimeout(()=>this.style.background='',180)">
+      <span style="font-size:13px;color:var(--red)" data-i18n="settingLogout">Log out</span>
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--red)"><polyline points="9 18 15 12 9 6"/></svg>
     </div>
   </div>
 </div>
 
 <script>
+// ══════════════════════════════════════
+// I18N
+// ══════════════════════════════════════
+const i18n = {
+  en: {
+    wallet:'Wallet', verified:'✓ Verified', postIdea:'+ Post Idea',
+    trendingNow:'Trending Now',
+    searchPlaceholder:'Search ideas...',
+    sortLabel:'Sort:', sortNew:'🕐 New', sortPopular:'🔥 Popular', sortProfit:'📈 Profitable', sortEnding:'⏱ Ending soon',
+    tagLabel:'Tag:', tagAll:'All',
+    interestOverTime:'Interest over time',
+    cardInvestors:'investors', cardPool:'pool', cardLeft:'left',
+    btnInvest:'Invest 10 SPK', btnCritique:'Critique',
+    leaderTitle:'Prophet Leaderboard',
+    leaderMeta:'{a} ideas · {b}% hit rate',
+    liveActivity:'Live Activity',
+    actInvested:'invested', actIn:'in', actCritiqued:'critiqued',
+    actNewIdea:'New idea posted:',
+    ago2:'2 min ago', ago7:'7 min ago', ago12:'12 min ago',
+    tabTrends:'Trends', tabFeed:'Feed', tabLeaders:'Leaders', tabProfile:'Profile',
+    verifiedInvestor:'✓ Verified Investor',
+    statIdeas:'Ideas', statProfit:'Profit', statInvested:'Invested', statRank:'Rank',
+    walletTitle:'Wallet', availableBalance:'Available balance',
+    settingsTitle:'Settings', langLabel:'Language',
+    settingNotifications:'Notifications', settingPrivacy:'Privacy', settingLogout:'Log out',
+    noResults:'No ideas match your filters',
+  },
+  ru: {
+    wallet:'Кошелёк', verified:'✓ Верифицирован', postIdea:'+ Идея',
+    trendingNow:'В орбите сейчас',
+    searchPlaceholder:'Искать идеи...',
+    sortLabel:'Сортировка:', sortNew:'🕐 Новые', sortPopular:'🔥 Популярные', sortProfit:'📈 Прибыльные', sortEnding:'⏱ Скоро закрытие',
+    tagLabel:'Тег:', tagAll:'Все',
+    interestOverTime:'Интерес орбиты',
+    cardInvestors:'инвесторов', cardPool:'пул', cardLeft:'осталось',
+    btnInvest:'Вложить 10 SPK', btnCritique:'Критика',
+    leaderTitle:'Пантеон пророков',
+    leaderMeta:'{a} идей · попаданий {b}%',
+    liveActivity:'Живой эфир',
+    actInvested:'вложил', actIn:'в', actCritiqued:'раскритиковал',
+    actNewIdea:'Новая идея в эфире:',
+    ago2:'2 мин назад', ago7:'7 мин назад', ago12:'12 мин назад',
+    tabTrends:'Тренды', tabFeed:'Лента', tabLeaders:'Пророки', tabProfile:'Профиль',
+    verifiedInvestor:'✓ Верифицированный инвестор',
+    statIdeas:'Идеи', statProfit:'Прибыль', statInvested:'Вложено', statRank:'Ранг',
+    walletTitle:'Кошелёк', availableBalance:'Доступный баланс',
+    settingsTitle:'Настройки', langLabel:'Язык',
+    settingNotifications:'Уведомления', settingPrivacy:'Приватность', settingLogout:'Выйти',
+    noResults:'Идеи не найдены',
+  }
+};
+
+let currentLang = localStorage.getItem('spark_lang') || 'en';
+
+function t(key) { return (i18n[currentLang] || i18n.en)[key] || i18n.en[key] || key; }
+
+function applyLang() {
+  // text nodes
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  // placeholders
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    el.placeholder = t(el.dataset.i18nPlaceholder);
+  });
+  // templates like "{a} ideas · {b}% hit rate"
+  document.querySelectorAll('[data-i18n-tpl]').forEach(el => {
+    el.textContent = t(el.dataset.i18nTpl)
+      .replace('{a}', el.dataset.a)
+      .replace('{b}', el.dataset.b);
+  });
+  // lang badge + highlight selected option
+  document.getElementById('langCurrent').textContent = currentLang.toUpperCase();
+  document.querySelectorAll('.lang-option').forEach(o => {
+    o.classList.toggle('selected', o.dataset.lang === currentLang);
+  });
+  // re-render cards (they contain translated strings)
+  renderPage();
+}
+
+function setLang(lang, e) {
+  if (e) { e.preventDefault(); e.stopPropagation(); }
+  currentLang = lang;
+  localStorage.setItem('spark_lang', lang);
+  document.getElementById('langDropdown').classList.remove('open');
+  applyLang();
+}
+
+function toggleLangDropdown(e) {
+  e.stopPropagation();
+  document.getElementById('langDropdown').classList.toggle('open');
+}
+document.addEventListener('click', () => {
+  const dd = document.getElementById('langDropdown');
+  if (dd) dd.classList.remove('open');
+});
+
+// ══════════════════════════════════════
+// DATA
+// ══════════════════════════════════════
+const CHART_COLOR = '#e8c55a';
+
+const allIdeas = [
+  { id:1,  user:'@alex_ventures', av:'A', bg:'linear-gradient(135deg,#e8c55a,#e87a5a)', time:'2h', tag:'AI Tools',    title:'AI-powered code review for solo devs',             body:'Automated PR review that learns your codebase style. Catches bugs, suggests refactors, and writes commit messages — all in under 10 seconds.', investors:320, pool:'12,500', countdown:'24', profit:34, curve:'M0,52 C30,50 60,48 90,44 C120,40 150,38 180,32 C210,26 240,24 270,20 C300,16 330,12 360,8 C380,5 400,4 400,4' },
+  { id:2,  user:'@maria_builds',  av:'M', bg:'linear-gradient(135deg,#5ae8c5,#5a90e8)', time:'5h', tag:'CleanEnergy', title:'Rooftop solar leasing — zero upfront cost',         body:'Homeowners lease their roof space, we install panels, they get 15% energy bill reduction instantly. Revenue from grid surplus.', investors:184, pool:'7,200', countdown:'11', profit:18, curve:'M0,56 C40,54 80,52 120,48 C160,44 200,46 240,40 C280,34 320,22 360,14 C380,10 400,9 400,9' },
+  { id:3,  user:'@kirill_vc',     av:'K', bg:'linear-gradient(135deg,#e85a7a,#c55ae8)', time:'8h', tag:'B2B SaaS',   title:'Async meeting summaries for Slack-heavy teams',     body:'Records voice memos in Slack, transcribes + summarises with action points, posts back to thread. No Zoom needed.', investors:97,  pool:'3,400', countdown:'6',  profit:9,  curve:'M0,60 C50,58 100,55 150,52 C200,49 230,50 260,46 C300,40 340,30 380,22 C390,19 400,18 400,18' },
+  { id:4,  user:'@dima_builds',   av:'D', bg:'linear-gradient(135deg,#cd7f32,#aa5a22)', time:'10h',tag:'DeFi',       title:'DeFi micro-lending for SME supply chains',          body:'Businesses unlock liquidity from unpaid invoices. Smart contracts settle in 48h. No credit check, no bank.', investors:241, pool:'9,800', countdown:'18', profit:27, curve:'M0,58 C60,56 100,53 150,48 C200,44 240,42 280,34 C320,26 360,16 400,10' },
+  { id:5,  user:'@sarah_angel',   av:'S', bg:'linear-gradient(135deg,#c0c0c0,#8888aa)', time:'13h',tag:'Hardware',   title:'Modular keyboard with swappable OS chips',          body:'Each chip runs a different OS profile. Swap from dev mode to design mode in seconds. MagSafe-style attachment.', investors:156, pool:'5,100', countdown:'32', profit:41, curve:'M0,60 C40,58 80,54 130,50 C180,46 220,44 270,36 C320,28 360,18 400,8' },
+  { id:6,  user:'@leo_founder',   av:'L', bg:'linear-gradient(135deg,#5a90e8,#5ae8c5)', time:'16h',tag:'AI Tools',   title:'Voice journal that auto-detects your mood trends',  body:'Record 30-second voice notes. AI extracts sentiment, energy, stress. Weekly report shows your emotional patterns.', investors:88,  pool:'2,900', countdown:'40', profit:15, curve:'M0,56 C50,55 90,54 140,52 C190,50 230,48 270,42 C310,36 360,26 400,16' },
+  { id:7,  user:'@nina_builds',   av:'N', bg:'linear-gradient(135deg,#e8a55a,#e8c55a)', time:'20h',tag:'Web3',       title:'On-chain reputation score for freelancers',         body:'Client reviews stored on-chain, portable across platforms. No more starting from zero on every marketplace.', investors:203, pool:'7,700', countdown:'22', profit:31, curve:'M0,54 C60,52 110,50 160,46 C210,42 250,40 290,34 C330,28 370,20 400,12' },
+  { id:8,  user:'@tom_ideas',     av:'T', bg:'linear-gradient(135deg,#c55ae8,#e85a7a)', time:'1d', tag:'B2B SaaS',   title:'CRM built for indie consultants — single person',   body:'Full pipeline, invoicing, and follow-up automation. No seats, no bloat. Syncs with Gmail and Notion.', investors:67,  pool:'1,800', countdown:'48', profit:7,  curve:'M0,60 C70,59 130,57 180,54 C230,51 270,49 310,44 C350,38 380,30 400,22' },
+  { id:9,  user:'@vera_eco',      av:'V', bg:'linear-gradient(135deg,#5ae8c5,#5a90e8)', time:'1d', tag:'CleanEnergy',title:'Community EV charging co-ops for apartment blocks', body:'Residents collectively own charging infra in their parking lot. Monthly earnings split by share. 0 upfront via grant model.', investors:119, pool:'4,200', countdown:'36', profit:22, curve:'M0,58 C50,56 100,54 150,50 C200,46 240,44 280,38 C320,32 365,22 400,14' },
+  { id:10, user:'@boris_vc',      av:'B', bg:'linear-gradient(135deg,#e8c55a,#5ae8c5)', time:'2d', tag:'DeFi',       title:'Yield optimizer that auto-rebalances between chains',body:'Set risk profile once. Smart contract moves your liquidity to highest-yield pools across 6 chains every 12h.', investors:178, pool:'6,500', countdown:'15', profit:38, curve:'M0,56 C40,54 90,51 140,47 C190,43 240,41 280,34 C320,26 370,16 400,10' },
+  { id:11, user:'@kat_design',    av:'K', bg:'linear-gradient(135deg,#e85a7a,#e8a55a)', time:'2d', tag:'AI Tools',   title:'AI brand identity kit from a single mood board',    body:'Upload 5 images. Get logo options, color palette, font pair, and brand guide PDF in 2 minutes. No designer needed.', investors:144, pool:'5,500', countdown:'28', profit:29, curve:'M0,58 C50,56 100,52 150,48 C200,44 250,42 290,36 C330,28 375,18 400,12' },
+  { id:12, user:'@pete_saas',     av:'P', bg:'linear-gradient(135deg,#5a90e8,#c55ae8)', time:'2d', tag:'Hardware',   title:'Posture sensor clip for remote workers',            body:'Attaches to shirt collar. Vibrates when you hunch. Weekly report shows your posture score. $29 device, $0 subscription.', investors:92,  pool:'3,100', countdown:'52', profit:12, curve:'M0,60 C60,59 110,57 160,54 C210,51 255,49 295,44 C335,38 370,28 400,20' },
+  { id:13, user:'@mira_web3',     av:'M', bg:'linear-gradient(135deg,#c55ae8,#5a90e8)', time:'3d', tag:'Web3',       title:'Token-gated coworking memberships in 40 cities',    body:'Hold 100 $WORK tokens, access any partner coworking space worldwide. No reservation, no fees beyond gas.', investors:231, pool:'8,900', countdown:'10', profit:44, curve:'M0,55 C40,53 90,50 140,46 C190,42 240,39 285,32 C330,25 370,16 400,9' },
+  { id:14, user:'@sam_builds',    av:'S', bg:'linear-gradient(135deg,#e8c55a,#e87a5a)', time:'3d', tag:'B2B SaaS',   title:'One-click privacy audit for SaaS companies',        body:'Scans your app, finds GDPR/CCPA gaps, generates remediation plan with priority order. Under 10 minutes.', investors:55,  pool:'1,500', countdown:'60', profit:6,  curve:'M0,60 C70,59 120,58 170,55 C220,52 265,50 305,46 C345,40 378,32 400,24' },
+  { id:15, user:'@olga_impact',   av:'O', bg:'linear-gradient(135deg,#5ae8c5,#e8c55a)', time:'3d', tag:'CleanEnergy',title:'Carbon credit marketplace for urban gardeners',      body:"Measure your garden's CO₂ absorption with a soil sensor. Sell certified credits to corporates. Average $180/year per plot.", investors:109, pool:'3,800', countdown:'44', profit:20, curve:'M0,57 C55,55 105,52 155,49 C205,46 245,44 285,38 C325,31 370,20 400,14' },
+];
+
+// ══════════════════════════════════════
+// STATE
+// ══════════════════════════════════════
+let currentPage = 1, activeSort = 'new', activeTag = 'all', searchQuery = '';
+const PER_PAGE  = 5;
+
+// ══════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════
+function getFiltered() {
+  let list = [...allIdeas];
+  if (activeTag !== 'all') list = list.filter(i => i.tag === activeTag);
+  if (searchQuery) list = list.filter(i =>
+    i.title.toLowerCase().includes(searchQuery) ||
+    i.body.toLowerCase().includes(searchQuery)  ||
+    i.tag.toLowerCase().includes(searchQuery)   ||
+    i.user.toLowerCase().includes(searchQuery)
+  );
+  if (activeSort === 'popular') list.sort((a,b) => b.investors - a.investors);
+  if (activeSort === 'profit')  list.sort((a,b) => b.profit - a.profit);
+  if (activeSort === 'ending')  list.sort((a,b) => parseInt(a.countdown) - parseInt(b.countdown));
+  return list;
+}
+
+function makeChart(id, curve) {
+  return `<svg class="chart" viewBox="0 0 400 64" preserveAspectRatio="none">
+    <defs><linearGradient id="cg${id}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${CHART_COLOR}" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="${CHART_COLOR}" stop-opacity="0"/>
+    </linearGradient></defs>
+    <path d="${curve} L400,64 L0,64 Z" fill="url(#cg${id})"/>
+    <path d="${curve}" fill="none" stroke="${CHART_COLOR}" stroke-width="2"/>
+  </svg>`;
+}
+
+function makeCard(idea) {
+  return `<div class="idea-card">
+    <div class="card-header">
+      <div class="card-avatar" style="background:${idea.bg}">${idea.av}</div>
+      <div class="card-meta">
+        <div class="card-username">${idea.user}</div>
+        <div class="card-time">${idea.time} · #${idea.tag}</div>
+      </div>
+      <div class="card-menu"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></div>
+    </div>
+    <div class="card-title">${idea.title}</div>
+    <div class="card-body">${idea.body}</div>
+    <div class="chart-wrap">
+      <div class="chart-labels"><span>${t('interestOverTime')}</span><span style="color:${CHART_COLOR}">↑ +${idea.profit}%</span></div>
+      ${makeChart(idea.id, idea.curve)}
+      <div class="chart-footer">
+        <div class="investors">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span>${idea.investors}</span> ${t('cardInvestors')} · <span class="pool">${idea.pool} SPK</span> ${t('cardPool')}
+        </div>
+        <div class="countdown">⏱ ${idea.countdown}h ${t('cardLeft')}</div>
+      </div>
+    </div>
+    <div class="card-actions">
+      <button class="btn-invest">${t('btnInvest')}</button>
+      <button class="btn-critique">${t('btnCritique')}</button>
+    </div>
+  </div>`;
+}
+
+function renderPage() {
+  const list       = getFiltered();
+  const totalPages = Math.max(1, Math.ceil(list.length / PER_PAGE));
+  if (currentPage > totalPages) currentPage = totalPages;
+  const slice = list.slice((currentPage-1)*PER_PAGE, currentPage*PER_PAGE);
+
+  const cl = document.getElementById('cardsList');
+  if (!cl) return;
+  cl.innerHTML = slice.length
+    ? slice.map(makeCard).join('')
+    : `<div style="text-align:center;padding:48px 0;color:var(--muted);font-size:13px">${t('noResults')}</div>`;
+
+  renderPagination(totalPages);
+  const feed = document.querySelector('.feed');
+  if (feed) feed.scrollTop = 0;
+}
+
+function renderPagination(totalPages) {
+  const pg = document.getElementById('pagination');
+  if (!pg) return;
+  if (totalPages <= 1) { pg.innerHTML = ''; return; }
+
+  const btn = (label, page, disabled, active) =>
+    `<button class="page-btn${active?' active':''}" data-page="${page}" ${disabled?'disabled':''}>${label}</button>`;
+
+  let pages = [];
+  if (totalPages <= 5) { pages = Array.from({length:totalPages},(_,i)=>i+1); }
+  else {
+    const l = Math.max(1,currentPage-1), r = Math.min(totalPages,currentPage+1);
+    if (l>2) pages.push('…l');
+    for (let p=l;p<=r;p++) pages.push(p);
+    if (r<totalPages-1) pages.push('…r');
+  }
+
+  let html = btn('«',1,currentPage===1,false)+btn('‹',currentPage-1,currentPage===1,false);
+  if (!pages.includes(1)) { html+=btn('1',1,false,false); if(pages[0]!=='…l') html+='<span class="page-sep">…</span>'; }
+  pages.forEach(p => {
+    if (p==='…l'||p==='…r') html+='<span class="page-sep">…</span>';
+    else html+=btn(p,p,false,p===currentPage);
+  });
+  if (!pages.includes(totalPages)) { if(pages[pages.length-1]!=='…r') html+='<span class="page-sep">…</span>'; html+=btn(totalPages,totalPages,false,false); }
+  html+=btn('›',currentPage+1,currentPage===totalPages,false)+btn('»',totalPages,currentPage===totalPages,false);
+
+  pg.innerHTML = html;
+  pg.querySelectorAll('.page-btn:not([disabled])').forEach(b => {
+    b.addEventListener('click', () => { currentPage=parseInt(b.dataset.page); renderPage(); });
+  });
+}
+
+// ══════════════════════════════════════
+// FILTER EVENTS
+// ══════════════════════════════════════
+document.querySelectorAll('[data-sort]').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('[data-sort]').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    activeSort = b.dataset.sort; currentPage = 1; renderPage();
+  });
+});
+document.querySelectorAll('[data-tag]').forEach(c => {
+  c.addEventListener('click', () => {
+    document.querySelectorAll('[data-tag]').forEach(x => x.classList.remove('active'));
+    c.classList.add('active');
+    activeTag = c.dataset.tag; currentPage = 1; renderPage();
+  });
+});
+document.getElementById('searchInput').addEventListener('input', e => {
+  searchQuery = e.target.value.toLowerCase().trim(); currentPage = 1; renderPage();
+});
+
+// ══════════════════════════════════════
+// MOBILE PANELS
+// ══════════════════════════════════════
 function openPanel(name) {
   document.querySelectorAll('.mob-tab').forEach(t => t.classList.remove('active'));
   document.querySelector(`[data-panel="${name}"]`).classList.add('active');
-  const feed          = document.querySelector('.feed');
-  const trendPanel    = document.getElementById('panel-trends');
-  const leaderPanel   = document.getElementById('panel-leaders');
-  const profilePanel  = document.getElementById('panel-profile');
-  const allPanels     = [trendPanel, leaderPanel, profilePanel];
-
+  const feed   = document.querySelector('.feed');
+  const panels = ['trends','leaders','profile'].map(id => document.getElementById(`panel-${id}`));
   if (name === 'feed') {
-    allPanels.forEach(p => p.classList.remove('open'));
-    feed.style.display = '';
+    panels.forEach(p => p && p.classList.remove('open'));
+    if (feed) feed.style.display = '';
   } else {
-    feed.style.display = 'none';
-    allPanels.forEach(p => p.classList.remove('open'));
+    if (feed) feed.style.display = 'none';
+    panels.forEach(p => p && p.classList.remove('open'));
     const target = document.getElementById(`panel-${name}`);
     if (target) target.classList.add('open');
   }
 }
-</script>
 
+// ══════════════════════════════════════
+// INIT
+// ══════════════════════════════════════
+applyLang(); // sets lang + renders cards
+</script>
 </body>
 </html>
