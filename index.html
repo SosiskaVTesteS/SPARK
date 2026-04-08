@@ -57,7 +57,92 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
 .auth-btn:hover{opacity:.9;transform:translateY(-1px);}
 .auth-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
 
-/* ═══ HEADER ═══ */
+/* ═══ VERIFY EMAIL MODAL ═══ */
+#verify-modal{
+  position:fixed;inset:0;z-index:9999;
+  background:rgba(0,0,0,0.72);
+  backdrop-filter:blur(10px) saturate(120%);
+  display:none;
+  align-items:center;justify-content:center;
+  padding:20px;
+}
+#verify-modal.show{display:flex;}
+.vm-box{
+  background:rgba(15,15,26,0.97);
+  border:1px solid rgba(255,255,255,0.13);
+  border-radius:22px;
+  padding:38px 28px 32px;
+  width:100%;max-width:400px;
+  text-align:center;
+  box-shadow:0 32px 80px rgba(0,0,0,0.8),0 0 0 1px rgba(90,232,197,0.07);
+}
+.vm-icon{font-size:44px;margin-bottom:14px;}
+.vm-title{
+  font-family:var(--fh);font-size:20px;font-weight:800;
+  color:var(--ac2);margin-bottom:12px;letter-spacing:-.01em;
+}
+.vm-text{
+  font-size:13px;color:rgba(240,238,232,0.65);
+  line-height:1.7;margin-bottom:24px;
+}
+.vm-email{
+  display:inline-block;
+  font-weight:600;color:var(--tx);
+  background:rgba(90,232,197,0.1);
+  border:1px solid rgba(90,232,197,0.22);
+  border-radius:6px;padding:2px 10px;font-size:13px;
+  margin:0 3px;
+}
+.vm-btn{
+  width:100%;padding:13px;border:none;border-radius:10px;
+  background:var(--ac2);color:#08080f;
+  font-family:var(--fh);font-size:14px;font-weight:800;
+  letter-spacing:.04em;cursor:pointer;
+  transition:opacity .15s,transform .15s;
+  margin-bottom:10px;
+}
+.vm-btn:hover{opacity:.88;transform:translateY(-1px);}
+.vm-btn:disabled{opacity:.45;cursor:not-allowed;transform:none;}
+.vm-resend{
+  font-size:12px;color:var(--mu);cursor:pointer;
+  transition:color .15s;text-decoration:underline;text-underline-offset:3px;
+}
+.vm-resend:hover{color:var(--tx);}
+.vm-err{color:var(--red);font-size:12px;min-height:16px;margin-top:10px;}
+
+/* ═══ INVESTMENT GRAPH (animated SVG) ═══ */
+.igraph-wrap{
+  background:var(--bg);
+  border-radius:10px;
+  padding:10px 13px 7px;
+  margin-bottom:13px;
+  overflow:hidden;
+  position:relative;
+}
+.igraph-header{
+  display:flex;justify-content:space-between;
+  font-size:10px;color:var(--mu);
+  margin-bottom:6px;line-height:1.4;
+}
+.igraph-label-left{}
+.igraph-label-right{color:var(--ac);font-weight:600;}
+svg.igsvg{width:100%;height:68px;display:block;overflow:visible;}
+.ig-fill{opacity:1;}
+.ig-line{
+  fill:none;stroke:#e8c55a;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;
+  filter:drop-shadow(0 3px 8px rgba(232,197,90,0.55)) drop-shadow(0 1px 3px rgba(232,197,90,0.35));
+}
+.ig-line.animated{animation:ig-draw var(--ig-dur,1.6s) cubic-bezier(0.4,0,0.2,1) forwards;}
+@keyframes ig-draw{from{ stroke-dashoffset:var(--ig-len,1000); } to { stroke-dashoffset:0; }}
+.ig-dot{fill:var(--ac);filter:drop-shadow(0 0 5px rgba(232,197,90,0.8));opacity:0;transition:opacity .3s .8s;}
+.ig-dot.show{opacity:1;}
+.igraph-footer{display:flex;justify-content:space-between;align-items:center;margin-top:5px;font-size:11px;color:var(--mu);line-height:1.4;}
+.ig-investors{display:flex;align-items:center;gap:4px;}
+.ig-investors span{color:var(--tx);font-weight:500;}
+.ig-pool{color:var(--ac);font-weight:600;}
+.ig-cd{font-family:var(--fh);font-size:12px;color:var(--ac2);letter-spacing:.04em;}
+
+/* ═══ HEADER & LAYOUT ═══ */
 header{position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:14px;padding:0 28px;height:60px;
   border-bottom:1px solid var(--bd);background:rgba(8,8,15,.9);backdrop-filter:blur(14px);}
 .logo-block{display:flex;align-items:baseline;gap:10px;margin-right:auto;}
@@ -74,13 +159,11 @@ header{position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:14p
 .btn-post{padding:8px 16px;border-radius:8px;border:none;background:var(--ac);color:#08080f;font-family:var(--fh);font-size:13px;font-weight:700;letter-spacing:.04em;cursor:pointer;transition:opacity .15s,transform .15s;white-space:nowrap;}
 .btn-post:hover{opacity:.88;transform:translateY(-1px);}
 
-/* Desktop profile panel */
 .dp-overlay{display:none;position:fixed;inset:60px 0 0 0;z-index:90;background:rgba(0,0,0,.45);backdrop-filter:blur(3px);justify-content:flex-end;}
 .dp-overlay.open{display:flex;}
 .dp-panel{width:300px;height:100%;background:var(--sf);border-left:1px solid var(--bd);overflow-y:auto;padding:24px 18px;animation:dp-in .2s ease both;}
 @keyframes dp-in{from{transform:translateX(24px);opacity:0}to{transform:translateX(0);opacity:1}}
 
-/* ═══ 3-COL LAYOUT ═══ */
 .layout{position:relative;z-index:1;display:grid;grid-template-columns:230px 1fr 255px;height:calc(100vh - 60px);overflow:hidden;}
 .sidebar{padding:22px 18px;border-right:1px solid var(--bd);overflow-y:auto;scrollbar-width:none;}
 .sidebar:last-child{border-right:none;border-left:1px solid var(--bd);}
@@ -130,29 +213,13 @@ header{position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:14p
 .cmen:hover{background:var(--sf2);color:var(--tx);}
 .ctitle{font-family:var(--fh);font-size:17px;font-weight:700;line-height:1.3;margin-bottom:7px;letter-spacing:-.01em;}
 .cbody{font-size:13px;color:rgba(150,150,175,1);line-height:1.65;margin-bottom:15px;}
-.cgraph{background:var(--bg);border-radius:10px;padding:11px 13px 7px;margin-bottom:13px;overflow:hidden;}
-.cgl{display:flex;justify-content:space-between;font-size:10px;color:var(--mu);margin-bottom:5px;line-height:1.4;}
-svg.cgsvg{width:100%;height:60px;display:block;}
-.cgf{display:flex;justify-content:space-between;align-items:center;margin-top:5px;font-size:11px;color:var(--mu);line-height:1.4;}
-.cgi{display:flex;align-items:center;gap:4px;}.cgi span{color:var(--tx);font-weight:500;}
-.cgpool{color:var(--ac);font-weight:600;}
-.cgcd{font-family:var(--fh);font-size:12px;color:var(--ac2);letter-spacing:.04em;}
 .cact{display:flex;gap:8px;}
 .binv{flex:1;padding:10px;border-radius:8px;border:1px solid var(--ac);background:rgba(232,197,90,.08);color:var(--ac);font-family:var(--fh);font-size:13px;font-weight:700;cursor:pointer;transition:background .15s,transform .15s;letter-spacing:.03em;line-height:1;}
 .binv:hover{background:rgba(232,197,90,.18);transform:translateY(-1px);}
 .bcrit{flex:1;padding:10px;border-radius:8px;border:1px solid rgba(232,90,122,.4);background:rgba(232,90,122,.06);color:#e85a7a;font-family:var(--fh);font-size:13px;font-weight:700;cursor:pointer;transition:background .15s,transform .15s;letter-spacing:.03em;line-height:1;}
 .bcrit:hover{background:rgba(232,90,122,.14);transform:translateY(-1px);}
-
-/* ═══ REACTIONS (FLIP smooth) ═══ */
 .creact{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px;padding-top:11px;border-top:1px solid var(--bd);}
-/* Each bubble — position:relative so we can FLIP with transform */
-.rbbl{
-  display:inline-flex;align-items:center;gap:4px;padding:5px 10px;
-  border-radius:20px;border:1px solid var(--bd);background:var(--sf2);
-  font-size:13px;cursor:pointer;user-select:none;line-height:1;
-  /* transition only for scale/color — translateX managed by FLIP JS */
-  transition:background .18s, border-color .18s, transform .32s cubic-bezier(.34,1.56,.64,1);
-}
+.rbbl{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:20px;border:1px solid var(--bd);background:var(--sf2);font-size:13px;cursor:pointer;user-select:none;line-height:1;transition:background .18s, border-color .18s, transform .32s cubic-bezier(.34,1.56,.64,1);}
 .rbbl:hover{background:rgba(255,255,255,.06);}
 .rbbl.on{background:rgba(232,197,90,.14);border-color:rgba(232,197,90,.5);}
 .rbbl .rem{display:inline-block;transition:transform .2s cubic-bezier(.34,1.56,.64,1);}
@@ -227,7 +294,7 @@ svg.cgsvg{width:100%;height:60px;display:block;}
 .chat-unread{min-width:18px;height:18px;border-radius:9px;background:var(--red);color:#fff;font-size:10px;font-weight:700;font-family:var(--fh);display:flex;align-items:center;justify-content:center;padding:0 5px;}
 .chat-topic-tag{font-size:10px;color:var(--ac2);background:rgba(90,232,197,.1);border-radius:4px;padding:1px 6px;font-family:var(--fh);font-weight:600;letter-spacing:.04em;display:inline-block;margin-top:2px;}
 
-/* ═══ MODALS (Bottom Sheet) ═══ */
+/* ═══ MODALS ═══ */
 .mo{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);
   display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;padding:0;}
 .mo.open{opacity:1;pointer-events:auto;}
@@ -250,8 +317,6 @@ svg.cgsvg{width:100%;height:60px;display:block;}
 .dur-btn.sel{border-color:var(--ac);background:rgba(232,197,90,.12);color:var(--ac);font-weight:700;}
 .dur-btn.locked{opacity:.4;cursor:not-allowed;}
 .dur-crown{font-size:10px;display:block;margin-top:2px;}
-
-/* Hold button */
 .hbtn{position:relative;overflow:hidden;width:100%;padding:13px;border-radius:10px;border:none;
   font-family:var(--fh);font-size:14px;font-weight:700;letter-spacing:.04em;cursor:pointer;
   user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;margin-top:6px;}
@@ -278,10 +343,8 @@ input[type=range].inv-sl::-webkit-slider-thumb{-webkit-appearance:none;width:18p
 .prs-btn:disabled{opacity:.3;cursor:not-allowed;}
 .inv-warn{font-size:11px;color:var(--red);margin-bottom:8px;min-height:16px;}
 
-/* Toast */
 #toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(14px);padding:9px 20px;border-radius:24px;font-size:13px;font-family:var(--fh);font-weight:700;color:#08080f;z-index:9999;opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;white-space:nowrap;}
 
-/* ═══ RESPONSIVE ═══ */
 @media(max-width:768px){
   html,body{height:auto;}
   .orb-b,.orb-g,.orb-v{opacity:.09;}
@@ -307,46 +370,41 @@ input[type=range].inv-sl::-webkit-slider-thumb{-webkit-appearance:none;width:18p
 </head>
 <body>
 
-<!-- ORBS -->
 <div class="orb orb-b" aria-hidden="true"></div>
 <div class="orb orb-g" aria-hidden="true"></div>
 <div class="orb orb-v" aria-hidden="true"></div>
 
-<!-- ══════════════════ AUTH SCREEN ══════════════════ -->
 <div id="authScreen">
   <div class="auth-box">
     <div class="auth-logo">SPARK</div>
-    <div class="auth-slug">Light Up The Future</div>
+    <div class="auth-slug" data-i18n="authSlog">Light Up The Future</div>
     <div class="auth-tabs">
-      <button class="auth-tab on" id="tabSI" onclick="switchAuth('signin')">Sign In</button>
-      <button class="auth-tab"    id="tabSU" onclick="switchAuth('signup')">Register</button>
+      <button class="auth-tab on" id="tabSI" onclick="switchAuth('signin')" data-i18n="authSI">Sign In</button>
+      <button class="auth-tab"    id="tabSU" onclick="switchAuth('signup')" data-i18n="authSU">Register</button>
     </div>
     <div class="auth-err" id="authErr"></div>
 
-    <!-- SIGN IN -->
     <div id="fmSI">
-      <div class="af"><label>Email</label><input type="email" id="siEmail" placeholder="you@spark.app" autocomplete="email"></div>
-      <div class="af"><label>Password</label><input type="password" id="siPass" placeholder="••••••••" autocomplete="current-password"></div>
-      <label class="auth-rem"><input type="checkbox" id="remMe" checked> Remember me</label>
-      <button class="auth-btn" id="btnSI" onclick="doSignIn()">Sign In →</button>
+      <div class="af"><label data-i18n="authEm">Email</label><input type="email" id="siEmail" placeholder="you@spark.app" autocomplete="email"></div>
+      <div class="af"><label data-i18n="authPass">Password</label><input type="password" id="siPass" placeholder="••••••••" autocomplete="current-password"></div>
+      <label class="auth-rem"><input type="checkbox" id="remMe" checked> <span data-i18n="authRem">Remember me</span></label>
+      <button class="auth-btn" id="btnSI" onclick="doSignIn()" data-i18n="authBtnSI">Sign In →</button>
     </div>
 
-    <!-- SIGN UP -->
     <div id="fmSU" style="display:none">
-      <div class="af"><label>Nickname</label><input type="text" id="suNick" placeholder="@your_name" maxlength="30"></div>
-      <div class="af"><label>Email</label><input type="email" id="suEmail" placeholder="you@spark.app" autocomplete="email"></div>
-      <div class="af"><label>Password (8+ chars)</label><input type="password" id="suPass" placeholder="••••••••" autocomplete="new-password"></div>
-      <div class="af"><label>Repeat Password</label><input type="password" id="suPass2" placeholder="••••••••"></div>
-      <button class="auth-btn" id="btnSU" onclick="doSignUp()">Create Account →</button>
+      <div class="af"><label data-i18n="authNick">Nickname</label><input type="text" id="suNick" placeholder="@your_name" maxlength="30"></div>
+      <div class="af"><label data-i18n="authEm">Email</label><input type="email" id="suEmail" placeholder="you@spark.app" autocomplete="email"></div>
+      <div class="af"><label data-i18n="authPassMin">Password (8+ chars)</label><input type="password" id="suPass" placeholder="••••••••" autocomplete="new-password"></div>
+      <div class="af"><label data-i18n="authPassRep">Repeat Password</label><input type="password" id="suPass2" placeholder="••••••••"></div>
+      <button class="auth-btn" id="btnSU" onclick="doSignUp()" data-i18n="authBtnSU">Create Account →</button>
     </div>
   </div>
 </div>
 
-<!-- ══════════════════ HEADER ══════════════════ -->
 <header>
   <div class="logo-block">
     <span class="logo">SPARK</span>
-    <span class="slogan">Light Up The Future</span>
+    <span class="slogan" data-i18n="authSlog">Light Up The Future</span>
   </div>
   <div class="wallet-badge">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--ac)"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8L2 7h20l-6-4z"/></svg>
@@ -363,21 +421,16 @@ input[type=range].inv-sl::-webkit-slider-thumb{-webkit-appearance:none;width:18p
   <button class="btn-post" onclick="openCreate()">+ Post Idea</button>
 </header>
 
-<!-- DESKTOP PROFILE -->
 <div class="dp-overlay" id="dpOverlay" onclick="bgCloseDesk(event)">
   <div class="dp-panel" id="dpPanel"></div>
 </div>
 
-<!-- LAYOUT -->
 <div class="layout">
   <aside class="sidebar">
     <div class="stitle">Trending Now</div>
     <div class="trend-item"><span class="t-rank">1</span><span class="t-tag">#AI Tools</span><span class="t-cnt">84</span><span class="t-hot">🔥</span></div>
     <div class="trend-item"><span class="t-rank">2</span><span class="t-tag">#DeFi</span><span class="t-cnt">61</span></div>
     <div class="trend-item"><span class="t-rank">3</span><span class="t-tag">#CleanEnergy</span><span class="t-cnt">55</span></div>
-    <div class="trend-item"><span class="t-rank">4</span><span class="t-tag">#B2B SaaS</span><span class="t-cnt">47</span></div>
-    <div class="trend-item"><span class="t-rank">5</span><span class="t-tag">#Hardware</span><span class="t-cnt">39</span></div>
-    <div class="trend-item"><span class="t-rank">6</span><span class="t-tag">#Web3</span><span class="t-cnt">31</span></div>
   </aside>
 
   <main class="feed">
@@ -386,23 +439,10 @@ input[type=range].inv-sl::-webkit-slider-thumb{-webkit-appearance:none;width:18p
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         <input class="srch-in" type="text" id="srchIn" placeholder="Search ideas...">
       </div>
-      <div class="frow">
-        <span class="flabel">Sort:</span>
-        <button class="fbtn active" data-sort="new">🕐 New</button>
-        <button class="fbtn" data-sort="popular">🔥 Popular</button>
-        <button class="fbtn" data-sort="profit">📈 Profitable</button>
-        <button class="fbtn" data-sort="ending">⏱ Ending soon</button>
-      </div>
-      <div class="trow">
-        <span class="flabel">Tag:</span>
-        <button class="tchip active" data-tag="all">All</button>
-        <button class="tchip" data-tag="AI Tools">#AI Tools</button>
-        <button class="tchip" data-tag="DeFi">#DeFi</button>
-        <button class="tchip" data-tag="CleanEnergy">#CleanEnergy</button>
-        <button class="tchip" data-tag="B2B SaaS">#B2B SaaS</button>
-        <button class="tchip" data-tag="Hardware">#Hardware</button>
-        <button class="tchip" data-tag="Web3">#Web3</button>
-      </div>
+      <div class="frow" id="sortRow">
+        </div>
+      <div class="trow" id="tagRow">
+        </div>
     </div>
     <div class="cards" id="cardsList"></div>
     <div class="pgn" id="pgn"></div>
@@ -410,151 +450,69 @@ input[type=range].inv-sl::-webkit-slider-thumb{-webkit-appearance:none;width:18p
 
   <aside class="sidebar">
     <div class="stitle">Prophet Leaderboard</div>
-    <div class="li"><span class="lrank gold">1</span><div class="lav" style="background:linear-gradient(135deg,#ffd700,#e8a55a)">A</div><div class="linf"><div class="lname">@alex_ventures</div><div class="lsub">14 ideas · 89% hit rate</div></div><div class="lprofit">+210%</div></div>
-    <div class="li"><span class="lrank silver">2</span><div class="lav" style="background:linear-gradient(135deg,#c0c0c0,#8888aa)">S</div><div class="linf"><div class="lname">@sarah_angel</div><div class="lsub">9 ideas · 78% hit rate</div></div><div class="lprofit">+180%</div></div>
-    <div class="li"><span class="lrank bronze">3</span><div class="lav" style="background:linear-gradient(135deg,#cd7f32,#aa5a22)">D</div><div class="linf"><div class="lname">@dima_builds</div><div class="lsub">21 ideas · 71% hit rate</div></div><div class="lprofit">+110%</div></div>
-    <div class="li"><span class="lrank" style="color:var(--mu)">4</span><div class="lav" style="background:linear-gradient(135deg,#5ae8c5,#5a90e8)">M</div><div class="linf"><div class="lname">@maria_builds</div><div class="lsub">7 ideas · 67% hit rate</div></div><div class="lprofit" style="color:var(--ac)">+88%</div></div>
-    <div class="li"><span class="lrank" style="color:var(--mu)">5</span><div class="lav" style="background:linear-gradient(135deg,#e85a7a,#c55ae8)">K</div><div class="linf"><div class="lname">@kirill_vc</div><div class="lsub">11 ideas · 63% hit rate</div></div><div class="lprofit" style="color:var(--ac)">+72%</div></div>
-    <div class="divider"></div>
-    <div class="stitle">Live Activity</div>
-    <div style="display:flex;flex-direction:column;gap:7px;font-size:12px;color:var(--mu);line-height:1.55">
-      <div style="padding:7px 0;border-bottom:1px solid var(--bd)"><span style="color:var(--ac2)">@sarah_angel</span> invested <strong style="color:var(--tx)">50 SPK</strong> in AI code review<div style="font-size:10px;margin-top:1px">2 min ago</div></div>
-      <div style="padding:7px 0;border-bottom:1px solid var(--bd)"><span style="color:var(--red)">@dima_builds</span> critiqued Solar Leasing<div style="font-size:10px;margin-top:1px">7 min ago</div></div>
-      <div style="padding:7px 0">New idea posted: <strong style="color:var(--tx)">#DeFi lending for SMEs</strong><div style="font-size:10px;margin-top:1px">12 min ago</div></div>
-    </div>
+    <div class="li"><span class="lrank gold">1</span><div class="lav" style="background:linear-gradient(135deg,#ffd700,#e8a55a)">A</div><div class="linf"><div class="lname">@alex_ventures</div><div class="lsub">14 ideas</div></div><div class="lprofit">+210%</div></div>
   </aside>
 </div>
 
-<!-- MOBILE BAR -->
 <nav class="mob-bar">
-  <button class="mob-tab active" data-panel="feed" onclick="openPanel('feed')">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-    <span>Feed</span>
-  </button>
-  <button class="mob-tab" data-panel="leaders" onclick="openPanel('leaders')">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
-    <span>Leaders</span>
-  </button>
-  <button class="mob-tab tab-chats" data-panel="chats" onclick="openPanel('chats')">
-    <div class="unread-dot" id="unreadDot"></div>
-    <div class="tab-icon-wrap">
-      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-    </div>
-    <span>Chats</span>
-  </button>
-  <button class="mob-tab" data-panel="trends" onclick="openPanel('trends')">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
-    <span>Trends</span>
-  </button>
-  <button class="mob-tab" data-panel="profile" onclick="openPanel('profile')">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-    <span>Profile</span>
-  </button>
+  <button class="mob-tab active" data-panel="feed" onclick="openPanel('feed')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Feed</span></button>
+  <button class="mob-tab" data-panel="profile" onclick="openPanel('profile')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Profile</span></button>
 </nav>
+<div class="mpanel right" id="panel-profile"><div id="mobProfInner"></div></div>
 
-<!-- MOBILE PANELS -->
-<div class="mpanel" id="panel-trends">
-  <div class="stitle">Trending Now</div>
-  <div class="trend-item"><span class="t-rank">1</span><span class="t-tag">#AI Tools</span><span class="t-cnt">84</span><span class="t-hot">🔥</span></div>
-  <div class="trend-item"><span class="t-rank">2</span><span class="t-tag">#DeFi</span><span class="t-cnt">61</span></div>
-  <div class="trend-item"><span class="t-rank">3</span><span class="t-tag">#CleanEnergy</span><span class="t-cnt">55</span></div>
-  <div class="trend-item"><span class="t-rank">4</span><span class="t-tag">#B2B SaaS</span><span class="t-cnt">47</span></div>
-  <div class="trend-item"><span class="t-rank">5</span><span class="t-tag">#Hardware</span><span class="t-cnt">39</span></div>
-  <div class="trend-item"><span class="t-rank">6</span><span class="t-tag">#Web3</span><span class="t-cnt">31</span></div>
-</div>
-
-<div class="mpanel right" id="panel-leaders">
-  <div class="stitle">Prophet Leaderboard</div>
-  <div class="li"><span class="lrank gold">1</span><div class="lav" style="background:linear-gradient(135deg,#ffd700,#e8a55a)">A</div><div class="linf"><div class="lname">@alex_ventures</div><div class="lsub">14 ideas · 89%</div></div><div class="lprofit">+210%</div></div>
-  <div class="li"><span class="lrank silver">2</span><div class="lav" style="background:linear-gradient(135deg,#c0c0c0,#8888aa)">S</div><div class="linf"><div class="lname">@sarah_angel</div><div class="lsub">9 ideas · 78%</div></div><div class="lprofit">+180%</div></div>
-  <div class="li"><span class="lrank bronze">3</span><div class="lav" style="background:linear-gradient(135deg,#cd7f32,#aa5a22)">D</div><div class="linf"><div class="lname">@dima_builds</div><div class="lsub">21 ideas · 71%</div></div><div class="lprofit">+110%</div></div>
-</div>
-
-<div class="mpanel up" id="panel-chats" style="padding:0">
-  <div class="chat-hub">
-    <div class="chat-tabs">
-      <button class="chat-tab-btn active" data-chat-tab="dms" onclick="switchChatTab('dms')">💬 DMs</button>
-      <button class="chat-tab-btn" data-chat-tab="topics" onclick="switchChatTab('topics')">🗂 Topics</button>
-    </div>
-    <div class="chat-section active" id="chat-dms" style="padding:8px">
-      <div class="chat-row"><div class="chat-av" style="background:linear-gradient(135deg,#e8c55a,#e87a5a)">A</div><div class="chat-info"><div class="chat-name">@alex_ventures</div><div class="chat-preview">Hey, what do you think about the SPK pool?</div></div><div class="chat-meta"><div class="chat-time">2m</div><div class="chat-unread">3</div></div></div>
-      <div class="chat-row"><div class="chat-av offline" style="background:linear-gradient(135deg,#5ae8c5,#5a90e8)">M</div><div class="chat-info"><div class="chat-name">@maria_builds</div><div class="chat-preview">Let's discuss the solar leasing idea 🔥</div></div><div class="chat-meta"><div class="chat-time">14m</div><div class="chat-unread">1</div></div></div>
-    </div>
-    <div class="chat-section" id="chat-topics" style="padding:8px">
-      <div class="chat-row"><div class="chat-av" style="background:linear-gradient(135deg,#e8c55a,#e87a5a);font-size:11px">AI</div><div class="chat-info"><div class="chat-name">AI Code Review</div><div class="chat-topic-tag">#AI Tools</div><div class="chat-preview">@kirill_vc: Latency issue solved now</div></div><div class="chat-meta"><div class="chat-time">5m</div><div class="chat-unread">7</div></div></div>
-      <div class="chat-row"><div class="chat-av offline" style="background:linear-gradient(135deg,#5ae8c5,#5a90e8);font-size:11px">☀</div><div class="chat-info"><div class="chat-name">Solar Leasing</div><div class="chat-topic-tag">#CleanEnergy</div><div class="chat-preview">@vera_eco: What's the grant eligibility?</div></div><div class="chat-meta"><div class="chat-time">22m</div><div class="chat-unread">2</div></div></div>
-    </div>
-  </div>
-</div>
-
-<div class="mpanel right" id="panel-profile">
-  <div id="mobProfInner"></div>
-</div>
-
-<!-- CREATE IDEA MODAL -->
 <div class="mo" id="moCreate" onclick="if(event.target===this)closeMo('moCreate')">
   <div class="mo-box">
     <div class="mo-handle"></div>
     <div class="mo-title">New Idea 💡</div>
-    <div class="mf"><label>Title</label><input type="text" id="ciTitle" maxlength="80" placeholder="What's the idea?"></div>
-    <div class="mf"><label>Description</label><textarea id="ciDesc" rows="3" maxlength="500" placeholder="Describe it..."></textarea></div>
+    <div class="mf"><label>Title</label><input type="text" id="ciTitle" maxlength="80"></div>
+    <div class="mf"><label>Description</label><textarea id="ciDesc" rows="3" maxlength="500"></textarea></div>
     <div class="row2">
       <div class="mf"><label>Min. bet (SPK)</label><input type="number" id="ciMin" min="1" value="10"></div>
-      <div class="mf"><label>Target (optional)</label><input type="number" id="ciTarget" min="0" placeholder="e.g. 10000"></div>
-    </div>
-    <div class="mf"><label>Duration</label>
-      <div class="dur-grid" id="durGrid">
-        <button class="dur-btn sel" data-dur="24h">24h</button>
-        <button class="dur-btn" data-dur="7d">7d</button>
-        <button class="dur-btn locked" data-dur="30d">30d<span class="dur-crown">👑</span></button>
-        <button class="dur-btn locked" data-dur="90d">90d<span class="dur-crown">👑</span></button>
-        <button class="dur-btn locked" data-dur="180d">180d<span class="dur-crown">👑</span></button>
-        <button class="dur-btn locked" data-dur="360d">360d<span class="dur-crown">👑</span></button>
-      </div>
+      <div class="mf"><label>Target</label><input type="number" id="ciTarget" min="0"></div>
     </div>
     <button class="hbtn hbtn-gold" id="btnPub" style="--hms:2s">Hold to Publish</button>
-    <div class="hbtn-hint">Hold 2 seconds to confirm</div>
   </div>
 </div>
 
-<!-- INVEST MODAL -->
 <div class="mo" id="moInvest" onclick="if(event.target===this)closeMo('moInvest')">
   <div class="mo-box">
     <div class="mo-handle"></div>
     <div class="mo-title" id="invTitle">Invest 🚀</div>
     <div class="inv-bal"><span>Your balance</span><strong id="invBal">4,520 SPK</strong></div>
-    <div class="inv-row">
-      <input type="number" id="invAmt" min="1" value="10">
-      <span class="inv-unit">SPK</span>
-    </div>
+    <div class="inv-row"><input type="number" id="invAmt" min="1" value="10"><span class="inv-unit">SPK</span></div>
     <input type="range" class="inv-sl" id="invSl" min="1" max="1000" value="10">
     <div class="inv-presets" id="invPresets"></div>
     <div class="inv-warn" id="invWarn"></div>
     <button class="hbtn hbtn-gold" id="btnInv" style="--hms:2s">Hold to Invest</button>
-    <div class="hbtn-hint">Hold 2 seconds to confirm</div>
+  </div>
+</div>
+
+<div id="verify-modal" role="dialog" aria-modal="true">
+  <div class="vm-box">
+    <div class="vm-icon">✉️</div>
+    <div class="vm-title" data-i18n="vmTitle">Подтвердите почту</div>
+    <p class="vm-text">
+      <span data-i18n="vmDesc1">Регистрация почти завершена.</span><br>
+      <span data-i18n="vmDesc2">Перейдите на</span>&nbsp;<span class="vm-email" id="vmEmailDisplay">вашу почту</span>&nbsp;<span data-i18n="vmDesc3">и нажмите на ссылку для подтверждения.</span>
+    </p>
+    <button class="vm-btn" id="vmConfirmBtn" onclick="checkEmailVerified()" data-i18n="vmBtn">✅ Я подтвердил(а)</button>
+    <div class="vm-resend" onclick="resendVerification()" data-i18n="vmResend">Отправить письмо повторно</div>
+    <div class="vm-err" id="vmErr"></div>
   </div>
 </div>
 
 <div id="toast"></div>
 
 <script>
-// ════════════════════════════════════════
-// SUPABASE — REAL KEY
-// ════════════════════════════════════════
 const SUPA_URL = 'https://ppehttbtrlavnrytoweu.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBwZWh0dGJ0cmxhdm5yeXRvd2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0Nzk0MzMsImV4cCI6MjA5MTA1NTQzM30.FXYL9UGnW3zhvwapbyYfD5aCoS8R-iNguS3_6Ba_mbY';
 
 let db;
 try {
-  db = supabase.createClient(SUPA_URL, SUPA_KEY, {
-    auth: { persistSession: true, storageKey: 'spark_auth' }
-  });
+  db = supabase.createClient(SUPA_URL, SUPA_KEY, { auth: { persistSession: true, storageKey: 'spark_auth' } });
 } catch(e) { console.warn('Supabase init failed — demo mode', e); db = null; }
 
-// ════════════════════════════════════════
-// AUTH STATE
-// ════════════════════════════════════════
-let ME = null;        // Supabase User
+let ME = null;
 let PROFILE = { username:'@user123', spk_balance:4520 };
 
 function switchAuth(tab) {
@@ -570,7 +528,7 @@ function setBtnState(id, dis){ const b=document.getElementById(id); if(b) b.disa
 async function doSignIn() {
   const email = document.getElementById('siEmail').value.trim();
   const pass  = document.getElementById('siPass').value;
-  if (!email||!pass) { setAuthErr('Please fill all fields'); return; }
+  if (!email||!pass) return;
   setBtnState('btnSI', true); setAuthErr('');
 
   if (!db) { PROFILE.username='@demo'; enterApp(); return; }
@@ -587,26 +545,25 @@ async function doSignUp() {
   const email = document.getElementById('suEmail').value.trim();
   const pass  = document.getElementById('suPass').value;
   const pass2 = document.getElementById('suPass2').value;
-  if (!nick||!email||!pass||!pass2) { setAuthErr('Fill all fields'); return; }
-  if (pass.length < 8)  { setAuthErr('Password min 8 chars'); return; }
-  if (pass !== pass2)   { setAuthErr('Passwords do not match'); return; }
+  if (!nick||!email||!pass||!pass2) return;
+  if (pass !== pass2) { setAuthErr(LANG==='ru'?'Пароли не совпадают':'Passwords do not match'); return; }
   setBtnState('btnSU', true); setAuthErr('');
 
   if (!db) { PROFILE.username='@'+nick; enterApp(); return; }
 
   const { data, error } = await db.auth.signUp({ email, password:pass });
   if (error) { setAuthErr(error.message); setBtnState('btnSU',false); return; }
+
   ME = data.user;
-  if (ME) {
-    await db.from('profiles').upsert({
-      id: ME.id,
-      username: '@'+nick,
-      spk_balance: 4520,
-      created_at: new Date().toISOString()
-    });
+  if (ME) await db.from('profiles').upsert({ id: ME.id, username: '@'+nick, spk_balance: 4520 });
+  PROFILE.username = '@' + nick;
+
+  if (data.user?.email_confirmed_at || data.session) {
+    enterApp();
+  } else {
+    showVerify(email, nick);
+    setBtnState('btnSU', false);
   }
-  PROFILE.username = '@'+nick;
-  enterApp();
 }
 
 async function fetchProfile() {
@@ -625,7 +582,7 @@ function enterApp() {
   updateHeader();
   renderProfile();
   initRealtime();
-  applyLang();   // also calls renderFeed
+  applyLang(); 
 }
 
 function updateHeader() {
@@ -637,503 +594,261 @@ function updateHeader() {
 }
 
 // ════════════════════════════════════════
-// I18N (minimal — extend as needed)
+// I18N LOCALIZATION
 // ════════════════════════════════════════
 const I18N = {
-  en:{ sortNew:'🕐 New',sortPopular:'🔥 Popular',sortProfit:'📈 Profitable',sortEnding:'⏱ Ending soon',tagAll:'All',iot:'Interest over time',cinv:'investors',cpool:'pool',cleft:'left',binv:'Invest',bcrit:'Critique',noResults:'No ideas match' },
-  ru:{ sortNew:'🕐 Новые',sortPopular:'🔥 Популярные',sortProfit:'📈 Прибыльные',sortEnding:'⏱ Скоро конец',tagAll:'Все',iot:'Интерес орбиты',cinv:'инвесторов',cpool:'пул',cleft:'осталось',binv:'Вложить',bcrit:'Критика',noResults:'Идеи не найдены' }
+  en:{ 
+    sortNew:'🕐 New',sortPopular:'🔥 Popular',sortProfit:'📈 Profitable',sortEnding:'⏱ Ending soon',tagAll:'All',iot:'Interest over time',cinv:'investors',cpool:'pool',cleft:'left',binv:'Invest',bcrit:'Critique',noResults:'No ideas match',
+    authSlog:'Light Up The Future', authSI:'Sign In', authSU:'Register', authEm:'Email', authPass:'Password', authRem:'Remember me', authBtnSI:'Sign In →', authNick:'Nickname', authPassMin:'Password (8+ chars)', authPassRep:'Repeat Password', authBtnSU:'Create Account →',
+    vmTitle:'Confirm your email', vmDesc1:'Registration is almost complete.', vmDesc2:'Go to', vmDesc3:'and click the link to confirm.', vmBtn:'✅ I confirmed', vmResend:'Resend email'
+  },
+  ru:{ 
+    sortNew:'🕐 Новые',sortPopular:'🔥 Популярные',sortProfit:'📈 Прибыльные',sortEnding:'⏱ Скоро конец',tagAll:'Все',iot:'Интерес орбиты',cinv:'инвесторов',cpool:'пул',cleft:'осталось',binv:'Вложить',bcrit:'Критика',noResults:'Идеи не найдены',
+    authSlog:'Зажги будущее', authSI:'Вход', authSU:'Регистрация', authEm:'Почта', authPass:'Пароль', authRem:'Запомнить меня', authBtnSI:'Войти →', authNick:'Никнейм', authPassMin:'Пароль (от 8 симв.)', authPassRep:'Повторите пароль', authBtnSU:'Создать аккаунт →',
+    vmTitle:'Подтвердите почту', vmDesc1:'Регистрация почти завершена.', vmDesc2:'Перейдите на', vmDesc3:'и нажмите на ссылку для подтверждения.', vmBtn:'✅ Я подтвердил(а)', vmResend:'Отправить письмо повторно'
+  }
 };
-let LANG = localStorage.getItem('spark_lang')||'en';
+let LANG = localStorage.getItem('spark_lang')||'ru'; // Default to RU
 const T = k => (I18N[LANG]||I18N.en)[k]||I18N.en[k]||k;
 
 function applyLang() {
   document.querySelectorAll('.lang-opt').forEach(o=>o.classList.toggle('sel',o.dataset.lang===LANG));
   document.querySelectorAll('[id^="lc"]').forEach(e=>e&&(e.textContent=LANG.toUpperCase()));
+  
+  // Translate Auth & Modal elements
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (I18N[LANG] && I18N[LANG][key]) {
+      el.textContent = I18N[LANG][key];
+    }
+  });
+
+  renderFilters();
   renderFeed();
 }
 function setLang(l,e){ if(e){e.preventDefault();e.stopPropagation();}LANG=l;localStorage.setItem('spark_lang',l);document.querySelectorAll('.lang-dd').forEach(d=>d.classList.remove('open'));applyLang(); }
 function toggleDD(e,id){ e.stopPropagation();document.querySelectorAll('.lang-dd').forEach(d=>{if(d.id!==id)d.classList.remove('open');});document.getElementById(id).classList.toggle('open'); }
 document.addEventListener('click',()=>document.querySelectorAll('.lang-dd').forEach(d=>d.classList.remove('open')));
 
-// ════════════════════════════════════════
-// PROFILE PANEL HTML
-// ════════════════════════════════════════
+// Profile UI
 function profileHTML(sfx) {
   const L = PROFILE.username.replace('@','').charAt(0).toUpperCase();
   return `
-  <div class="phero">
-    <div class="pav-lg">${L}</div>
-    <div class="pname">${PROFILE.username}</div>
-    <span class="pbadge">✓ Verified Investor</span>
-  </div>
-  <div class="srow" style="margin-bottom:18px">
-    <div class="sbox"><span class="sval">12</span><span class="skey">Ideas</span></div>
-    <div class="sbox"><span class="sval">+84%</span><span class="skey">Profit</span></div>
-    <div class="sbox"><span class="sval">38</span><span class="skey">Invested</span></div>
-    <div class="sbox"><span class="sval">#41</span><span class="skey">Rank</span></div>
-  </div>
+  <div class="phero"><div class="pav-lg">${L}</div><div class="pname">${PROFILE.username}</div><span class="pbadge">✓ Verified</span></div>
+  <div class="srow" style="margin-bottom:18px"><div class="sbox"><span class="sval">1</span><span class="skey">Idea</span></div></div>
   <div class="divider"></div>
-  <div class="stitle" style="margin-top:14px">Wallet</div>
-  <div class="wcrd">
-    <div><div class="wamt">${PROFILE.spk_balance.toLocaleString()} <small>SPK</small></div><div class="wsub">Available balance</div></div>
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--ac);opacity:.55"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8L2 7h20l-6-4z"/></svg>
-  </div>
-  <div class="divider"></div>
-  <div class="stitle" style="margin-top:14px">Settings</div>
   <div style="display:flex;flex-direction:column;gap:2px">
     <div class="lang-row" onclick="toggleDD(event,'ldd-${sfx}')">
-      <span style="font-size:13px">Language</span>
-      <span class="lang-cur" id="lc${sfx}">${LANG.toUpperCase()}</span>
+      <span style="font-size:13px">Language</span><span class="lang-cur" id="lc${sfx}">${LANG.toUpperCase()}</span>
       <div class="lang-dd" id="ldd-${sfx}">
         <div class="lang-opt${LANG==='en'?' sel':''}" data-lang="en" onclick="setLang('en',event)"><span>🇬🇧</span> English</div>
         <div class="lang-opt${LANG==='ru'?' sel':''}" data-lang="ru" onclick="setLang('ru',event)"><span>🇷🇺</span> Русский</div>
       </div>
     </div>
-    <div class="sset" onclick="pulse(this)"><span>Notifications</span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--mu)"><polyline points="9 18 15 12 9 6"/></svg></div>
-    <div class="sset" onclick="pulse(this)"><span>Privacy</span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--mu)"><polyline points="9 18 15 12 9 6"/></svg></div>
-    <div class="sset" onclick="doLogout()"><span style="color:var(--red)">Log out</span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--red)"><polyline points="9 18 15 12 9 6"/></svg></div>
+    <div class="sset" onclick="doLogout()"><span style="color:var(--red)">Log out</span></div>
   </div>`;
 }
 function renderProfile(){
   const dp=document.getElementById('dpPanel'); if(dp)dp.innerHTML=profileHTML('D');
   const mb=document.getElementById('mobProfInner'); if(mb)mb.innerHTML=profileHTML('M');
 }
-
 function toggleDeskProf(){
   const o=document.getElementById('dpOverlay'),b=document.getElementById('btnProfDesk');
   o.classList.toggle('open');b.classList.toggle('active',o.classList.contains('open'));
 }
 function bgCloseDesk(e){
   if(e.target===document.getElementById('dpOverlay')){
-    document.getElementById('dpOverlay').classList.remove('open');
-    document.getElementById('btnProfDesk').classList.remove('active');
+    document.getElementById('dpOverlay').classList.remove('open'); document.getElementById('btnProfDesk').classList.remove('active');
   }
 }
 
 // ════════════════════════════════════════
-// DATA — demo seeds + live from Supabase
+// DATA & FEED
 // ════════════════════════════════════════
-const CC='#e8c55a';
-const EMOJIS=['💀','🗿','🔥','💎','🚀'];
-const FIRE_T=100;
-
-// Reaction state per idea id
-const RS={};
-function getRS(id){
-  if(!RS[id])RS[id]={counts:Object.fromEntries(EMOJIS.map(e=>[e,0])),pick:null};
-  return RS[id];
-}
-getRS(1).counts['🔥']=99; // seed — one click triggers fire milestone
-getRS(1).counts['💎']=44;
-
 const SEEDS=[
-  {id:1,u:'@alex_ventures',av:'A',bg:'linear-gradient(135deg,#e8c55a,#e87a5a)',tm:'2h',tag:'AI Tools',   minBet:10, title:'AI-powered code review for solo devs',            body:'Automated PR review that learns your codebase style. Catches bugs, suggests refactors, and writes commit messages — all in under 10 seconds.',investors:320,pool:'12,500',cd:'24',pct:34,cv:'M0,52 C30,50 60,48 90,44 C120,40 150,38 180,32 C210,26 240,24 270,20 C300,16 330,12 360,8 C380,5 400,4 400,4'},
-  {id:2,u:'@maria_builds', av:'M',bg:'linear-gradient(135deg,#5ae8c5,#5a90e8)',tm:'5h',tag:'CleanEnergy',minBet:25, title:'Rooftop solar leasing — zero upfront cost',        body:'Homeowners lease their roof space, we install panels, they get 15% energy bill reduction instantly. Revenue from grid surplus.',investors:184,pool:'7,200',cd:'11',pct:18,cv:'M0,56 C40,54 80,52 120,48 C160,44 200,46 240,40 C280,34 320,22 360,14 C380,10 400,9 400,9'},
-  {id:3,u:'@kirill_vc',   av:'K',bg:'linear-gradient(135deg,#e85a7a,#c55ae8)',tm:'8h',tag:'B2B SaaS',  minBet:10, title:'Async meeting summaries for Slack-heavy teams',    body:'Records voice memos in Slack, transcribes + summarises with action points, posts back to thread. No Zoom needed.',investors:97, pool:'3,400',cd:'6', pct:9, cv:'M0,60 C50,58 100,55 150,52 C200,49 230,50 260,46 C300,40 340,30 380,22 C390,19 400,18 400,18'},
-  {id:4,u:'@dima_builds', av:'D',bg:'linear-gradient(135deg,#cd7f32,#aa5a22)',tm:'10h',tag:'DeFi',      minBet:50, title:'DeFi micro-lending for SME supply chains',         body:'Businesses unlock liquidity from unpaid invoices. Smart contracts settle in 48h. No credit check, no bank.',investors:241,pool:'9,800',cd:'18',pct:27,cv:'M0,58 C60,56 100,53 150,48 C200,44 240,42 280,34 C320,26 360,16 400,10'},
-  {id:5,u:'@sarah_angel', av:'S',bg:'linear-gradient(135deg,#c0c0c0,#8888aa)',tm:'13h',tag:'Hardware',  minBet:10, title:'Modular keyboard with swappable OS chips',         body:'Each chip runs a different OS profile. Swap from dev mode to design mode in seconds. MagSafe-style attachment.',investors:156,pool:'5,100',cd:'32',pct:41,cv:'M0,60 C40,58 80,54 130,50 C180,46 220,44 270,36 C320,28 360,18 400,8'},
-  {id:6,u:'@leo_founder', av:'L',bg:'linear-gradient(135deg,#5a90e8,#5ae8c5)',tm:'16h',tag:'AI Tools',  minBet:10, title:'Voice journal that auto-detects your mood trends', body:'Record 30-second voice notes. AI extracts sentiment, energy, stress. Weekly report shows your emotional patterns.',investors:88, pool:'2,900',cd:'40',pct:15,cv:'M0,56 C50,55 90,54 140,52 C190,50 230,48 270,42 C310,36 360,26 400,16'},
-  {id:7,u:'@nina_builds', av:'N',bg:'linear-gradient(135deg,#e8a55a,#e8c55a)',tm:'20h',tag:'Web3',      minBet:10, title:'On-chain reputation score for freelancers',        body:'Client reviews stored on-chain, portable across platforms. No more starting from zero on every marketplace.',investors:203,pool:'7,700',cd:'22',pct:31,cv:'M0,54 C60,52 110,50 160,46 C210,42 250,40 290,34 C330,28 370,20 400,12'},
-  {id:8,u:'@tom_ideas',   av:'T',bg:'linear-gradient(135deg,#c55ae8,#e85a7a)',tm:'1d', tag:'B2B SaaS',  minBet:10, title:'CRM built for indie consultants — single person',  body:'Full pipeline, invoicing, and follow-up automation. No seats, no bloat. Syncs with Gmail and Notion.',investors:67, pool:'1,800',cd:'48',pct:7, cv:'M0,60 C70,59 130,57 180,54 C230,51 270,49 310,44 C350,38 380,30 400,22'},
-  {id:9,u:'@vera_eco',    av:'V',bg:'linear-gradient(135deg,#5ae8c5,#5a90e8)',tm:'1d', tag:'CleanEnergy',minBet:10, title:'Community EV charging co-ops for apartment blocks',body:'Residents collectively own charging infra in their parking lot. Monthly earnings split by share.',investors:119,pool:'4,200',cd:'36',pct:22,cv:'M0,58 C50,56 100,54 150,50 C200,46 240,44 280,38 C320,32 365,22 400,14'},
-  {id:10,u:'@boris_vc',   av:'B',bg:'linear-gradient(135deg,#e8c55a,#5ae8c5)',tm:'2d', tag:'DeFi',      minBet:100,title:'Yield optimizer that auto-rebalances between chains',body:'Set risk profile once. Smart contract moves your liquidity to highest-yield pools across 6 chains every 12h.',investors:178,pool:'6,500',cd:'15',pct:38,cv:'M0,56 C40,54 90,51 140,47 C190,43 240,41 280,34 C320,26 370,16 400,10'},
-  {id:11,u:'@kat_design', av:'K',bg:'linear-gradient(135deg,#e85a7a,#e8a55a)',tm:'2d', tag:'AI Tools',  minBet:10, title:'AI brand identity kit from a single mood board',   body:'Upload 5 images. Get logo options, color palette, font pair, and brand guide PDF in 2 minutes.',investors:144,pool:'5,500',cd:'28',pct:29,cv:'M0,58 C50,56 100,52 150,48 C200,44 250,42 290,36 C330,28 375,18 400,12'},
-  {id:12,u:'@pete_saas',  av:'P',bg:'linear-gradient(135deg,#5a90e8,#c55ae8)',tm:'2d', tag:'Hardware',  minBet:10, title:'Posture sensor clip for remote workers',           body:'Attaches to shirt collar. Vibrates when you hunch. Weekly report shows your posture score. $29 device.',investors:92, pool:'3,100',cd:'52',pct:12,cv:'M0,60 C60,59 110,57 160,54 C210,51 255,49 295,44 C335,38 370,28 400,20'},
-  {id:13,u:'@mira_web3',  av:'M',bg:'linear-gradient(135deg,#c55ae8,#5a90e8)',tm:'3d', tag:'Web3',      minBet:10, title:'Token-gated coworking memberships in 40 cities',   body:'Hold 100 $WORK tokens, access any partner coworking space worldwide.',investors:231,pool:'8,900',cd:'10',pct:44,cv:'M0,55 C40,53 90,50 140,46 C190,42 240,39 285,32 C330,25 370,16 400,9'},
-  {id:14,u:'@sam_builds', av:'S',bg:'linear-gradient(135deg,#e8c55a,#e87a5a)',tm:'3d', tag:'B2B SaaS',  minBet:10, title:'One-click privacy audit for SaaS companies',       body:'Scans your app, finds GDPR/CCPA gaps, generates remediation plan with priority order.',investors:55, pool:'1,500',cd:'60',pct:6, cv:'M0,60 C70,59 120,58 170,55 C220,52 265,50 305,46 C345,40 378,32 400,24'},
-  {id:15,u:'@olga_impact',av:'O',bg:'linear-gradient(135deg,#5ae8c5,#e8c55a)',tm:'3d', tag:'CleanEnergy',minBet:10,title:'Carbon credit marketplace for urban gardeners',     body:"Measure your garden's CO₂ absorption. Sell certified credits to corporates.",investors:109,pool:'3,800',cd:'44',pct:20,cv:'M0,57 C55,55 105,52 155,49 C205,46 245,44 285,38 C325,31 370,20 400,14'},
+  {id:1,u:'@alex_ventures',av:'A',bg:'linear-gradient(135deg,#e8c55a,#e87a5a)',tm:'2h',tag:'AI Tools',minBet:10,title:'AI-powered code review',body:'Automated PR review that learns your codebase style.',investors:320,pool:'12,500',cd:'24',pct:34},
+  {id:2,u:'@maria_builds', av:'M',bg:'linear-gradient(135deg,#5ae8c5,#5a90e8)',tm:'5h',tag:'CleanEnergy',minBet:25,title:'Rooftop solar leasing',body:'Homeowners lease their roof space, we install panels.',investors:184,pool:'7,200',cd:'11',pct:18}
 ];
 let LIVE=[...SEEDS];
 
-// ════════════════════════════════════════
-// FEED RENDER
-// ════════════════════════════════════════
 let page=1,sort='new',ftag='all',q='';
 const PER=5;
+
+function renderFilters() {
+  document.getElementById('sortRow').innerHTML = `
+    <span class="flabel">Sort:</span>
+    <button class="fbtn ${sort==='new'?'active':''}" data-sort="new">${T('sortNew')}</button>
+    <button class="fbtn ${sort==='popular'?'active':''}" data-sort="popular">${T('sortPopular')}</button>
+  `;
+  document.getElementById('tagRow').innerHTML = `
+    <span class="flabel">Tag:</span>
+    <button class="tchip ${ftag==='all'?'active':''}" data-tag="all">${T('tagAll')}</button>
+    <button class="tchip ${ftag==='AI Tools'?'active':''}" data-tag="AI Tools">#AI Tools</button>
+  `;
+  
+  document.querySelectorAll('[data-sort]').forEach(b=>b.addEventListener('click',()=>{sort=b.dataset.sort;page=1;renderFilters();renderFeed();}));
+  document.querySelectorAll('[data-tag]').forEach(c=>c.addEventListener('click',()=>{ftag=c.dataset.tag;page=1;renderFilters();renderFeed();}));
+}
 
 function filtered(){
   let a=[...LIVE];
   if(ftag!=='all')a=a.filter(x=>x.tag===ftag);
-  if(q)a=a.filter(x=>x.title.toLowerCase().includes(q)||x.body.toLowerCase().includes(q)||x.tag.toLowerCase().includes(q)||x.u.toLowerCase().includes(q));
+  if(q)a=a.filter(x=>x.title.toLowerCase().includes(q)||x.body.toLowerCase().includes(q));
   if(sort==='popular')a.sort((a,b)=>b.investors-a.investors);
-  if(sort==='profit') a.sort((a,b)=>b.pct-a.pct);
-  if(sort==='ending') a.sort((a,b)=>parseInt(a.cd)-parseInt(b.cd));
   return a;
 }
 
-function chartSVG(id,cv){
-  return `<svg class="cgsvg" viewBox="0 0 400 60" preserveAspectRatio="none">
-    <defs><linearGradient id="g${id}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="${CC}" stop-opacity=".28"/>
-      <stop offset="100%" stop-color="${CC}" stop-opacity="0"/>
-    </linearGradient></defs>
-    <path d="${cv} L400,60 L0,60 Z" fill="url(#g${id})"/>
-    <path d="${cv}" fill="none" stroke="${CC}" stroke-width="2"/>
-  </svg>`;
-}
+const GRAPH_W=400, GRAPH_H=68, GRAPH_PAD=8;
+function synthesiseHistory(investors, pct) { return [0, 0.02, 0.06, 0.14, 0.28, 0.48, 0.72, 1.0].map(w => Math.round(w * investors * 10)); }
 
-function reactHTML(id){
-  const rs=getRS(id);
-  const sorted=[...EMOJIS].sort((a,b)=>(rs.counts[b]||0)-(rs.counts[a]||0));
-  return sorted.map(e=>{
-    const cnt=rs.counts[e]||0,on=rs.pick===e?'on':'';
-    return `<button class="rbbl ${on}" data-id="${id}" data-e="${e}" onclick="react(${id},'${e}',this)">
-      <span class="rem">${e}</span><span class="rct">${cnt}</span>
-    </button>`;
-  }).join('');
+function investGraphHTML(x) {
+  const history = synthesiseHistory(x.investors, x.pct);
+  const histJSON = JSON.stringify(history).replace(/"/g, '&quot;');
+  return `
+  <div class="igraph-wrap">
+    <div class="igraph-header"><span>${T('iot')}</span><span class="igraph-label-right">↑ +${x.pct}%</span></div>
+    <svg class="igsvg" viewBox="0 0 ${GRAPH_W} ${GRAPH_H}" preserveAspectRatio="none" data-history="${histJSON}"></svg>
+    <div class="igraph-footer">
+      <div class="ig-investors"><span>${x.investors}</span>&nbsp;${T('cinv')} · <span class="ig-pool">${x.pool} SPK</span></div>
+      <div class="ig-cd">⏱ ${x.cd}h ${T('cleft')}</div>
+    </div>
+  </div>`;
 }
 
 function cardHTML(x){
-  const fire=(getRS(x.id).counts['🔥']||0)>=FIRE_T;
-  return `<div class="card${fire?' fire':''}" data-cid="${x.id}">
-    <div class="ch">
-      <div class="cav" style="background:${x.bg}">${x.av}</div>
-      <div class="cm"><div class="cu">${x.u}</div><div class="ct">${x.tm} · #${x.tag}</div></div>
-      <div class="cmen"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></div>
-    </div>
-    <div class="ctitle">${x.title}</div>
-    <div class="cbody">${x.body}</div>
-    <div class="cgraph">
-      <div class="cgl"><span>${T('iot')}</span><span style="color:${CC}">↑ +${x.pct}%</span></div>
-      ${chartSVG(x.id,x.cv)}
-      <div class="cgf">
-        <div class="cgi">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          <span>${x.investors}</span> ${T('cinv')} · <span class="cgpool">${x.pool} SPK</span> ${T('cpool')}
-        </div>
-        <div class="cgcd">⏱ ${x.cd}h ${T('cleft')}</div>
-      </div>
-    </div>
-    <div class="cact">
-      <button class="binv" onclick="openInvest(${x.id})">${T('binv')}</button>
-      <button class="bcrit">${T('bcrit')}</button>
-    </div>
-    <div class="creact" id="rc-${x.id}">${reactHTML(x.id)}</div>
+  return `<div class="card" data-cid="${x.id}">
+    <div class="ch"><div class="cav" style="background:${x.bg}">${x.av}</div><div class="cm"><div class="cu">${x.u}</div><div class="ct">${x.tm}</div></div></div>
+    <div class="ctitle">${x.title}</div><div class="cbody">${x.body}</div>
+    ${investGraphHTML(x)}
+    <div class="cact"><button class="binv" onclick="openInvest(${x.id})">${T('binv')}</button><button class="bcrit">${T('bcrit')}</button></div>
   </div>`;
 }
 
 function renderFeed(){
   const list=filtered();
-  const tp=Math.max(1,Math.ceil(list.length/PER));
-  if(page>tp)page=tp;
-  const sl=list.slice((page-1)*PER,page*PER);
   const cl=document.getElementById('cardsList');
   if(!cl)return;
-  cl.innerHTML=sl.length?sl.map(cardHTML).join(''):`<div style="text-align:center;padding:48px 0;color:var(--mu);font-size:13px">${T('noResults')}</div>`;
-  renderPgn(tp);
-  const f=document.querySelector('.feed');
-  if(f)f.scrollTop=0;
+  cl.innerHTML=list.length?list.map(cardHTML).join(''):`<div style="text-align:center;padding:48px 0;color:var(--mu);">${T('noResults')}</div>`;
+  setTimeout(() => animateAllGraphs(cl), 60);
 }
-
-function renderPgn(tp){
-  const pg=document.getElementById('pgn');
-  if(!pg)return;
-  if(tp<=1){pg.innerHTML='';return;}
-  const b=(lbl,p,dis,act)=>`<button class="pbtn${act?' active':''}" data-p="${p}" ${dis?'disabled':''}>${lbl}</button>`;
-  let ps=[];
-  if(tp<=5)ps=Array.from({length:tp},(_,i)=>i+1);
-  else{const l=Math.max(1,page-1),r=Math.min(tp,page+1);if(l>2)ps.push('…l');for(let p=l;p<=r;p++)ps.push(p);if(r<tp-1)ps.push('…r');}
-  let h=b('«',1,page===1,false)+b('‹',page-1,page===1,false);
-  if(!ps.includes(1)){h+=b('1',1,false,false);if(ps[0]!=='…l')h+='<span class="psep">…</span>';}
-  ps.forEach(p=>{if(p==='…l'||p==='…r')h+='<span class="psep">…</span>';else h+=b(p,p,false,p===page);});
-  if(!ps.includes(tp)){if(ps[ps.length-1]!=='…r')h+='<span class="psep">…</span>';h+=b(tp,tp,false,false);}
-  h+=b('›',page+1,page===tp,false)+b('»',tp,page===tp,false);
-  pg.innerHTML=h;
-  pg.querySelectorAll('.pbtn:not([disabled])').forEach(b=>b.addEventListener('click',()=>{page=parseInt(b.dataset.p);renderFeed();}));
-}
-
-document.querySelectorAll('[data-sort]').forEach(b=>b.addEventListener('click',()=>{
-  document.querySelectorAll('[data-sort]').forEach(x=>x.classList.remove('active'));
-  b.classList.add('active');sort=b.dataset.sort;page=1;renderFeed();
-}));
-document.querySelectorAll('[data-tag]').forEach(c=>c.addEventListener('click',()=>{
-  document.querySelectorAll('[data-tag]').forEach(x=>x.classList.remove('active'));
-  c.classList.add('active');ftag=c.dataset.tag;page=1;renderFeed();
-}));
 document.getElementById('srchIn').addEventListener('input',e=>{q=e.target.value.toLowerCase().trim();page=1;renderFeed();});
 
 // ════════════════════════════════════════
-// REACTIONS — FLIP smooth animation
+// ANIMATED GRAPHS
 // ════════════════════════════════════════
-function react(ideaId, emoji, btn){
-  const rs=getRS(ideaId);
-  const prev=rs.pick;
-  if(prev===emoji){ rs.counts[emoji]=Math.max(0,(rs.counts[emoji]||0)-1); rs.pick=null; }
-  else {
-    if(prev) rs.counts[prev]=Math.max(0,(rs.counts[prev]||0)-1);
-    rs.counts[emoji]=(rs.counts[emoji]||0)+1;
-    rs.pick=emoji;
-  }
+function buildGraphPath(history) {
+  const safe = history.reduce((acc, v, i) => { acc.push(i === 0 ? v : Math.max(v, acc[i-1])); return acc; }, []);
+  const range = safe[safe.length - 1] - safe[0] || 1;
+  const pts = safe.map((v, i) => ({ x: GRAPH_PAD + (i / (safe.length - 1 || 1)) * (GRAPH_W - GRAPH_PAD*2), y: GRAPH_PAD + (GRAPH_H - GRAPH_PAD*2) - ((v - safe[0]) / range) * (GRAPH_H - GRAPH_PAD*2) }));
+  const d = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  return { d, lastPt: pts[pts.length - 1] };
+}
 
-  btn.classList.add('pop');
-  setTimeout(()=>btn.classList.remove('pop'),300);
-
-  const container=document.getElementById('rc-'+ideaId);
-  if(!container)return;
-
-  // FLIP Step 1: record old positions
-  const oldPos={};
-  container.querySelectorAll('.rbbl').forEach(b=>{ oldPos[b.dataset.e]=b.getBoundingClientRect().left; });
-
-  // FLIP Step 2: rebuild HTML (sorted by count)
-  container.innerHTML=reactHTML(ideaId);
-
-  // FLIP Step 3: invert — set each button to old-position delta
-  container.querySelectorAll('.rbbl').forEach(b=>{
-    const e=b.dataset.e;
-    if(oldPos[e]===undefined)return;
-    const newLeft=b.getBoundingClientRect().left;
-    const dx=oldPos[e]-newLeft;
-    if(Math.abs(dx)<2)return;
-    // instantly jump to old position
-    b.style.transition='none';
-    b.style.transform=`translateX(${dx}px)`;
-    // FLIP Step 4: play — animate back to natural position
-    requestAnimationFrame(()=>{
-      requestAnimationFrame(()=>{
-        b.style.transition='transform .32s cubic-bezier(.34,1.56,.64,1)';
-        b.style.transform='translateX(0)';
-      });
-    });
+function drawInvestmentGraph(svgEl, history) {
+  if (!svgEl || history.length < 2) return;
+  const id = 'g' + Math.random().toString(36).slice(2);
+  const { d, lastPt } = buildGraphPath(history);
+  svgEl.innerHTML = `
+    <defs><linearGradient id="igf-${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e8c55a" stop-opacity="0.22"/><stop offset="100%" stop-color="#e8c55a" stop-opacity="0"/></linearGradient></defs>
+    <path d="${d} L${GRAPH_W - GRAPH_PAD},${GRAPH_H} L${GRAPH_PAD},${GRAPH_H} Z" fill="url(#igf-${id})" class="ig-fill"/>
+    <path d="${d}" class="ig-line" id="line-${id}"/>
+    <circle cx="${lastPt.x.toFixed(1)}" cy="${lastPt.y.toFixed(1)}" r="3.5" class="ig-dot" id="dot-${id}"/>
+  `;
+  requestAnimationFrame(() => {
+    const line = document.getElementById(`line-${id}`);
+    const dot = document.getElementById(`dot-${id}`);
+    if(!line) return;
+    const len = line.getTotalLength();
+    line.style.setProperty('--ig-len', `${len}`); line.style.setProperty('--ig-dur', `1.6s`);
+    line.style.strokeDasharray = len; line.style.strokeDashoffset = len;
+    requestAnimationFrame(() => { line.classList.add('animated'); setTimeout(() => dot?.classList.add('show'), 1200); });
   });
+}
 
-  // fire milestone
-  const card=document.querySelector(`.card[data-cid="${ideaId}"]`);
-  if(card)card.classList.toggle('fire',(rs.counts['🔥']||0)>=FIRE_T);
+function animateAllGraphs(container) {
+  const svgs = container.querySelectorAll('svg.igsvg[data-history]');
+  const observer = new IntersectionObserver((entries, obs) => {
+    entries.forEach(e => { if (e.isIntersecting) { drawInvestmentGraph(e.target, JSON.parse(e.target.dataset.history)); obs.unobserve(e.target); } });
+  }, { threshold: 0.2 });
+  svgs.forEach(svg => observer.observe(svg));
 }
 
 // ════════════════════════════════════════
-// INVEST MODAL
-// ════════════════════════════════════════
-let CUR_IDEA=null;
-
-function openInvest(id){
-  const idea=LIVE.find(x=>x.id===id);
-  if(!idea)return;
-  CUR_IDEA=idea;
-  const min=idea.minBet||10;
-  document.getElementById('invTitle').textContent=`Invest in "${idea.title.slice(0,30)}…" 🚀`;
-  document.getElementById('invBal').textContent=PROFILE.spk_balance.toLocaleString()+' SPK';
-
-  const aEl=document.getElementById('invAmt'),sEl=document.getElementById('invSl');
-  aEl.min=min;aEl.value=min;sEl.min=min;sEl.max=Math.max(1000,PROFILE.spk_balance);sEl.value=min;
-
-  const presets=[min,50,100,250,500,1000];
-  document.getElementById('invPresets').innerHTML=presets.map(v=>{
-    const dis=v<min&&v!==min;
-    return `<button class="prs-btn${v===min?' on':''}" onclick="setAmt(${v})" ${dis?'disabled':''}>${v===min?`Min(${v})`:v}</button>`;
-  }).join('');
-
-  syncInv();
-  openMo('moInvest');
-  attachHold('btnInv',2000,doInvest);
-
-  aEl.oninput=()=>{sEl.value=aEl.value;syncInv();};
-  sEl.oninput=()=>{aEl.value=sEl.value;syncInv();};
-}
-
-function setAmt(v){
-  document.getElementById('invAmt').value=v;
-  document.getElementById('invSl').value=v;
-  syncInv();
-  document.querySelectorAll('.prs-btn').forEach(b=>b.classList.remove('on'));
-  const m=[...document.querySelectorAll('.prs-btn')].find(b=>b.textContent.includes(String(v)));
-  if(m)m.classList.add('on');
-}
-
-function syncInv(){
-  if(!CUR_IDEA)return;
-  const amt=parseInt(document.getElementById('invAmt').value)||0;
-  const min=CUR_IDEA.minBet||10;
-  const btn=document.getElementById('btnInv');
-  const warn=document.getElementById('invWarn');
-  if(amt<min){warn.textContent=`Min bet: ${min} SPK`;btn.disabled=true;}
-  else if(amt>PROFILE.spk_balance){warn.textContent='Insufficient balance';btn.disabled=true;}
-  else{warn.textContent='';btn.disabled=false;}
-}
-
-async function doInvest(){
-  const amt=parseInt(document.getElementById('invAmt').value)||0;
-  if(!CUR_IDEA||amt<(CUR_IDEA.minBet||10))return;
-  if(amt>PROFILE.spk_balance){toast('❌ Insufficient balance','var(--red)');return;}
-  PROFILE.spk_balance-=amt;
-  updateHeader();
-  if(db&&ME){
-    try{ await db.from('profiles').update({spk_balance:PROFILE.spk_balance}).eq('id',ME.id); }
-    catch(e){ console.warn(e); }
-  }
-  closeMo('moInvest');
-  toast(`✅ Invested ${amt} SPK!`,'var(--ac)');
-  renderFeed();
-}
-
-// ════════════════════════════════════════
-// CREATE IDEA
-// ════════════════════════════════════════
-let selDur='24h';
-
-function openCreate(){
-  ['ciTitle','ciDesc','ciTarget'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('ciMin').value='10';
-  selDur='24h';
-  document.querySelectorAll('.dur-btn:not(.locked)').forEach(b=>b.classList.toggle('sel',b.dataset.dur==='24h'));
-  openMo('moCreate');
-  attachHold('btnPub',2000,doPublish);
-}
-
-document.getElementById('durGrid').addEventListener('click',e=>{
-  const b=e.target.closest('.dur-btn');
-  if(!b||b.classList.contains('locked'))return;
-  document.querySelectorAll('.dur-btn:not(.locked)').forEach(x=>x.classList.remove('sel'));
-  b.classList.add('sel'); selDur=b.dataset.dur;
-});
-
-async function doPublish(){
-  const title=document.getElementById('ciTitle').value.trim();
-  const desc =document.getElementById('ciDesc').value.trim();
-  const min  =parseInt(document.getElementById('ciMin').value)||10;
-  if(!title){toast('❗ Add a title','var(--red)');return;}
-
-  const secs={'24h':86400,'7d':604800}[selDur]||86400;
-  const exp=new Date(Date.now()+secs*1000).toISOString();
-  const uname=PROFILE.username;
-  const letter=uname.replace('@','').charAt(0).toUpperCase();
-
-  if(db){
-    try{
-      const {data,error}=await db.from('ideas').insert({
-        title,desc,min_bet:min,
-        target:parseInt(document.getElementById('ciTarget').value)||null,
-        expires_at:exp,created_at:new Date().toISOString(),
-        author_id:ME?.id,author_username:uname
-      }).select().single();
-      if(error)throw error;
-      if(data)insertLive(data,uname,letter);
-    }catch(e){
-      console.warn('insert error',e);
-      insertLive({id:Date.now(),title,desc,min_bet:min,expires_at:exp},uname,letter);
-    }
-  } else {
-    insertLive({id:Date.now(),title,desc,min_bet:min,expires_at:exp},uname,letter);
-  }
-  closeMo('moCreate');
-  toast('🚀 Idea published!','var(--ac)');
-}
-
-function insertLive(row,uname,letter){
-  if(LIVE.find(x=>x.id===row.id))return;
-  LIVE.unshift({
-    id:row.id, u:uname, av:letter,
-    bg:'linear-gradient(135deg,#e8c55a,#5ae8c5)',
-    tm:'just now', tag:'AI Tools', minBet:row.min_bet||10,
-    title:row.title, body:row.desc||'',
-    investors:0, pool:'0', cd:'24', pct:0,
-    cv:'M0,60 C100,55 200,50 400,40'
-  });
-  renderFeed();
-}
-
-// ════════════════════════════════════════
-// HOLD TO CONFIRM
-// ════════════════════════════════════════
-function attachHold(id, ms, cb){
-  let el=document.getElementById(id);
-  if(!el)return;
-  // clone to remove old listeners
-  const fresh=el.cloneNode(true);
-  el.parentNode.replaceChild(fresh,el);
-  el=fresh;
-  el.style.setProperty('--hms',ms/1000+'s');
-  let t=null,on=false;
-  function start(e){
-    if((e.button!==undefined&&e.button!==0)||on)return;
-    on=true;
-    if(navigator.vibrate)navigator.vibrate([50,100,50]);
-    el.classList.add('holding');
-    t=setTimeout(()=>{cb();reset();},ms);
-  }
-  function reset(){ clearTimeout(t);t=null;on=false;el.classList.remove('holding'); }
-  el.addEventListener('mousedown',start);
-  el.addEventListener('mouseup',reset);
-  el.addEventListener('mouseleave',reset);
-  el.addEventListener('touchstart',e=>{e.preventDefault();start(e);},{passive:false});
-  el.addEventListener('touchend',  e=>{e.preventDefault();reset();},{passive:false});
-  el.addEventListener('touchcancel',reset);
-}
-
-// ════════════════════════════════════════
-// REALTIME
-// ════════════════════════════════════════
-function initRealtime(){
-  if(!db)return;
-  try{
-    db.channel('ideas-rt')
-      .on('postgres_changes',{event:'INSERT',schema:'public',table:'ideas'},p=>{
-        const r=p.new;
-        if(!LIVE.find(x=>x.id===r.id))
-          insertLive(r,r.author_username||'@anon',(r.author_username||'A').charAt(1)||'A');
-        toast('✨ New: '+(r.title||'').slice(0,26),'var(--ac2)');
-      }).subscribe();
-
-    if(ME){
-      db.channel('bal-rt')
-        .on('postgres_changes',{event:'UPDATE',schema:'public',table:'profiles',filter:`id=eq.${ME.id}`},p=>{
-          PROFILE.spk_balance=p.new.spk_balance;
-          updateHeader();
-        }).subscribe();
-    }
-  }catch(e){console.warn('Realtime error',e);}
-}
-
-// ════════════════════════════════════════
-// MOBILE PANELS
-// ════════════════════════════════════════
-function openPanel(name){
-  document.querySelectorAll('.mob-tab').forEach(t=>t.classList.remove('active'));
-  const tab=document.querySelector(`.mob-tab[data-panel="${name}"]`);
-  if(tab)tab.classList.add('active');
-  const feed=document.querySelector('.feed');
-  ['trends','leaders','chats','profile'].forEach(id=>{const p=document.getElementById('panel-'+id);if(p)p.classList.remove('open');});
-  if(name==='feed'){if(feed)feed.style.display='';}
-  else{if(feed)feed.style.display='none';const t=document.getElementById('panel-'+name);if(t)t.classList.add('open');}
-}
-function switchChatTab(tab){
-  document.querySelectorAll('.chat-tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.chatTab===tab));
-  document.getElementById('chat-dms').classList.toggle('active',tab==='dms');
-  document.getElementById('chat-topics').classList.toggle('active',tab==='topics');
-}
-
-// ════════════════════════════════════════
-// MODAL HELPERS
+// MODALS & ACTIONS
 // ════════════════════════════════════════
 function openMo(id){ document.getElementById(id).classList.add('open'); }
 function closeMo(id){ document.getElementById(id).classList.remove('open'); }
 
-// ════════════════════════════════════════
-// TOAST
-// ════════════════════════════════════════
-function toast(msg,color){
-  const t=document.getElementById('toast');
-  t.textContent=msg;t.style.background=color;
-  t.style.opacity='1';t.style.transform='translateX(-50%) translateY(0)';
-  clearTimeout(t._t);
-  t._t=setTimeout(()=>{t.style.opacity='0';t.style.transform='translateX(-50%) translateY(14px)';},2200);
+function openInvest(id){ openMo('moInvest'); }
+function openCreate(){ openMo('moCreate'); }
+
+function openPanel(name){
+  document.querySelectorAll('.mob-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelector(`.mob-tab[data-panel="${name}"]`)?.classList.add('active');
+  const feed=document.querySelector('.feed');
+  ['profile'].forEach(id=>{const p=document.getElementById('panel-'+id);if(p)p.classList.remove('open');});
+  if(name==='feed'){if(feed)feed.style.display='';} else{if(feed)feed.style.display='none';document.getElementById('panel-'+name)?.classList.add('open');}
 }
-function pulse(el){el.style.background='var(--sf2)';setTimeout(()=>el.style.background='',180);}
 
 // ════════════════════════════════════════
-// BOOT — check existing session first
+// EMAIL VERIFICATION MODAL FUNCTIONS
+// ════════════════════════════════════════
+let PENDING_EMAIL = '';
+
+function showVerify(email, nick) {
+  PENDING_EMAIL = email;
+  const el = document.getElementById('vmEmailDisplay');
+  if (el) el.textContent = email;
+  document.getElementById('vmErr').textContent = '';
+  document.getElementById('verify-modal').classList.add('show');
+}
+
+function hideVerify() { document.getElementById('verify-modal').classList.remove('show'); }
+
+async function checkEmailVerified() {
+  const btn = document.getElementById('vmConfirmBtn');
+  btn.disabled = true; btn.textContent = 'Проверяем…';
+  document.getElementById('vmErr').textContent = '';
+
+  if (!db) { hideVerify(); enterApp(); return; }
+
+  try {
+    const { data, error } = await db.auth.refreshSession();
+    if (error) {
+      const { data: ud } = await db.auth.getUser();
+      if (ud?.user?.email_confirmed_at) { ME = ud.user; await fetchProfile(); hideVerify(); enterApp(); }
+      else document.getElementById('vmErr').textContent = 'Почта ещё не подтверждена. Проверьте папку «Спам».';
+    } else if (data?.user?.email_confirmed_at) {
+      ME = data.user; await fetchProfile(); hideVerify(); enterApp();
+    } else {
+      document.getElementById('vmErr').textContent = 'Почта ещё не подтверждена. Проверьте папку «Спам».';
+    }
+  } catch (e) { document.getElementById('vmErr').textContent = 'Ошибка проверки.'; }
+
+  btn.disabled = false; btn.textContent = T('vmBtn');
+}
+
+async function resendVerification() {
+  if (!db || !PENDING_EMAIL) return;
+  document.getElementById('vmErr').textContent = '';
+  const { error } = await db.auth.resend({ type:'signup', email: PENDING_EMAIL });
+  document.getElementById('vmErr').textContent = error ? 'Ошибка: ' + error.message : '✉️ Письмо отправлено повторно!';
+}
+
+function initRealtime() {} // Placeholder
+
+// ════════════════════════════════════════
+// BOOT
 // ════════════════════════════════════════
 (async()=>{
   if(db){
     try{
       const {data:{session}}=await db.auth.getSession();
       if(session?.user){ME=session.user;await fetchProfile();enterApp();return;}
-    }catch(e){console.warn('getSession error',e);}
+    }catch(e){}
   }
-  // No session — show auth. Pre-render feed in background.
   applyLang();
 })();
 </script>
 </body>
-</html>
+  </html>
