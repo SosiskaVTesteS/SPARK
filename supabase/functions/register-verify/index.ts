@@ -90,6 +90,7 @@ Deno.serve(async (req) => {
     return json({ message: 'Invalid verification code' }, 400);
   }
 
+  // --- Create user ---
   const { data: created, error: createError } = await admin.auth.admin.createUser({
     email,
     password,
@@ -98,12 +99,12 @@ Deno.serve(async (req) => {
   });
 
   let userId = created?.user?.id;
+  let sessionTokens: { access_token: string; refresh_token: string } | null = null;
 
   if (createError) {
     const msg = (createError.message || '').toLowerCase();
     if (msg.includes('already') || msg.includes('registered') || msg.includes('exists')) {
-      // User was already created (e.g. from a previous timed-out request).
-      // Let's verify password and get their ID by signing in.
+      // Self-healing: user was created by a previous timed-out request
       const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || serviceKey;
       const userClient = createClient(supabaseUrl, anonKey, {
         auth: { persistSession: false, autoRefreshToken: false },
@@ -112,11 +113,16 @@ Deno.serve(async (req) => {
         email,
         password,
       });
-
       if (signInError || !signInData.user) {
         return json({ message: 'This email is already registered.' }, 400);
       }
       userId = signInData.user.id;
+      if (signInData.session) {
+        sessionTokens = {
+          access_token: signInData.session.access_token,
+          refresh_token: signInData.session.refresh_token,
+        };
+      }
     } else {
       console.error('[register-verify] createUser error:', createError.message);
       return json({ message: 'Could not complete registration' }, 500);
@@ -127,20 +133,50 @@ Deno.serve(async (req) => {
     return json({ message: 'Could not complete registration' }, 500);
   }
 
-  const { error: profileError } = await admin.from('profiles').upsert({
+  // --- Parallel: profile + cleanup + server-side sign-in (if needed) ---
+  const profilePromise = admin.from('profiles').upsert({
     id: userId,
     username: pending.username,
     spk_balance: 4520,
   });
-  if (profileError) {
-    console.error('[register-verify] profile upsert error:', profileError.message);
+  const cleanupPromise = admin.from('pending_registrations').delete().eq('email', email);
+
+  if (!sessionTokens) {
+    // Sign in on server (same datacenter = ~50ms network vs ~500ms from mobile)
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || serviceKey;
+    const loginClient = createClient(supabaseUrl, anonKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const [profileRes, , loginRes] = await Promise.all([
+      profilePromise,
+      cleanupPromise,
+      loginClient.auth.signInWithPassword({ email, password }),
+    ]);
+    if (profileRes.error) {
+      console.error('[register-verify] profile upsert error:', profileRes.error.message);
+    }
+    if (!loginRes.error && loginRes.data?.session) {
+      sessionTokens = {
+        access_token: loginRes.data.session.access_token,
+        refresh_token: loginRes.data.session.refresh_token,
+      };
+    }
+  } else {
+    // Already have session from self-healing path
+    const [profileRes] = await Promise.all([profilePromise, cleanupPromise]);
+    if (profileRes.error) {
+      console.error('[register-verify] profile upsert error:', profileRes.error.message);
+    }
   }
 
-  await admin.from('pending_registrations').delete().eq('email', email);
-
-  return json({
+  const response: Record<string, unknown> = {
     ok: true,
-    message: 'Registration complete. You can sign in now.',
+    message: 'Registration complete.',
     user_id: userId,
-  });
+  };
+  if (sessionTokens) {
+    response.session = sessionTokens;
+  }
+
+  return json(response);
 });

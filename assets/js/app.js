@@ -344,12 +344,26 @@ async function doVerifyRegistration() {
     }
 
     toast(T('regComplete'), 'var(--ac2)');
-    var signIn = await supa.auth.signInWithPassword({
-      email: PENDING_EMAIL,
-      password: PENDING_REG_PASSWORD
-    });
-    if (signIn.error) throw signIn.error;
-    ME = signIn.data.user;
+
+    // Use server-provided session tokens (instant, no network call)
+    if (verified.data && verified.data.session) {
+      var setRes = await supa.auth.setSession({
+        access_token: verified.data.session.access_token,
+        refresh_token: verified.data.session.refresh_token
+      });
+      if (!setRes.error && setRes.data && setRes.data.user) {
+        ME = setRes.data.user;
+      }
+    }
+    // Fallback: sign in if session wasn't returned
+    if (!ME) {
+      var signIn = await supa.auth.signInWithPassword({
+        email: PENDING_EMAIL,
+        password: PENDING_REG_PASSWORD
+      });
+      if (signIn.error) throw signIn.error;
+      ME = signIn.data.user;
+    }
     PROFILE.username = '@' + PENDING_NICK;
     PROFILE.spk_balance = 4520; // РЈСЃС‚Р°РЅР°РІР»РёРІР°РµРј Р±Р°Р»Р°РЅСЃ РЅР°РїСЂСЏРјСѓСЋ, С‚Р°Рє РєР°Рє РјС‹ С‚РѕС‡РЅРѕ Р·РЅР°РµРј РµРіРѕ РїСЂРё СЃРѕР·РґР°РЅРёРё
     PENDING_REG_PASSWORD = '';
