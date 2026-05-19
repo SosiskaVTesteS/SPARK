@@ -101,6 +101,12 @@ async function callEdgeFunction(name, body) {
     var { data: { session } } = await supa.auth.getSession();
     if (session && session.access_token) token = session.access_token;
   } catch (e) {}
+
+  var controller = new AbortController();
+  var timeoutId = setTimeout(function () {
+    controller.abort();
+  }, 15000);
+
   try {
     var res = await fetch(url, {
       method: 'POST',
@@ -109,8 +115,10 @@ async function callEdgeFunction(name, body) {
         Authorization: 'Bearer ' + token,
         apikey: SUPABASE_ANON_KEY
       },
-      body: JSON.stringify(body || {})
+      body: JSON.stringify(body || {}),
+      signal: controller.signal
     });
+    clearTimeout(timeoutId);
     var json = {};
     try {
       json = await res.json();
@@ -122,6 +130,10 @@ async function callEdgeFunction(name, body) {
     }
     return { ok: true, data: json };
   } catch (e) {
+    clearTimeout(timeoutId);
+    if (e.name === 'AbortError') {
+      return { ok: false, error: new Error('timeout') };
+    }
     return { ok: false, error: e };
   }
 }
