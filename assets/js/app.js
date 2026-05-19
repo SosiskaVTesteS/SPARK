@@ -222,14 +222,72 @@ function setAuthErr(m) {
   if (el) el.textContent = m;
 }
 
+var activeButtonTimers = new Map();
+
 function setBtnLoading(idOrEl, isLoading) {
   var btn = typeof idOrEl === 'string' ? document.getElementById(idOrEl) : idOrEl;
   if (!btn) return;
-  btn.disabled = isLoading;
+
+  if (activeButtonTimers.has(btn)) {
+    var timerData = activeButtonTimers.get(btn);
+    clearInterval(timerData.interval);
+    activeButtonTimers.delete(btn);
+  }
+
   if (isLoading) {
-    btn.classList.add('btn-loading');
+    btn.disabled = true;
+    if (btn.dataset.originalHtml === undefined) {
+      btn.dataset.originalHtml = btn.innerHTML;
+    }
+
+    var isCountdownBtn = ['btnSU', 'btnSUVerify', 'btnSendDelCode', 'btnConfirmDel'].includes(btn.id);
+
+    if (isCountdownBtn) {
+      btn.classList.add('btn-timer-loading');
+      var duration = 5;
+      btn.innerHTML =
+        '<span class="btn-timer-content" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; vertical-align: middle; width: 100%; height: 100%;">' +
+          '<svg class="btn-timer-svg" width="20" height="20" viewBox="0 0 24 24" style="transform: rotate(-90deg); flex-shrink: 0;">' +
+            '<circle class="btn-timer-track" cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.5" style="opacity: 0.15;"></circle>' +
+            '<circle class="btn-timer-progress" cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.5" stroke-dasharray="56.55" stroke-dashoffset="56.55" stroke-linecap="round"></circle>' +
+          '</svg>' +
+          '<span class="btn-timer-text" style="font-family: var(--fh); font-weight: 700; font-size: 13px; min-width: 22px; text-align: left;">' + duration + 's</span>' +
+        '</span>';
+
+      var progressCircle = btn.querySelector('.btn-timer-progress');
+      var timerText = btn.querySelector('.btn-timer-text');
+
+      setTimeout(function() {
+        if (progressCircle) {
+          progressCircle.style.transition = 'stroke-dashoffset ' + duration + 's linear';
+          progressCircle.style.strokeDashoffset = '0';
+        }
+      }, 20);
+
+      var remaining = duration;
+      var interval = setInterval(function() {
+        remaining--;
+        if (remaining >= 0) {
+          if (timerText) timerText.textContent = remaining + 's';
+        }
+        if (remaining <= 0) {
+          clearInterval(interval);
+          if (timerText) timerText.textContent = '0s';
+          if (progressCircle) progressCircle.classList.add('pulse-glow');
+        }
+      }, 1000);
+
+      activeButtonTimers.set(btn, { interval: interval });
+    } else {
+      btn.classList.add('btn-loading');
+    }
   } else {
     btn.classList.remove('btn-loading');
+    btn.classList.remove('btn-timer-loading');
+    if (btn.dataset.originalHtml !== undefined) {
+      btn.innerHTML = btn.dataset.originalHtml;
+    }
+    btn.disabled = false;
   }
 }
 
@@ -426,29 +484,30 @@ async function fetchProfile() {
 }
 
 async function doLogout(skipSignOut) {
+  // First, completely obliterate all session and local storage to prevent any session restoring!
+  var savedLang = null;
   try {
-    if (supa && !skipSignOut) {
-      await supa.auth.signOut();
-    } else if (supa && skipSignOut) {
-      // Execute signOut asynchronously in the background so it doesn't block the UI transition
-      supa.auth.signOut().catch(function(e) { console.warn('async signOut error', e); });
+    savedLang = localStorage.getItem('spark_lang');
+    localStorage.clear();
+    sessionStorage.clear();
+    if (savedLang) {
+      localStorage.setItem('spark_lang', savedLang);
+    }
+  } catch (err) {
+    console.warn('storage clear error', err);
+  }
+
+  try {
+    if (supa) {
+      if (skipSignOut) {
+        // Run signOut in the background but catch any errors (since the user is already deleted, it might throw)
+        supa.auth.signOut().catch(function(e) { console.warn('async signOut error', e); });
+      } else {
+        await supa.auth.signOut();
+      }
     }
   } catch (e) {
     console.warn('signOut error', e);
-  }
-  try {
-    var keys = [];
-    for (var i = 0; i < localStorage.length; i++) {
-      var k = localStorage.key(i);
-      if (k && (k.startsWith('sb-') || k.includes('supabase.auth.token'))) {
-        keys.push(k);
-      }
-    }
-    keys.forEach(function (key) {
-      localStorage.removeItem(key);
-    });
-  } catch (err) {
-    console.warn('localStorage clear error', err);
   }
 
   // Explicitly reset session state to guarantee immediate redirection to sign-in page
@@ -462,7 +521,10 @@ async function doLogout(skipSignOut) {
   var launchOverlay = document.getElementById('launchOverlay');
   if (launchOverlay) launchOverlay.classList.add('gone');
 
-  location.reload();
+  // Use a reliable 150ms delay before redirecting to the base URL to prevent any race conditions with async storage writes
+  setTimeout(function() {
+    window.location.href = window.location.origin + window.location.pathname;
+  }, 150);
 }
 
 function enterApp() {

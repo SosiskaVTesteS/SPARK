@@ -554,3 +554,38 @@ input[type=range].inv-sl::-webkit-slider-thumb{-webkit-appearance:none;width:18p
     .settings-item { flex-direction: column; align-items: flex-start; gap: 15px; }
     .spark-btn-danger { width: 100%; text-align: center; }
 }
+
+/* ════ Premium Intelligent Circular Countdown Loader ════ */
+.btn-timer-loading {
+  position: relative !important;
+  pointer-events: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.btn-timer-progress {
+  transform-origin: center;
+  transition: stroke-dashoffset 0.1s linear;
+}
+
+/* Beautiful pulsing glow when countdown reaches 0s but database/email is still processing */
+.btn-timer-progress.pulse-glow {
+  animation: timer-pulse 1.5s ease-in-out infinite;
+  stroke-dashoffset: 0 !important;
+}
+
+@keyframes timer-pulse {
+  0% {
+    opacity: 1;
+    filter: drop-shadow(0 0 1px currentColor);
+  }
+  50% {
+    opacity: 0.4;
+    filter: drop-shadow(0 0 4px currentColor);
+  }
+  100% {
+    opacity: 1;
+    filter: drop-shadow(0 0 1px currentColor);
+  }
+}
