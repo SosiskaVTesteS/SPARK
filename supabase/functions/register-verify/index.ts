@@ -1,8 +1,11 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
+import { Client } from 'https://deno.land/x/postgres@v0.17.0/mod.ts';
+import bcrypt from 'npm:bcryptjs';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
 };
 
 function json(body: unknown, status = 200) {
@@ -12,19 +15,19 @@ function json(body: unknown, status = 200) {
   });
 }
 
-function normalizeEmail(email: string) {
+function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
-async function sha256(text: string) {
-  const data = new TextEncoder().encode(text);
-  const hash = await crypto.subtle.digest('SHA-256', data);
+async function sha256(str: string): Promise<string> {
+  const buf = new TextEncoder().encode(str);
+  const hash = await crypto.subtle.digest('SHA-256', buf);
   return Array.from(new Uint8Array(hash))
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
 }
 
-function pepper() {
+function pepper(): string {
   return Deno.env.get('REGISTRATION_PEPPER') || 'spark';
 }
 
@@ -34,7 +37,8 @@ Deno.serve(async (req) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  if (!supabaseUrl || !serviceKey) {
+  const dbUrl = Deno.env.get('SUPABASE_DB_URL');
+  if (!supabaseUrl || !serviceKey || !dbUrl) {
     return json({ message: 'Server configuration error' }, 500);
   }
 
@@ -90,50 +94,76 @@ Deno.serve(async (req) => {
     return json({ message: 'Invalid verification code' }, 400);
   }
 
-  // --- Create user ---
-  const { data: created, error: createError } = await admin.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-    user_metadata: { username: pending.username },
-  });
+  // Connect to DB directly
+  const client = new Client(dbUrl);
+  await client.connect();
 
-  let userId = created?.user?.id;
+  let userId: string | null = null;
   let sessionTokens: { access_token: string; refresh_token: string } | null = null;
 
-  if (createError) {
-    const msg = (createError.message || '').toLowerCase();
-    if (msg.includes('already') || msg.includes('registered') || msg.includes('exists')) {
-      // Self-healing: user was created by a previous timed-out request
-      const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || serviceKey;
-      const userClient = createClient(supabaseUrl, anonKey, {
-        auth: { persistSession: false, autoRefreshToken: false },
-      });
-      const { data: signInData, error: signInError } = await userClient.auth.signInWithPassword({
-        email,
-        password,
-      });
-      if (signInError || !signInData.user) {
-        return json({ message: 'This email is already registered.' }, 400);
-      }
-      userId = signInData.user.id;
-      if (signInData.session) {
-        sessionTokens = {
-          access_token: signInData.session.access_token,
-          refresh_token: signInData.session.refresh_token,
-        };
-      }
-    } else {
-      console.error('[register-verify] createUser error:', createError.message);
-      return json({ message: 'Could not complete registration' }, 500);
-    }
-  }
+  try {
+    // 1. Check if user already exists
+    const checkUser = await client.queryObject<{ id: string }>(
+      'select id from auth.users where email = $1',
+      [email]
+    );
 
-  if (!userId) {
+    if (checkUser.rows.length > 0) {
+      userId = checkUser.rows[0].id;
+    } else {
+      // 2. Insert user directly to completely bypass slow/hanging GoTrue welcome emails
+      userId = crypto.randomUUID();
+      const identityId = crypto.randomUUID();
+      const salt = bcrypt.genSaltSync(10);
+      const encryptedPassword = bcrypt.hashSync(password, salt);
+      const now = new Date().toISOString();
+      const appMetadata = JSON.stringify({ provider: 'email', providers: ['email'] });
+      const userMetadata = JSON.stringify({ username: pending.username });
+      const identityData = JSON.stringify({
+        sub: userId,
+        email: email,
+        email_verified: true,
+        phone_verified: false
+      });
+
+      const tx = client.createTransaction("insert_user_tx");
+      await tx.begin();
+      try {
+        await tx.queryObject(`
+          insert into auth.users (
+            instance_id, id, aud, role, email, encrypted_password,
+            email_confirmed_at, confirmed_at, created_at, updated_at,
+            raw_app_meta_data, raw_user_meta_data, is_super_admin, is_anonymous, is_sso_user
+          ) values (
+            '00000000-0000-0000-0000-000000000000', $1, 'authenticated', 'authenticated', $2, $3,
+            $4, $4, $4, $4,
+            $5, $6, false, false, false
+          )
+        `, [userId, email, encryptedPassword, now, appMetadata, userMetadata]);
+
+        await tx.queryObject(`
+          insert into auth.identities (
+            id, user_id, identity_data, provider, provider_id, email, created_at, updated_at
+          ) values (
+            $1, $2, $3, 'email', $2, $4, $5, $5
+          )
+        `, [identityId, userId, identityData, email, now]);
+
+        await tx.commit();
+      } catch (err) {
+        await tx.rollback();
+        throw err;
+      }
+    }
+  } catch (err: any) {
+    console.error('[register-verify] DB error:', err.message || err);
+    await client.end();
     return json({ message: 'Could not complete registration' }, 500);
   }
 
-  // --- Parallel: profile + cleanup + server-side sign-in (if needed) ---
+  await client.end();
+
+  // --- Parallel: profiles upsert + pending cleanup ---
   const profilePromise = admin.from('profiles').upsert({
     id: userId,
     username: pending.username,
@@ -141,32 +171,23 @@ Deno.serve(async (req) => {
   });
   const cleanupPromise = admin.from('pending_registrations').delete().eq('email', email);
 
-  if (!sessionTokens) {
-    // Sign in on server (same datacenter = ~50ms network vs ~500ms from mobile)
+  await Promise.all([profilePromise, cleanupPromise]);
+
+  // --- Server-side sign-in fallback (optional) ---
+  try {
     const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || serviceKey;
     const loginClient = createClient(supabaseUrl, anonKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
-    const [profileRes, , loginRes] = await Promise.all([
-      profilePromise,
-      cleanupPromise,
-      loginClient.auth.signInWithPassword({ email, password }),
-    ]);
-    if (profileRes.error) {
-      console.error('[register-verify] profile upsert error:', profileRes.error.message);
-    }
+    const loginRes = await loginClient.auth.signInWithPassword({ email, password });
     if (!loginRes.error && loginRes.data?.session) {
       sessionTokens = {
         access_token: loginRes.data.session.access_token,
         refresh_token: loginRes.data.session.refresh_token,
       };
     }
-  } else {
-    // Already have session from self-healing path
-    const [profileRes] = await Promise.all([profilePromise, cleanupPromise]);
-    if (profileRes.error) {
-      console.error('[register-verify] profile upsert error:', profileRes.error.message);
-    }
+  } catch (err) {
+    console.warn('[register-verify] Server sign-in failed (non-fatal):', err);
   }
 
   const response: Record<string, unknown> = {
