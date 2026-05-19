@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Первый деплой Supabase для SPARK. Запуск из папки SPARK: ./scripts/supabase-deploy.sh
 set -euo pipefail
-PROJECT_REF="ykmtewsfkgduvkmguasv"
+PROJECT_REF="ppehttbtrlavnrytoweu"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
@@ -21,5 +21,7 @@ supabase db push
 supabase secrets set --env-file .env
 supabase functions deploy register-send-code --no-verify-jwt
 supabase functions deploy register-verify --no-verify-jwt
+supabase functions deploy privacy-send-delete-code --no-verify-jwt
+supabase functions deploy privacy-delete-account --no-verify-jwt
 
 echo "Готово."

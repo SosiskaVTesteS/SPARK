@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
+import nodemailer from 'npm:nodemailer@6.9.10';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -105,11 +106,11 @@ async function sendViaBrevo(to: string, code: string): Promise<boolean> {
   }
 }
 
-function smtpConfigured(): boolean {
+function gmailScriptConfigured(): boolean {
   return Boolean(Deno.env.get('GMAIL_SCRIPT_URL'));
 }
 
-async function sendViaSmtp(to: string, code: string): Promise<boolean> {
+async function sendViaGmailScript(to: string, code: string): Promise<boolean> {
   const scriptUrl = Deno.env.get('GMAIL_SCRIPT_URL');
   if (!scriptUrl) return false;
 
@@ -145,18 +146,80 @@ async function sendViaSmtp(to: string, code: string): Promise<boolean> {
   }
 }
 
+function smtpConfigured(): boolean {
+  return Boolean(
+    Deno.env.get('SMTP_HOSTNAME') &&
+      Deno.env.get('SMTP_PORT') &&
+      Deno.env.get('SMTP_USERNAME') &&
+      Deno.env.get('SMTP_PASSWORD') &&
+      Deno.env.get('SMTP_FROM')
+  );
+}
+
+let cachedTransport: any = null;
+
+function getSmtpTransport() {
+  if (cachedTransport) return cachedTransport;
+  cachedTransport = nodemailer.createTransport({
+    pool: true,
+    maxConnections: 5,
+    maxMessages: 100,
+    rateDelta: 1000,
+    rateLimit: 5,
+    host: Deno.env.get('SMTP_HOSTNAME')!,
+    port: Number(Deno.env.get('SMTP_PORT')),
+    secure: Deno.env.get('SMTP_SECURE') === 'true',
+    auth: {
+      user: Deno.env.get('SMTP_USERNAME')!,
+      pass: Deno.env.get('SMTP_PASSWORD')!,
+    },
+  });
+  return cachedTransport;
+}
+
+async function sendViaSmtp(to: string, code: string): Promise<boolean> {
+  if (!smtpConfigured()) return false;
+
+  const transport = getSmtpTransport();
+
+  await new Promise<void>((resolve, reject) => {
+    transport.sendMail(
+      {
+        from: Deno.env.get('SMTP_FROM')!,
+        to,
+        subject: DELETE_EMAIL_SUBJECT,
+        html: deleteEmailHtml(code),
+      },
+      (error) => {
+        if (error) reject(error);
+        else resolve();
+      }
+    );
+  });
+  return true;
+}
+
 async function sendDeleteCode(to: string, code: string): Promise<boolean> {
+  const hasGmailScript = gmailScriptConfigured();
   const hasSmtp = smtpConfigured();
   const hasResend = Boolean(Deno.env.get('RESEND_API_KEY'));
   const hasBrevo = Boolean(Deno.env.get('BREVO_API_KEY'));
 
-  if (!hasResend && !hasBrevo && !hasSmtp) {
+  if (!hasResend && !hasBrevo && !hasSmtp && !hasGmailScript) {
     console.warn('[privacy-send-delete-code] no email provider configured');
     return false;
   }
 
   let lastError: unknown = null;
 
+  if (hasGmailScript) {
+    try {
+      if (await sendViaGmailScript(to, code)) return true;
+    } catch (e) {
+      lastError = e;
+      console.error('[privacy-send-delete-code] Gmail Script failed', e);
+    }
+  }
   if (hasSmtp) {
     try {
       if (await sendViaSmtp(to, code)) return true;

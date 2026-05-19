@@ -3,7 +3,7 @@
 # Требуется: Supabase CLI (scoop install supabase / npm i -g supabase)
 
 $ErrorActionPreference = "Stop"
-$ProjectRef = "ykmtewsfkgduvkmguasv"
+$ProjectRef = "ppehttbtrlavnrytoweu"
 $Root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 Set-Location $Root
 
@@ -33,5 +33,7 @@ supabase secrets set --env-file .env
 Write-Host "==> deploy edge functions"
 supabase functions deploy register-send-code --no-verify-jwt
 supabase functions deploy register-verify --no-verify-jwt
+supabase functions deploy privacy-send-delete-code --no-verify-jwt
+supabase functions deploy privacy-delete-account --no-verify-jwt
 
 Write-Host "Готово. Проверьте регистрацию в приложении с реальным email." -ForegroundColor Green

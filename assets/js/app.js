@@ -432,7 +432,20 @@ async function fetchProfile() {
 }
 
 async function doLogout() {
-  if (supa) await supa.auth.signOut();
+  try {
+    if (supa) await supa.auth.signOut();
+  } catch (e) {
+    console.warn('signOut error', e);
+  }
+  try {
+    for (var key in localStorage) {
+      if (key.startsWith('sb-') || key.includes('supabase.auth.token')) {
+        localStorage.removeItem(key);
+      }
+    }
+  } catch (err) {
+    console.warn('localStorage clear error', err);
+  }
   location.reload();
 }
 
@@ -1429,7 +1442,14 @@ function bindAuthListener() {
   supa.auth.onAuthStateChange(function (event, session) {
     if (event === 'SIGNED_OUT') {
       ME = null;
+      PROFILE = { username: '@user', spk_balance: 0 };
       appEntered = false;
+      document.documentElement.classList.remove('spark-presession');
+      document.documentElement.classList.add('auth-active');
+      var authScreen = document.getElementById('authScreen');
+      if (authScreen) authScreen.classList.remove('gone');
+      var launchOverlay = document.getElementById('launchOverlay');
+      if (launchOverlay) launchOverlay.classList.add('gone');
       return;
     }
     if (!session || !session.user) return;
@@ -1444,6 +1464,7 @@ function bindAuthListener() {
       return;
     }
     setTimeout(function () {
+      if (appEntered) return;
       fetchProfile().then(function () {
         enterApp();
       }).catch(function (e) {
