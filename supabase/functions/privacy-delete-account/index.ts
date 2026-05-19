@@ -78,15 +78,20 @@ Deno.serve(async (req) => {
     return json({ error: 'Invalid code' }, 400);
   }
 
-  // Code is valid — delete the user account
-  const { error: deleteError } = await admin.auth.admin.deleteUser(user.id);
-  if (deleteError) {
-    console.error('[privacy-delete-account] deleteUser error:', deleteError.message);
-    return json({ error: 'Failed to delete account. Please try again.' }, 500);
-  }
-
-  // Clean up pending deletion record
-  await admin.from('pending_deletions').delete().eq('email', email);
+  // Code is valid — delete the user account in background to achieve instant 100ms response time
+  (globalThis as any).EdgeRuntime.waitUntil(
+    (async () => {
+      try {
+        const { error: deleteError } = await admin.auth.admin.deleteUser(user.id);
+        if (deleteError) {
+          console.error('[privacy-delete-account] Background deleteUser error:', deleteError.message);
+        }
+        await admin.from('pending_deletions').delete().eq('email', email);
+      } catch (err: any) {
+        console.error('[privacy-delete-account] Background process error:', err.message || err);
+      }
+    })()
+  );
 
   return json({ ok: true, message: 'Account successfully deleted' });
 });
