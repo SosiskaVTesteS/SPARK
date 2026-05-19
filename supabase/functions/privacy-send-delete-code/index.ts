@@ -209,6 +209,32 @@ Deno.serve(async (req) => {
 
   const email = user.email;
 
+  let payload: { password?: string } = {};
+  try {
+    payload = await req.json();
+  } catch {
+    return json({ error: 'Invalid request payload' }, 400);
+  }
+
+  const password = payload.password;
+  if (!password) {
+    return json({ error: 'Password is required' }, 400);
+  }
+
+  // Verify password by attempting sign in
+  const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || serviceKey;
+  const userClient = createClient(supabaseUrl, anonKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+  const { error: verifyErr } = await userClient.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (verifyErr) {
+    return json({ error: 'Incorrect password' }, 400);
+  }
+
   // Generate 6-digit code
   const code = String(Math.floor(100000 + Math.random() * 900000));
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();

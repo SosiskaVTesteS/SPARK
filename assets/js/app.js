@@ -337,9 +337,7 @@ async function doVerifyRegistration() {
       password: PENDING_REG_PASSWORD
     });
     if (!verified.ok) {
-      var vMsg = verified.body && verified.body.message
-        ? verified.body.message
-        : T('regInvalidCode');
+      var vMsg = registrationErrorMessage(verified);
       setAuthErr(vMsg);
       toast(vMsg, 'var(--red)');
       return;
@@ -1622,20 +1620,18 @@ document.addEventListener('DOMContentLoaded', function() {
       btn.disabled = true;
       btn.textContent = '...';
       try {
-        var { error: verifyErr } = await supa.auth.signInWithPassword({
-          email: ME.email,
-          password: currPwd
-        });
-        if (verifyErr) throw verifyErr;
-        
-        var r = await callEdgeFunction('privacy-send-delete-code', {});
-        if (!r.ok) throw new Error(r.error || 'Failed');
+        var r = await callEdgeFunction('privacy-send-delete-code', { password: currPwd });
+        if (!r.ok) throw new Error((r.body && r.body.error) || r.error?.message || r.error || 'Failed');
         
         toast(T('delCodeSent'), 'var(--ac2)');
         document.getElementById('confirm-step-password').classList.add('modal-step-hidden');
         document.getElementById('confirm-step-code').classList.remove('modal-step-hidden');
       } catch (err) {
-        toast(T('delErr') + ': ' + (err.message || ''), 'var(--red)');
+        var errMsg = err.message || '';
+        if (errMsg.indexOf('Incorrect password') !== -1 || errMsg.indexOf('Incorrect') !== -1) {
+          errMsg = T('pwdErr') || 'Неверный пароль';
+        }
+        toast(T('delErr') + ': ' + errMsg, 'var(--red)');
       }
       btn.disabled = false;
       btn.textContent = T('delSendCode');
