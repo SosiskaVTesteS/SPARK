@@ -97,17 +97,32 @@ Deno.serve(async (req) => {
     user_metadata: { username: pending.username },
   });
 
+  let userId = created?.user?.id;
+
   if (createError) {
     const msg = (createError.message || '').toLowerCase();
-    if (msg.includes('already') || msg.includes('registered')) {
-      await admin.from('pending_registrations').delete().eq('email', email);
-      return json({ message: 'Invalid verification code' }, 400);
+    if (msg.includes('already') || msg.includes('registered') || msg.includes('exists')) {
+      // User was already created (e.g. from a previous timed-out request).
+      // Let's verify password and get their ID by signing in.
+      const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || serviceKey;
+      const userClient = createClient(supabaseUrl, anonKey, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+      const { data: signInData, error: signInError } = await userClient.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError || !signInData.user) {
+        return json({ message: 'This email is already registered.' }, 400);
+      }
+      userId = signInData.user.id;
+    } else {
+      console.error('[register-verify] createUser error:', createError.message);
+      return json({ message: 'Could not complete registration' }, 500);
     }
-    console.error('[register-verify] createUser', createError.message);
-    return json({ message: 'Could not complete registration' }, 500);
   }
 
-  const userId = created.user?.id;
   if (!userId) {
     return json({ message: 'Could not complete registration' }, 500);
   }
@@ -118,7 +133,7 @@ Deno.serve(async (req) => {
     spk_balance: 4520,
   });
   if (profileError) {
-    console.error('[register-verify] profile', profileError.message);
+    console.error('[register-verify] profile upsert error:', profileError.message);
   }
 
   await admin.from('pending_registrations').delete().eq('email', email);

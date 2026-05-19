@@ -105,7 +105,7 @@ async function callEdgeFunction(name, body) {
   var controller = new AbortController();
   var timeoutId = setTimeout(function () {
     controller.abort();
-  }, 15000);
+  }, 30000);
 
   try {
     var res = await fetch(url, {
