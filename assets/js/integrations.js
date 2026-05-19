@@ -97,10 +97,12 @@ async function callEdgeFunction(name, body) {
   }
   var url = SUPABASE_URL.replace(/\/$/, '') + '/functions/v1/' + name;
   var token = SUPABASE_ANON_KEY;
-  try {
-    var { data: { session } } = await supa.auth.getSession();
-    if (session && session.access_token) token = session.access_token;
-  } catch (e) {}
+  if (name !== 'register-send-code' && name !== 'register-verify') {
+    try {
+      var { data: { session } } = await supa.auth.getSession();
+      if (session && session.access_token) token = session.access_token;
+    } catch (e) {}
+  }
 
   var controller = new AbortController();
   var timeoutId = setTimeout(function () {

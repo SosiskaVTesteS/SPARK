@@ -278,10 +278,15 @@ async function doSignUp() {
   if (pass.length < 8) { setAuthErr('Password min 8 chars'); return; }
   if (pass !== pass2) { setAuthErr('Passwords do not match'); return; }
 
-  setBtnState('btnSU', true);
+  var btn = document.getElementById('btnSU');
+  var originalText = btn ? btn.textContent : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '...';
+  }
   setAuthErr('');
 
-  if (!supa) { PROFILE.username = '@' + nick; enterApp(); setBtnState('btnSU', false); return; }
+  if (!supa) { PROFILE.username = '@' + nick; enterApp(); if (btn) { btn.disabled = false; btn.textContent = originalText; } return; }
 
   PENDING_EMAIL = email;
   PENDING_NICK = nick;
@@ -310,13 +315,17 @@ async function doSignUp() {
     featureToast('registration', e);
     setAuthErr(integrationMessage('registration'));
   } finally {
-    setBtnState('btnSU', false);
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
   }
 }
 
 async function doVerifyRegistration() {
   var codeEl = document.getElementById('suCode');
-  var code = codeEl ? codeEl.value.trim() : '';
+  // Sanitize the code to handle copy-pasting or autofilling with spaces/hyphens on mobile
+  var code = codeEl ? codeEl.value.replace(/\D/g, '') : '';
   if (!/^\d{6}$/.test(code)) {
     setAuthErr(T('regInvalidCode'));
     return;
@@ -327,7 +336,12 @@ async function doVerifyRegistration() {
     return;
   }
 
-  setBtnState('btnSUVerify', true);
+  var btn = document.getElementById('btnSUVerify');
+  var originalText = btn ? btn.textContent : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '...';
+  }
   setAuthErr('');
 
   try {
@@ -375,7 +389,10 @@ async function doVerifyRegistration() {
     setAuthErr(msg);
     toast(msg, 'var(--red)');
   } finally {
-    setBtnState('btnSUVerify', false);
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
   }
 }
 
