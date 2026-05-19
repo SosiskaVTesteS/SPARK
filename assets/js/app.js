@@ -222,9 +222,15 @@ function setAuthErr(m) {
   if (el) el.textContent = m;
 }
 
-function setBtnState(id, dis) {
-  var b = document.getElementById(id);
-  if (b) b.disabled = dis;
+function setBtnLoading(idOrEl, isLoading) {
+  var btn = typeof idOrEl === 'string' ? document.getElementById(idOrEl) : idOrEl;
+  if (!btn) return;
+  btn.disabled = isLoading;
+  if (isLoading) {
+    btn.classList.add('btn-loading');
+  } else {
+    btn.classList.remove('btn-loading');
+  }
 }
 
 async function doSignIn() {
@@ -234,10 +240,10 @@ async function doSignIn() {
   var email = emailEl.value.trim();
   var pass = passEl.value;
   if (!email || !pass) { setAuthErr('Please fill all fields'); return; }
-  setBtnState('btnSI', true);
+  setBtnLoading('btnSI', true);
   setAuthErr('');
 
-  if (!supa) { PROFILE.username = '@demo'; enterApp(); setBtnState('btnSI', false); return; }
+  if (!supa) { PROFILE.username = '@demo'; enterApp(); setBtnLoading('btnSI', false); return; }
 
   try {
     var r = await supa.auth.signInWithPassword({ email: email, password: pass });
@@ -247,7 +253,7 @@ async function doSignIn() {
       PENDING_EMAIL = email;
       showVerify(email, '');
       setAuthErr(T('verifyTitle'));
-      setBtnState('btnSI', false);
+      setBtnLoading('btnSI', false);
       return;
     }
     await fetchProfile();
@@ -258,7 +264,7 @@ async function doSignIn() {
     toast(msg, 'var(--red)');
     setAuthErr(msg);
   } finally {
-    setBtnState('btnSI', false);
+    setBtnLoading('btnSI', false);
   }
 }
 
@@ -279,14 +285,10 @@ async function doSignUp() {
   if (pass !== pass2) { setAuthErr('Passwords do not match'); return; }
 
   var btn = document.getElementById('btnSU');
-  var originalText = btn ? btn.textContent : '';
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = '...';
-  }
+  setBtnLoading(btn, true);
   setAuthErr('');
 
-  if (!supa) { PROFILE.username = '@' + nick; enterApp(); if (btn) { btn.disabled = false; btn.textContent = originalText; } return; }
+  if (!supa) { PROFILE.username = '@' + nick; enterApp(); setBtnLoading(btn, false); return; }
 
   PENDING_EMAIL = email;
   PENDING_NICK = nick;
@@ -315,10 +317,7 @@ async function doSignUp() {
     featureToast('registration', e);
     setAuthErr(integrationMessage('registration'));
   } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = originalText;
-    }
+    setBtnLoading(btn, false);
   }
 }
 
@@ -337,11 +336,7 @@ async function doVerifyRegistration() {
   }
 
   var btn = document.getElementById('btnSUVerify');
-  var originalText = btn ? btn.textContent : '';
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = '...';
-  }
+  setBtnLoading(btn, true);
   setAuthErr('');
 
   try {
@@ -381,7 +376,7 @@ async function doVerifyRegistration() {
       ME = signIn.data.user;
     }
     PROFILE.username = '@' + PENDING_NICK;
-    PROFILE.spk_balance = 4520; // РЈСЃС‚Р°РЅР°РІР»РёРІР°РµРј Р±Р°Р»Р°РЅСЃ РЅР°РїСЂСЏРјСѓСЋ, С‚Р°Рє РєР°Рє РјС‹ С‚РѕС‡РЅРѕ Р·РЅР°РµРј РµРіРѕ РїСЂРё СЃРѕР·РґР°РЅРёРё
+    PROFILE.spk_balance = 4520; // Устанавливаем баланс напрямую, так как мы точно знаем его при создании
     PENDING_REG_PASSWORD = '';
     showRegistrationForm();
     enterApp();
@@ -391,10 +386,7 @@ async function doVerifyRegistration() {
     setAuthErr(msg);
     toast(msg, 'var(--red)');
   } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = originalText;
-    }
+    setBtnLoading(btn, false);
   }
 }
 
@@ -1688,8 +1680,7 @@ document.addEventListener('DOMContentLoaded', function() {
       var btn = document.getElementById('btnSendDelCode');
       var currPwd = document.getElementById('delete-curr-pwd').value;
       
-      btn.disabled = true;
-      btn.textContent = '...';
+      setBtnLoading(btn, true);
       try {
         var r = await callEdgeFunction('privacy-send-delete-code', { password: currPwd });
         if (!r.ok) throw new Error((r.body && r.body.error) || r.error?.message || r.error || 'Failed');
@@ -1703,9 +1694,9 @@ document.addEventListener('DOMContentLoaded', function() {
           errMsg = T('pwdErr') || 'Неверный пароль';
         }
         toast(T('delErr') + ': ' + errMsg, 'var(--red)');
+      } finally {
+        setBtnLoading(btn, false);
       }
-      btn.disabled = false;
-      btn.textContent = T('delSendCode');
     });
   }
 
@@ -1717,8 +1708,7 @@ document.addEventListener('DOMContentLoaded', function() {
       var btn = document.getElementById('btnConfirmDel');
       var code = document.getElementById('delete-verify-code').value;
       
-      btn.disabled = true;
-      btn.textContent = '...';
+      setBtnLoading(btn, true);
       try {
         var r = await callEdgeFunction('privacy-delete-account', { code: code });
         if (!r.ok) throw new Error(r.error || 'Failed');
@@ -1729,8 +1719,7 @@ document.addEventListener('DOMContentLoaded', function() {
         doLogout();
       } catch (err) {
         toast(T('regInvalidCode') + ': ' + (err.message || ''), 'var(--red)');
-        btn.disabled = false;
-        btn.textContent = T('delFinalBtn');
+        setBtnLoading(btn, false);
       }
     });
   }
