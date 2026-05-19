@@ -297,6 +297,25 @@ Deno.serve(async (req) => {
     }, 429);
   }
 
+  // 30-second cooldown to prevent race conditions from double clicks
+  const { data: existingReg } = await admin
+    .from('pending_registrations')
+    .select('last_sent_at')
+    .eq('email', email)
+    .maybeSingle();
+
+  if (existingReg && existingReg.last_sent_at) {
+    const lastSent = new Date(existingReg.last_sent_at).getTime();
+    const elapsed = Date.now() - lastSent;
+    const cooldownMs = 30 * 1000;
+    if (elapsed < cooldownMs) {
+      const waitSeconds = Math.ceil((cooldownMs - elapsed) / 1000);
+      return json({
+        message: `Код уже был отправлен недавно. Пожалуйста, подождите еще ${waitSeconds} сек. перед повторной отправкой.`,
+      }, 429);
+    }
+  }
+
   const code = randomCode();
   const codeHash = await sha256(code + ':' + email);
   const pepper = Deno.env.get('REGISTRATION_PEPPER') || 'spark';

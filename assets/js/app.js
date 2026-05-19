@@ -134,8 +134,27 @@ document.addEventListener('DOMContentLoaded', function () {
       if (logoutBtn) doLogout();
     });
   });
-  initObservatory();
+  // Dynamic verification code auto-sanitization
+  var suCodeInput = document.getElementById('suCode');
+  if (suCodeInput) {
+    suCodeInput.addEventListener('input', function () {
+      var cleaned = this.value.replace(/\D/g, '').slice(0, 6);
+      if (this.value !== cleaned) {
+        this.value = cleaned;
+      }
+    });
+  }
+  var delCodeInput = document.getElementById('delete-verify-code');
+  if (delCodeInput) {
+    delCodeInput.addEventListener('input', function () {
+      var cleaned = this.value.replace(/\D/g, '').slice(0, 6);
+      if (this.value !== cleaned) {
+        this.value = cleaned;
+      }
+    });
+  }
 
+  initObservatory();
   bootApp();
 });
 
@@ -1773,7 +1792,8 @@ document.addEventListener('DOMContentLoaded', function() {
       e.preventDefault();
       if (!ME) return;
       var btn = document.getElementById('btnConfirmDel');
-      var code = document.getElementById('delete-verify-code').value;
+      var rawCode = document.getElementById('delete-verify-code').value;
+      var code = rawCode.replace(/\D/g, '');
       
       setBtnLoading(btn, true);
       try {

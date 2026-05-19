@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
     return json({ error: 'Invalid request body' }, 400);
   }
 
-  const code = String(body.code || '').trim();
+  const code = String(body.code || '').replace(/\D/g, '');
   if (!code) return json({ error: 'Code is required' }, 400);
 
   const admin = createClient(supabaseUrl, serviceKey, {

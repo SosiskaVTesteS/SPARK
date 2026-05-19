@@ -298,6 +298,23 @@ Deno.serve(async (req) => {
     return json({ error: 'Incorrect password' }, 400);
   }
 
+  // 30-second cooldown to prevent race conditions from double clicks
+  const { data: existingDel } = await admin
+    .from('pending_deletions')
+    .select('created_at')
+    .eq('email', email)
+    .maybeSingle();
+
+  if (existingDel && existingDel.created_at) {
+    const lastSent = new Date(existingDel.created_at).getTime();
+    const elapsed = Date.now() - lastSent;
+    const cooldownMs = 30 * 1000;
+    if (elapsed < cooldownMs) {
+      const waitSeconds = Math.ceil((cooldownMs - elapsed) / 1000);
+      return json({ error: `Код подтверждения уже был отправлен. Пожалуйста, подождите еще ${waitSeconds} сек.` }, 429);
+    }
+  }
+
   // Generate 6-digit code
   const code = String(Math.floor(100000 + Math.random() * 900000));
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
@@ -308,6 +325,7 @@ Deno.serve(async (req) => {
     code,
     attempts: 0,
     expires_at: expiresAt,
+    created_at: new Date().toISOString(),
   }, { onConflict: 'email' });
 
   if (dbError) {

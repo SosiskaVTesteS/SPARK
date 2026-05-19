@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
   }
 
   const email = normalizeEmail(payload.email || '');
-  const code = String(payload.code || '').trim();
+  const code = String(payload.code || '').replace(/\D/g, '');
   const password = payload.password || '';
 
   if (!email || !/^\d{6}$/.test(code) || password.length < 8) {
@@ -91,7 +91,7 @@ Deno.serve(async (req) => {
 
   const passwordHash = await sha256(password + ':' + pepper());
   if (passwordHash !== pending.password_hash) {
-    return json({ message: 'Invalid verification code' }, 400);
+    return json({ message: 'Invalid session password. Please restart registration.' }, 400);
   }
 
   // Connect to DB directly
