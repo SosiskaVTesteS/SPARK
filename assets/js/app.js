@@ -425,9 +425,14 @@ async function fetchProfile() {
   }
 }
 
-async function doLogout() {
+async function doLogout(skipSignOut) {
   try {
-    if (supa) await supa.auth.signOut();
+    if (supa && !skipSignOut) {
+      await supa.auth.signOut();
+    } else if (supa && skipSignOut) {
+      // Execute signOut asynchronously in the background so it doesn't block the UI transition
+      supa.auth.signOut().catch(function(e) { console.warn('async signOut error', e); });
+    }
   } catch (e) {
     console.warn('signOut error', e);
   }
@@ -1716,7 +1721,7 @@ document.addEventListener('DOMContentLoaded', function() {
         toast(T('delSuccess'), 'var(--ac2)');
         var moDel = document.getElementById('delete-modal');
         if (moDel) moDel.classList.remove('active');
-        doLogout();
+        doLogout(true); // Pass true to skip synchronous signOut network call
       } catch (err) {
         toast(T('regInvalidCode') + ': ' + (err.message || ''), 'var(--red)');
         setBtnLoading(btn, false);
