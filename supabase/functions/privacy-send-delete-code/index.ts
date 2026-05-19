@@ -226,19 +226,26 @@ Deno.serve(async (req) => {
     return json({ error: 'Failed to create deletion request. DB Error: ' + dbError.message }, 500);
   }
 
-  try {
-    const sent = await sendDeleteCode(email, code);
-    if (!sent) {
-      const allowDev = Deno.env.get('ALLOW_DEV_REGISTRATION_CODES') === 'true';
-      if (allowDev) {
-        return json({ ok: true, message: 'Code created (no email provider)', dev_code: code });
-      }
-      return json({ error: 'Email delivery is not configured' }, 503);
+  const allowDev = Deno.env.get('ALLOW_DEV_REGISTRATION_CODES') === 'true';
+  if (allowDev) {
+    try {
+      await sendDeleteCode(email, code);
+    } catch (e) {
+      console.error('[privacy-send-delete-code] Dev mode send error:', e);
     }
-  } catch (e: any) {
-    console.error('[privacy-send-delete-code] send error:', e?.message || e);
-    return json({ error: 'Failed to send confirmation email' }, 503);
+    return json({ ok: true, message: 'Code created (dev mode)', dev_code: code });
   }
+
+  // Send email in background to return response instantly
+  (globalThis as any).EdgeRuntime.waitUntil(
+    (async () => {
+      try {
+        await sendDeleteCode(email, code);
+      } catch (e: any) {
+        console.error('[privacy-send-delete-code] Background send error:', e?.message || e);
+      }
+    })()
+  );
 
   return json({ ok: true, message: 'Confirmation code sent to your email' });
 });

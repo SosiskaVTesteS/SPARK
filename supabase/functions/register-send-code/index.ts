@@ -319,24 +319,32 @@ Deno.serve(async (req) => {
   }
 
   const allowDev = Deno.env.get('ALLOW_DEV_REGISTRATION_CODES') === 'true';
-  let emailSent = false;
-  try {
-    emailSent = await sendVerificationEmail(email, code);
-  } catch (e) {
-    console.error('[register-send-code] send', e);
-    if (!allowDev) {
-      return json({ message: 'Could not send verification email' }, 503);
+  if (allowDev) {
+    try {
+      await sendVerificationEmail(email, code);
+    } catch (e) {
+      console.error('[register-send-code] Dev mode send error:', e);
     }
+    return json({
+      ok: true,
+      message: 'If this email can be registered, a verification code was sent.',
+      dev_code: code,
+    });
   }
 
-  if (!emailSent && !allowDev) {
-    console.error('[register-send-code] no email provider and dev codes disabled');
-    return json({ message: 'Email delivery is not configured' }, 503);
-  }
+  // Send email in background to return response instantly
+  (globalThis as any).EdgeRuntime.waitUntil(
+    (async () => {
+      try {
+        await sendVerificationEmail(email, code);
+      } catch (e: any) {
+        console.error('[register-send-code] Background send error:', e?.message || e);
+      }
+    })()
+  );
 
   return json({
     ok: true,
     message: 'If this email can be registered, a verification code was sent.',
-    ...(allowDev ? { dev_code: code } : {}),
   });
 });
