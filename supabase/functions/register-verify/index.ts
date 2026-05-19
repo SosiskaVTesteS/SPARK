@@ -126,33 +126,48 @@ Deno.serve(async (req) => {
         phone_verified: false
       });
 
-      const tx = client.createTransaction("insert_user_tx");
-      await tx.begin();
+      // Insert user
       try {
-        await tx.queryObject(`
+        await client.queryObject(`
           insert into auth.users (
             instance_id, id, aud, role, email, encrypted_password,
-            email_confirmed_at, confirmed_at, created_at, updated_at,
-            raw_app_meta_data, raw_user_meta_data, is_super_admin, is_anonymous, is_sso_user
+            email_confirmed_at, created_at, updated_at,
+            raw_app_meta_data, raw_user_meta_data, is_anonymous, is_sso_user,
+            confirmation_token, recovery_token, email_change_token_new, email_change,
+            phone_change, phone_change_token, email_change_token_current, reauthentication_token,
+            email_change_confirm_status
           ) values (
             '00000000-0000-0000-0000-000000000000', $1, 'authenticated', 'authenticated', $2, $3,
-            $4, $4, $4, $4,
-            $5, $6, false, false, false
+            $4, $4, $4,
+            $5, $6, false, false,
+            '', '', '', '',
+            '', '', '', '',
+            0
           )
         `, [userId, email, encryptedPassword, now, appMetadata, userMetadata]);
+      } catch (uErr: any) {
+        console.error('[register-verify] auth.users insert failed:', uErr.message || uErr);
+        throw new Error('users_insert_failed: ' + (uErr.message || String(uErr)));
+      }
 
-        await tx.queryObject(`
+      // Insert identity
+      try {
+        await client.queryObject(`
           insert into auth.identities (
-            id, user_id, identity_data, provider, provider_id, email, created_at, updated_at
+            id, user_id, identity_data, provider, provider_id, created_at, updated_at
           ) values (
-            $1, $2, $3, 'email', $2, $4, $5, $5
+            $1, $2, $3, 'email', $4, $5, $6
           )
-        `, [identityId, userId, identityData, email, now]);
-
-        await tx.commit();
-      } catch (err) {
-        await tx.rollback();
-        throw err;
+        `, [identityId, userId, identityData, userId, now, now]);
+      } catch (iErr: any) {
+        console.error('[register-verify] auth.identities insert failed, performing manual rollback:', iErr.message || iErr);
+        // Manual rollback: delete the created user
+        try {
+          await client.queryObject('delete from auth.users where id = $1', [userId]);
+        } catch (delErr: any) {
+          console.error('[register-verify] Rollback deletion of user failed:', delErr.message || delErr);
+        }
+        throw new Error('identities_insert_failed: ' + (iErr.message || String(iErr)));
       }
     }
   } catch (err: any) {
