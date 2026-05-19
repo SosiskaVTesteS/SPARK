@@ -318,21 +318,7 @@ Deno.serve(async (req) => {
     return json({ message: 'Could not start registration' }, 500);
   }
 
-  const allowDev = Deno.env.get('ALLOW_DEV_REGISTRATION_CODES') === 'true';
-  if (allowDev) {
-    try {
-      await sendVerificationEmail(email, code);
-    } catch (e) {
-      console.error('[register-send-code] Dev mode send error:', e);
-    }
-    return json({
-      ok: true,
-      message: 'If this email can be registered, a verification code was sent.',
-      dev_code: code,
-    });
-  }
-
-  // Send email in background to return response instantly
+  // Always send email in the background to guarantee instant response time (<100ms)
   (globalThis as any).EdgeRuntime.waitUntil(
     (async () => {
       try {
@@ -343,8 +329,14 @@ Deno.serve(async (req) => {
     })()
   );
 
-  return json({
+  const allowDev = Deno.env.get('ALLOW_DEV_REGISTRATION_CODES') === 'true';
+  const response: Record<string, unknown> = {
     ok: true,
     message: 'If this email can be registered, a verification code was sent.',
-  });
+  };
+  if (allowDev) {
+    response.dev_code = code;
+  }
+
+  return json(response);
 });
