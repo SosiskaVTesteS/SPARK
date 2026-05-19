@@ -188,21 +188,20 @@ Deno.serve(async (req) => {
 
   await Promise.all([profilePromise, cleanupPromise]);
 
-  // --- Server-side sign-in fallback (optional) ---
+  // --- Server-side sign-in replacement using generateLink ---
+  let tokenHash: string | null = null;
   try {
-    const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || serviceKey;
-    const loginClient = createClient(supabaseUrl, anonKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
+    const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
+      type: 'magiclink',
+      email: email,
     });
-    const loginRes = await loginClient.auth.signInWithPassword({ email, password });
-    if (!loginRes.error && loginRes.data?.session) {
-      sessionTokens = {
-        access_token: loginRes.data.session.access_token,
-        refresh_token: loginRes.data.session.refresh_token,
-      };
+    if (!linkError && linkData?.properties?.hashed_token) {
+      tokenHash = linkData.properties.hashed_token;
+    } else if (linkError) {
+      console.warn('[register-verify] Generate link error:', linkError.message);
     }
   } catch (err) {
-    console.warn('[register-verify] Server sign-in failed (non-fatal):', err);
+    console.warn('[register-verify] Server link generation failed (non-fatal):', err);
   }
 
   const response: Record<string, unknown> = {
@@ -210,8 +209,8 @@ Deno.serve(async (req) => {
     message: 'Registration complete.',
     user_id: userId,
   };
-  if (sessionTokens) {
-    response.session = sessionTokens;
+  if (tokenHash) {
+    response.token_hash = tokenHash;
   }
 
   return json(response);

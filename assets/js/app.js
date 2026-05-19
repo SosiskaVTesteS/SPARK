@@ -359,17 +359,19 @@ async function doVerifyRegistration() {
 
     toast(T('regComplete'), 'var(--ac2)');
 
-    // Use server-provided session tokens (instant, no network call)
-    if (verified.data && verified.data.session) {
-      var setRes = await supa.auth.setSession({
-        access_token: verified.data.session.access_token,
-        refresh_token: verified.data.session.refresh_token
+    // Use server-provided token_hash for instant, passwordless, bcryptless login
+    if (verified.data && verified.data.token_hash) {
+      var verifyRes = await supa.auth.verifyOtp({
+        token_hash: verified.data.token_hash,
+        type: 'magiclink'
       });
-      if (!setRes.error && setRes.data && setRes.data.user) {
-        ME = setRes.data.user;
+      if (!verifyRes.error && verifyRes.data && verifyRes.data.user) {
+        ME = verifyRes.data.user;
+      } else if (verifyRes.error) {
+        console.warn('verifyOtp error, trying fallback:', verifyRes.error.message);
       }
     }
-    // Fallback: sign in if session wasn't returned
+    // Fallback: sign in if session wasn't returned/established
     if (!ME) {
       var signIn = await supa.auth.signInWithPassword({
         email: PENDING_EMAIL,
@@ -438,14 +440,31 @@ async function doLogout() {
     console.warn('signOut error', e);
   }
   try {
-    for (var key in localStorage) {
-      if (key.startsWith('sb-') || key.includes('supabase.auth.token')) {
-        localStorage.removeItem(key);
+    var keys = [];
+    for (var i = 0; i < localStorage.length; i++) {
+      var k = localStorage.key(i);
+      if (k && (k.startsWith('sb-') || k.includes('supabase.auth.token'))) {
+        keys.push(k);
       }
     }
+    keys.forEach(function (key) {
+      localStorage.removeItem(key);
+    });
   } catch (err) {
     console.warn('localStorage clear error', err);
   }
+
+  // Explicitly reset session state to guarantee immediate redirection to sign-in page
+  ME = null;
+  PROFILE = { username: '@user', spk_balance: 0 };
+  appEntered = false;
+  document.documentElement.classList.remove('spark-presession');
+  document.documentElement.classList.add('auth-active');
+  var authScreen = document.getElementById('authScreen');
+  if (authScreen) authScreen.classList.remove('gone');
+  var launchOverlay = document.getElementById('launchOverlay');
+  if (launchOverlay) launchOverlay.classList.add('gone');
+
   location.reload();
 }
 
