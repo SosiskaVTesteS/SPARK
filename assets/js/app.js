@@ -1377,42 +1377,53 @@ async function doInvest() {
   }
   try {
     if (supa && ME) {
-      var rpc = await supa.rpc('invest_in_idea', {
-        p_idea_id: CUR_IDEA.id,
-        p_amount: amt
-      });
-      if (rpc.error) {
-        var rpcMsg = String(rpc.error.message || '').toLowerCase();
-        var rpcMissing = rpcMsg.includes('function') && rpcMsg.includes('invest_in_idea');
-        if (ALLOW_LEGACY_INVEST_FALLBACK && rpcMissing) {
-          usingLegacyInvestFallback = true;
-          if (!investFallbackNoticeShown) {
-            investFallbackNoticeShown = true;
-            toast('⚠️ ' + T('legacyInvestMode'), 'var(--ac2)');
-          }
-          var currentBalance = Number(PROFILE.spk_balance || 0);
-          var nextBalance = currentBalance - amt;
-          if (nextBalance < 0) throw new Error('insufficient_balance');
-          var upd = await supa.from('profiles').update({ spk_balance: nextBalance }).eq('id', ME.id);
-          if (upd.error) throw upd.error;
-          PROFILE.spk_balance = nextBalance;
-        } else {
-          throw rpc.error;
-        }
-      }
-      var payload = rpc.data;
-      var newBalance = null;
-      if (!usingLegacyInvestFallback && Array.isArray(payload) && payload[0] && Number.isFinite(Number(payload[0].new_balance))) {
-        newBalance = Number(payload[0].new_balance);
-      } else if (!usingLegacyInvestFallback && payload && Number.isFinite(Number(payload.new_balance))) {
-        newBalance = Number(payload.new_balance);
-      }
-      if (newBalance === null) {
-        await fetchProfile();
+      if (String(CUR_IDEA.id).length < 20) {
+        // Mock idea - deduct balance directly for UI testing
+        var currentBalance = Number(PROFILE.spk_balance || 0);
+        var nextBalance = currentBalance - amt;
+        if (nextBalance < 0) throw new Error('insufficient_balance');
+        var upd = await supa.from('profiles').update({ spk_balance: nextBalance }).eq('id', ME.id);
+        if (upd.error) throw upd.error;
+        PROFILE.spk_balance = nextBalance;
+        updateHeader();
       } else {
-        PROFILE.spk_balance = newBalance;
+        var rpc = await supa.rpc('invest_in_idea', {
+          p_idea_id: CUR_IDEA.id,
+          p_amount: amt
+        });
+        if (rpc.error) {
+          var rpcMsg = String(rpc.error.message || '').toLowerCase();
+          var rpcMissing = rpcMsg.includes('function') && rpcMsg.includes('invest_in_idea');
+          if (ALLOW_LEGACY_INVEST_FALLBACK && rpcMissing) {
+            usingLegacyInvestFallback = true;
+            if (!investFallbackNoticeShown) {
+              investFallbackNoticeShown = true;
+              toast('⚠️ ' + T('legacyInvestMode'), 'var(--ac2)');
+            }
+            var currentBalance = Number(PROFILE.spk_balance || 0);
+            var nextBalance = currentBalance - amt;
+            if (nextBalance < 0) throw new Error('insufficient_balance');
+            var upd = await supa.from('profiles').update({ spk_balance: nextBalance }).eq('id', ME.id);
+            if (upd.error) throw upd.error;
+            PROFILE.spk_balance = nextBalance;
+          } else {
+            throw rpc.error;
+          }
+        }
+        var payload = rpc.data;
+        var newBalance = null;
+        if (!usingLegacyInvestFallback && Array.isArray(payload) && payload[0] && Number.isFinite(Number(payload[0].new_balance))) {
+          newBalance = Number(payload[0].new_balance);
+        } else if (!usingLegacyInvestFallback && payload && Number.isFinite(Number(payload.new_balance))) {
+          newBalance = Number(payload.new_balance);
+        }
+        if (newBalance === null) {
+          await fetchProfile();
+        } else {
+          PROFILE.spk_balance = newBalance;
+        }
+        updateHeader();
       }
-      updateHeader();
     } else {
       PROFILE.spk_balance -= amt;
       updateHeader();
