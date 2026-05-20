@@ -322,7 +322,7 @@ function setBtnLoading(idOrEl, isLoading) {
         }
         if (remaining <= 0) {
           clearInterval(interval);
-          if (timerText) timerText.textContent = '0s';
+          if (timerText) timerText.textContent = '...';
           if (progressCircle) progressCircle.classList.add('pulse-glow');
         }
       }, 1000);
