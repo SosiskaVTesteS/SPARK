@@ -1486,8 +1486,7 @@ async function doPublish() {
         target_sum: ciTarget ? (parseInt(ciTarget.value, 10) || null) : null,
         expires_at: exp,
         created_at: new Date().toISOString(),
-        author_id: ME ? ME.id : null,
-        author_username: uname
+        author_id: ME ? ME.id : null
       }).select().single();
       if (r.error) throw r.error;
       if (r.data) insertLive(r.data, uname, letter);
