@@ -337,16 +337,16 @@ Deno.serve(async (req) => {
     return json({ message: 'Could not start registration' }, 500);
   }
 
-  // Always send email in the background to guarantee instant response time (<100ms)
-  (globalThis as any).EdgeRuntime.waitUntil(
-    (async () => {
-      try {
-        await sendVerificationEmail(email, code);
-      } catch (e: any) {
-        console.error('[register-send-code] Background send error:', e?.message || e);
-      }
-    })()
-  );
+  // Send email synchronously to avoid Deno Deploy waitUntil hang issues
+  try {
+    const sent = await sendVerificationEmail(email, code);
+    if (!sent) {
+      return json({ message: 'Failed to send verification email. Please try again later.' }, 500);
+    }
+  } catch (e: any) {
+    console.error('[register-send-code] Email send error:', e?.message || e);
+    return json({ message: 'Failed to send verification email.' }, 500);
+  }
 
   const allowDev = Deno.env.get('ALLOW_DEV_REGISTRATION_CODES') === 'true';
   const response: Record<string, unknown> = {

@@ -193,18 +193,19 @@ Deno.serve(async (req) => {
     return json({ error: 'Failed to create deletion request.' }, 500);
   }
 
-  // 4 — send email in background, respond instantly
+  // 4 — send email synchronously, respond immediately after
   const allowDev = Deno.env.get('ALLOW_DEV_REGISTRATION_CODES') === 'true';
   if (allowDev) {
     try { await sendEmail(email, code, lang); } catch (e) { console.error('[delete-code] dev send error:', e); }
     return json({ ok: true, message: 'Code created (dev)', dev_code: code });
   }
 
-  (globalThis as any).EdgeRuntime.waitUntil(
-    (async () => {
-      try { await sendEmail(email, code, lang); } catch (e: any) { console.error('[delete-code] bg send error:', e?.message || e); }
-    })()
-  );
+  try {
+    await sendEmail(email, code, lang);
+  } catch (e: any) {
+    console.error('[delete-code] bg send error:', e?.message || e);
+    return json({ error: 'Failed to send confirmation email' }, 500);
+  }
 
   return json({ ok: true, message: 'Confirmation code sent to your email' });
 });
