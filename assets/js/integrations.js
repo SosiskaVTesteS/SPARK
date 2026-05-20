@@ -33,6 +33,10 @@ function registrationErrorMessage(result) {
   }
   var status = result.status;
   var msg = (result.body && result.body.message) || (result.error && result.error.message) || '';
+  if (status === 504) {
+    // Edge Function timed out — cold start or server overload
+    return typeof T === 'function' ? T('reg_err_network') : 'Server took too long. Please try again.';
+  }
   if (status === 404) {
     return typeof T === 'function' ? T('reg_err_functions') : integrationMessage('registration');
   }
@@ -92,14 +96,23 @@ async function safeSupabaseCall(feature, fn, options) {
 }
 
 async function callEdgeFunction(name, body) {
-  if (!supa || !SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  // Registration endpoints have verify_jwt = false and work without an active Supabase session.
+  // Only check SUPABASE_URL + SUPABASE_ANON_KEY for them; avoid blocking on supa === null.
+  var isPublicEndpoint = (name === 'register-send-code' || name === 'register-verify');
+
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    return { ok: false, error: new Error('supabase_unconfigured'), status: 503 };
+  }
+  if (!isPublicEndpoint && !supa) {
     return { ok: false, error: new Error('supabase_unavailable') };
   }
+
   var url = SUPABASE_URL.replace(/\/$/, '') + '/functions/v1/' + name;
   var token = SUPABASE_ANON_KEY;
-  if (name !== 'register-send-code' && name !== 'register-verify') {
+  if (!isPublicEndpoint && supa) {
     try {
-      var { data: { session } } = await supa.auth.getSession();
+      var sessionData = await supa.auth.getSession();
+      var session = sessionData && sessionData.data && sessionData.data.session;
       if (session && session.access_token) token = session.access_token;
     } catch (e) {}
   }
@@ -107,7 +120,7 @@ async function callEdgeFunction(name, body) {
   var controller = new AbortController();
   var timeoutId = setTimeout(function () {
     controller.abort();
-  }, 15000); // 15-second robust timeout to guarantee the loader handles cold starts and network hangs gracefully
+  }, 20000); // 20s — accommodates Edge Function cold starts (~8-12s) with margin
 
   try {
     var res = await fetch(url, {
@@ -134,7 +147,8 @@ async function callEdgeFunction(name, body) {
   } catch (e) {
     clearTimeout(timeoutId);
     if (e.name === 'AbortError') {
-      return { ok: false, error: new Error('timeout') };
+      // Timed out — return a status so the caller can show a meaningful message
+      return { ok: false, error: new Error('timeout'), status: 504 };
     }
     return { ok: false, error: e };
   }
