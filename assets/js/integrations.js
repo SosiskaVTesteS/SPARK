@@ -26,6 +26,22 @@ function isAuthError(err) {
   return msg.indexOf('invalid api key') !== -1 || msg.indexOf('jwt') !== -1;
 }
 
+/**
+ * Reads the Supabase access_token directly from localStorage as a fallback
+ * when supa is null or auth.getSession() fails (e.g. CDN load error).
+ */
+function getStoredSessionToken() {
+  try {
+    var storageKey = 'spark_auth';
+    var raw = localStorage.getItem(storageKey);
+    if (!raw) return null;
+    var d = JSON.parse(raw);
+    // Supabase v2 stores session under currentSession or directly
+    var s = d && (d.access_token ? d : (d.currentSession || d.session || null));
+    return (s && s.access_token) ? s.access_token : null;
+  } catch (e) { return null; }
+}
+
 function registrationErrorMessage(result) {
   if (!result) return integrationMessage('registration');
   if (result.error && !result.status) {
@@ -109,13 +125,32 @@ async function callEdgeFunction(name, body) {
 
   var url = SUPABASE_URL.replace(/\/$/, '') + '/functions/v1/' + name;
   var token = SUPABASE_ANON_KEY;
-  if (!isPublicEndpoint && supa) {
-    try {
-      var sessionData = await supa.auth.getSession();
-      var session = sessionData && sessionData.data && sessionData.data.session;
-      if (session && session.access_token) token = session.access_token;
-    } catch (e) {}
+  if (!isPublicEndpoint) {
+    if (supa) {
+      try {
+        var sessionData = await supa.auth.getSession();
+        var session = sessionData && sessionData.data && sessionData.data.session;
+        if (session && session.access_token) {
+          token = session.access_token;
+        } else {
+          // getSession returned empty — try localStorage directly
+          var stored = getStoredSessionToken();
+          if (stored) token = stored;
+          else return { ok: false, error: new Error('not_authenticated') };
+        }
+      } catch (e) {
+        var stored = getStoredSessionToken();
+        if (stored) token = stored;
+        else return { ok: false, error: new Error('not_authenticated') };
+      }
+    } else {
+      // supa unavailable (CDN load failed) — try localStorage directly
+      var stored = getStoredSessionToken();
+      if (stored) token = stored;
+      else return { ok: false, error: new Error('supabase_unavailable') };
+    }
   }
+
 
   var controller = new AbortController();
   var timeoutId = setTimeout(function () {

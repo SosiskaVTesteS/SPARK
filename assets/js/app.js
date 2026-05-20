@@ -290,7 +290,7 @@ function setBtnLoading(idOrEl, isLoading) {
       btn.dataset.originalHtml = btn.innerHTML;
     }
 
-    var isCountdownBtn = ['btnSU', 'btnSUVerify', 'btnSendDelCode', 'btnConfirmDel', 'btnSUResend'].includes(btn.id);
+    var isCountdownBtn = ['btnSU', 'btnSUVerify', 'btnConfirmDel', 'btnSUResend'].includes(btn.id);
 
     if (isCountdownBtn) {
       btn.classList.add('btn-timer-loading');
@@ -1867,7 +1867,7 @@ document.addEventListener('DOMContentLoaded', function() {
   if (formDelPwd) {
     formDelPwd.addEventListener('submit', async function (e) {
       e.preventDefault();
-      if (!ME) return;
+      if (!ME) { toast(T('signInRequired') || 'Войдите в аккаунт', 'var(--red)'); return; }
       if (AuthFlowManager.isProcessing()) return;
 
       var btn = document.getElementById('btnSendDelCode');
