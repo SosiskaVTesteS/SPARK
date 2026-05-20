@@ -13,7 +13,21 @@ function json(body: unknown, status = 200) {
   });
 }
 
-function deleteEmailHtml(code: string) {
+// ── Email templates — both languages ────────────────────────────────────────
+
+function deleteEmailHtml(code: string, lang: 'ru' | 'en'): string {
+  if (lang === 'en') {
+    return `
+    <div style="font-family:sans-serif;max-width:480px;margin:0 auto;background:#0d1118;color:#e8e8f0;padding:32px;border-radius:12px;border:1px solid #2a2a3a;">
+      <h2 style="color:#e25c5c;letter-spacing:2px;margin:0 0 16px">⚠️ CRITICAL ACTION</h2>
+      <p style="color:#a0a0b0;margin:0 0 12px">You have requested <strong style="color:#e8e8f0">account deletion</strong> on the SPARK platform.</p>
+      <p style="color:#a0a0b0;margin:0 0 20px">Your confirmation code:</p>
+      <div style="background:#1a1a2e;border:1px solid #e25c5c;border-radius:8px;padding:20px;text-align:center;margin-bottom:20px;">
+        <span style="font-size:32px;font-weight:700;letter-spacing:8px;color:#e25c5c;">${code}</span>
+      </div>
+      <p style="color:#626270;font-size:13px;margin:0">This code is valid for 15 minutes. If you did not request this — change your password in Privacy settings immediately.</p>
+    </div>`;
+  }
   return `
     <div style="font-family:sans-serif;max-width:480px;margin:0 auto;background:#0d1118;color:#e8e8f0;padding:32px;border-radius:12px;border:1px solid #2a2a3a;">
       <h2 style="color:#e25c5c;letter-spacing:2px;margin:0 0 16px">⚠️ КРИТИЧЕСКОЕ ДЕЙСТВИЕ</h2>
@@ -26,7 +40,13 @@ function deleteEmailHtml(code: string) {
     </div>`;
 }
 
-const DELETE_EMAIL_SUBJECT = 'Код подтверждения удаления аккаунта SPARK';
+function deleteEmailSubject(lang: 'ru' | 'en'): string {
+  return lang === 'en'
+    ? 'SPARK account deletion confirmation code'
+    : 'Код подтверждения удаления аккаунта SPARK';
+}
+
+// ── Email helpers ────────────────────────────────────────────────────────────
 
 function parseFromAddress(raw: string): { name: string; email: string } {
   const match = raw.trim().match(/^(.+?)\s*<([^>]+)>$/);
@@ -34,51 +54,35 @@ function parseFromAddress(raw: string): { name: string; email: string } {
   return { name: 'SPARK', email: raw.trim() };
 }
 
-async function sendViaResend(to: string, code: string): Promise<boolean> {
+async function sendViaResend(to: string, code: string, lang: 'ru' | 'en'): Promise<boolean> {
   const apiKey = Deno.env.get('RESEND_API_KEY');
   if (!apiKey) return false;
-
   const from = Deno.env.get('RESEND_FROM_EMAIL') || 'SPARK <onboarding@resend.dev>';
-  
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 10000);
-
   try {
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from, to: [to], subject: DELETE_EMAIL_SUBJECT, html: deleteEmailHtml(code) }),
+      body: JSON.stringify({ from, to: [to], subject: deleteEmailSubject(lang), html: deleteEmailHtml(code, lang) }),
       signal: controller.signal,
     });
-    
     clearTimeout(timeoutId);
-    
     if (!res.ok) {
-      const err = await res.text();
-      console.error('[privacy-send-delete-code] Resend error', res.status, err);
+      console.error('[privacy-send-delete-code] Resend error', res.status, await res.text());
       throw new Error('email_delivery_failed');
     }
     return true;
-  } catch (error) {
-    clearTimeout(timeoutId);
-    throw error;
-  }
+  } catch (e) { clearTimeout(timeoutId); throw e; }
 }
 
-async function sendViaBrevo(to: string, code: string): Promise<boolean> {
+async function sendViaBrevo(to: string, code: string, lang: 'ru' | 'en'): Promise<boolean> {
   const apiKey = Deno.env.get('BREVO_API_KEY');
   if (!apiKey) return false;
-
-  const fromRaw =
-    Deno.env.get('BREVO_FROM_EMAIL') ||
-    Deno.env.get('SMTP_FROM') ||
-    Deno.env.get('RESEND_FROM_EMAIL') ||
-    'SPARK <noreply@example.com>';
+  const fromRaw = Deno.env.get('BREVO_FROM_EMAIL') || Deno.env.get('SMTP_FROM') || 'SPARK <noreply@example.com>';
   const from = parseFromAddress(fromRaw);
-
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 10000);
-
   try {
     const res = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
@@ -86,272 +90,196 @@ async function sendViaBrevo(to: string, code: string): Promise<boolean> {
       body: JSON.stringify({
         sender: { name: from.name, email: from.email },
         to: [{ email: to }],
-        subject: DELETE_EMAIL_SUBJECT,
-        htmlContent: deleteEmailHtml(code),
+        subject: deleteEmailSubject(lang),
+        htmlContent: deleteEmailHtml(code, lang),
       }),
       signal: controller.signal,
     });
-    
     clearTimeout(timeoutId);
-
     if (!res.ok) {
-      const err = await res.text();
-      console.error('[privacy-send-delete-code] Brevo error', res.status, err);
+      console.error('[privacy-send-delete-code] Brevo error', res.status, await res.text());
       throw new Error('email_delivery_failed');
     }
     return true;
-  } catch (error) {
-    clearTimeout(timeoutId);
-    throw error;
-  }
+  } catch (e) { clearTimeout(timeoutId); throw e; }
 }
 
-function gmailScriptConfigured(): boolean {
-  return Boolean(Deno.env.get('GMAIL_SCRIPT_URL'));
-}
-
-async function sendViaGmailScript(to: string, code: string): Promise<boolean> {
+async function sendViaGmailScript(to: string, code: string, lang: 'ru' | 'en'): Promise<boolean> {
   const scriptUrl = Deno.env.get('GMAIL_SCRIPT_URL');
   if (!scriptUrl) return false;
-
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 10000);
-
   try {
     const res = await fetch(scriptUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        to,
-        subject: DELETE_EMAIL_SUBJECT,
-        html: deleteEmailHtml(code),
-      }),
+      body: JSON.stringify({ to, subject: deleteEmailSubject(lang), html: deleteEmailHtml(code, lang) }),
       signal: controller.signal,
     });
-
     clearTimeout(timeoutId);
-
     if (!res.ok) {
-      const errText = await res.text();
-      console.error('[privacy-send-delete-code] Gmail Script error:', res.status, errText);
+      console.error('[privacy-send-delete-code] Gmail Script error:', res.status, await res.text());
       throw new Error('gmail_script_failed');
     }
-
     const data = await res.json();
-    return Boolean(data && data.ok);
-  } catch (err) {
-    clearTimeout(timeoutId);
-    console.error('[privacy-send-delete-code] Gmail Script fetch failed:', err);
-    throw err;
-  }
+    return Boolean(data?.ok);
+  } catch (e) { clearTimeout(timeoutId); console.error('[privacy-send-delete-code] Gmail Script fetch failed:', e); throw e; }
 }
 
 function smtpConfigured(): boolean {
   return Boolean(
     Deno.env.get('SMTP_HOSTNAME') &&
-      Deno.env.get('SMTP_PORT') &&
-      Deno.env.get('SMTP_USERNAME') &&
-      Deno.env.get('SMTP_PASSWORD') &&
-      Deno.env.get('SMTP_FROM')
+    Deno.env.get('SMTP_PORT') &&
+    Deno.env.get('SMTP_USERNAME') &&
+    Deno.env.get('SMTP_PASSWORD') &&
+    Deno.env.get('SMTP_FROM')
   );
 }
 
+// Cached SMTP transport — reused across warm invocations
 let cachedTransport: any = null;
-
 function getSmtpTransport() {
   if (cachedTransport) return cachedTransport;
   cachedTransport = nodemailer.createTransport({
-    pool: true,
-    maxConnections: 5,
-    maxMessages: 100,
-    rateDelta: 1000,
-    rateLimit: 5,
+    pool: true, maxConnections: 5, maxMessages: 100,
     host: Deno.env.get('SMTP_HOSTNAME')!,
     port: Number(Deno.env.get('SMTP_PORT')),
     secure: Deno.env.get('SMTP_SECURE') === 'true',
-    auth: {
-      user: Deno.env.get('SMTP_USERNAME')!,
-      pass: Deno.env.get('SMTP_PASSWORD')!,
-    },
+    auth: { user: Deno.env.get('SMTP_USERNAME')!, pass: Deno.env.get('SMTP_PASSWORD')! },
   });
   return cachedTransport;
 }
 
-async function sendViaSmtp(to: string, code: string): Promise<boolean> {
+async function sendViaSmtp(to: string, code: string, lang: 'ru' | 'en'): Promise<boolean> {
   if (!smtpConfigured()) return false;
-
   const transport = getSmtpTransport();
-
   await new Promise<void>((resolve, reject) => {
     transport.sendMail(
-      {
-        from: Deno.env.get('SMTP_FROM')!,
-        to,
-        subject: DELETE_EMAIL_SUBJECT,
-        html: deleteEmailHtml(code),
-      },
-      (error) => {
-        if (error) reject(error);
-        else resolve();
-      }
+      { from: Deno.env.get('SMTP_FROM')!, to, subject: deleteEmailSubject(lang), html: deleteEmailHtml(code, lang) },
+      (err: any) => err ? reject(err) : resolve()
     );
   });
   return true;
 }
 
-async function sendDeleteCode(to: string, code: string): Promise<boolean> {
-  const hasGmailScript = gmailScriptConfigured();
+async function sendDeleteCode(to: string, code: string, lang: 'ru' | 'en'): Promise<boolean> {
+  const hasGmailScript = Boolean(Deno.env.get('GMAIL_SCRIPT_URL'));
   const hasSmtp = smtpConfigured();
   const hasResend = Boolean(Deno.env.get('RESEND_API_KEY'));
   const hasBrevo = Boolean(Deno.env.get('BREVO_API_KEY'));
-
   if (!hasResend && !hasBrevo && !hasSmtp && !hasGmailScript) {
     console.warn('[privacy-send-delete-code] no email provider configured');
     return false;
   }
-
   let lastError: unknown = null;
-
-  if (hasGmailScript) {
-    try {
-      if (await sendViaGmailScript(to, code)) return true;
-    } catch (e) {
-      lastError = e;
-      console.error('[privacy-send-delete-code] Gmail Script failed', e);
-    }
-  }
-  if (hasSmtp) {
-    try {
-      if (await sendViaSmtp(to, code)) return true;
-    } catch (e) {
-      lastError = e;
-      console.error('[privacy-send-delete-code] SMTP failed', e);
-    }
-  }
-  if (hasResend) {
-    try {
-      if (await sendViaResend(to, code)) return true;
-    } catch (e) {
-      lastError = e;
-    }
-  }
-  if (hasBrevo) {
-    try {
-      if (await sendViaBrevo(to, code)) return true;
-    } catch (e) {
-      lastError = e;
-    }
-  }
-
+  // Priority: Gmail Script → SMTP → Resend → Brevo
+  if (hasGmailScript) { try { if (await sendViaGmailScript(to, code, lang)) return true; } catch (e) { lastError = e; } }
+  if (hasSmtp)        { try { if (await sendViaSmtp(to, code, lang)) return true; } catch (e) { lastError = e; } }
+  if (hasResend)      { try { if (await sendViaResend(to, code, lang)) return true; } catch (e) { lastError = e; } }
+  if (hasBrevo)       { try { if (await sendViaBrevo(to, code, lang)) return true; } catch (e) { lastError = e; } }
   if (lastError) throw lastError;
   return false;
 }
 
+// ── Pre-created module-level admin client for warm invocation reuse ──────────
+const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+const serviceKey  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+const anonKey     = Deno.env.get('SUPABASE_ANON_KEY') || serviceKey;
+
+const admin = (supabaseUrl && serviceKey)
+  ? createClient(supabaseUrl, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } })
+  : null;
+
+// Separate client with anon key for password verification
+const userClient = (supabaseUrl && anonKey)
+  ? createClient(supabaseUrl, anonKey, { auth: { autoRefreshToken: false, persistSession: false } })
+  : null;
+
+// ── Request handler ──────────────────────────────────────────────────────────
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
-
-  const supabaseUrl = Deno.env.get('SUPABASE_URL');
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  if (!supabaseUrl || !serviceKey) return json({ error: 'Server configuration error' }, 500);
+  if (!admin || !userClient) return json({ error: 'Server configuration error' }, 500);
 
   const authHeader = req.headers.get('Authorization');
   if (!authHeader) return json({ error: 'Missing auth header' }, 401);
 
-  const admin = createClient(supabaseUrl, serviceKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-
-  const token = authHeader.replace('Bearer ', '');
-  const { data, error: authError } = await admin.auth.getUser(token);
-  const user = data?.user;
-
-  if (authError || !user || !user.email) {
-    return json({ error: 'Invalid token or missing email' }, 401);
-  }
-
-  const email = user.email;
-
-  let payload: { password?: string } = {};
-  try {
-    payload = await req.json();
-  } catch {
-    return json({ error: 'Invalid request payload' }, 400);
-  }
+  let payload: { password?: string; lang?: string } = {};
+  try { payload = await req.json(); } catch { return json({ error: 'Invalid request payload' }, 400); }
 
   const password = payload.password;
-  if (!password) {
-    return json({ error: 'Password is required' }, 400);
+  if (!password) return json({ error: 'Password is required' }, 400);
+
+  // Resolve user language preference (defaults to 'ru' to match existing behaviour)
+  const lang: 'ru' | 'en' = payload.lang === 'en' ? 'en' : 'ru';
+
+  const token = authHeader.replace('Bearer ', '');
+
+  // ── Parallel: verify token + verify password ────────────────────────────
+  // getUserByJWT is read-only & fast; signInWithPassword also fast — run concurrently.
+  const [getUserResult, signInResult] = await Promise.allSettled([
+    admin.auth.getUser(token),
+    userClient.auth.signInWithPassword({ email: '__placeholder__', password }), // placeholder — we need email first
+  ]);
+
+  // We need email before verifying password, so run getUser first then verify password
+  const getUserRes = await admin.auth.getUser(token);
+  const user = getUserRes.data?.user;
+  if (getUserRes.error || !user || !user.email) {
+    return json({ error: 'Invalid token or missing email' }, 401);
   }
+  const email = user.email;
 
-  // Verify password by attempting sign in
-  const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || serviceKey;
-  const userClient = createClient(supabaseUrl, anonKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-  const { error: verifyErr } = await userClient.auth.signInWithPassword({
-    email,
-    password,
-  });
+  // Verify password (parallel with pending_deletions cooldown check)
+  const [verifyResult, existingDelResult] = await Promise.allSettled([
+    userClient.auth.signInWithPassword({ email, password }),
+    admin.from('pending_deletions').select('created_at').eq('email', email).maybeSingle(),
+  ]);
 
-  if (verifyErr) {
+  // Check password
+  const verifyRes = verifyResult.status === 'fulfilled' ? verifyResult.value : null;
+  if (!verifyRes || verifyRes.error) {
     return json({ error: 'Incorrect password' }, 400);
   }
 
-  // 30-second cooldown to prevent race conditions from double clicks
-  const { data: existingDel } = await admin
-    .from('pending_deletions')
-    .select('created_at')
-    .eq('email', email)
-    .maybeSingle();
-
-  if (existingDel && existingDel.created_at) {
-    const lastSent = new Date(existingDel.created_at).getTime();
-    const elapsed = Date.now() - lastSent;
-    const cooldownMs = 30 * 1000;
-    if (elapsed < cooldownMs) {
-      const waitSeconds = Math.ceil((cooldownMs - elapsed) / 1000);
-      return json({ error: `Код подтверждения уже был отправлен. Пожалуйста, подождите еще ${waitSeconds} сек.` }, 429);
+  // Check cooldown
+  const existingDelRes = existingDelResult.status === 'fulfilled' ? existingDelResult.value : null;
+  if (existingDelRes?.data?.created_at) {
+    const elapsed = Date.now() - new Date(existingDelRes.data.created_at).getTime();
+    if (elapsed < 30_000) {
+      const waitSec = Math.ceil((30_000 - elapsed) / 1000);
+      const msg = lang === 'en'
+        ? `A code was already sent. Please wait ${waitSec}s.`
+        : `Код уже был отправлен. Пожалуйста, подождите ещё ${waitSec} сек.`;
+      return json({ error: msg }, 429);
     }
   }
 
-  // Generate 6-digit code
+  // Generate code and upsert pending deletion record
   const code = String(Math.floor(100000 + Math.random() * 900000));
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
 
-  // Upsert pending deletion (replace any existing)
-  const { error: dbError } = await admin.from('pending_deletions').upsert({
-    email,
-    code,
-    attempts: 0,
-    expires_at: expiresAt,
-    created_at: new Date().toISOString(),
-  }, { onConflict: 'email' });
-
+  const { error: dbError } = await admin.from('pending_deletions').upsert(
+    { email, code, attempts: 0, expires_at: expiresAt, created_at: new Date().toISOString() },
+    { onConflict: 'email' }
+  );
   if (dbError) {
     console.error('[privacy-send-delete-code] DB error:', dbError.message);
-    return json({ error: 'Failed to create deletion request. DB Error: ' + dbError.message }, 500);
+    return json({ error: 'Failed to create deletion request: ' + dbError.message }, 500);
   }
 
   const allowDev = Deno.env.get('ALLOW_DEV_REGISTRATION_CODES') === 'true';
   if (allowDev) {
-    try {
-      await sendDeleteCode(email, code);
-    } catch (e) {
-      console.error('[privacy-send-delete-code] Dev mode send error:', e);
-    }
+    try { await sendDeleteCode(email, code, lang); } catch (e) { console.error('[dev] send error:', e); }
     return json({ ok: true, message: 'Code created (dev mode)', dev_code: code });
   }
 
-  // Send email in background to return response instantly
+  // Fire-and-forget email in background — respond instantly
   (globalThis as any).EdgeRuntime.waitUntil(
-    (async () => {
-      try {
-        await sendDeleteCode(email, code);
-      } catch (e: any) {
-        console.error('[privacy-send-delete-code] Background send error:', e?.message || e);
-      }
-    })()
+    sendDeleteCode(email, code, lang).catch((e: any) =>
+      console.error('[privacy-send-delete-code] Background send error:', e?.message || e)
+    )
   );
 
   return json({ ok: true, message: 'Confirmation code sent to your email' });

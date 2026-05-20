@@ -1875,7 +1875,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       AuthFlowManager.start('DEL_SENDING_CODE', btn);
       try {
-        var r = await callEdgeFunction('privacy-send-delete-code', { password: currPwd });
+        var r = await callEdgeFunction('privacy-send-delete-code', { password: currPwd, lang: LANG });
         if (!r.ok) throw new Error((r.body && r.body.error) || r.error?.message || r.error || 'Failed');
 
         toast(T('delCodeSent'), 'var(--ac2)');
