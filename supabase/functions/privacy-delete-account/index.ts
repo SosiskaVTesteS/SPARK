@@ -81,19 +81,16 @@ Deno.serve(async (req) => {
     return json({ error: 'Invalid code' }, 400);
   }
 
-  // ── Code is valid — delete user + cleanup concurrently in background ────────
-  (globalThis as any).EdgeRuntime.waitUntil(
-    Promise.allSettled([
-      admin.auth.admin.deleteUser(user.id),
-      admin.from('pending_deletions').delete().eq('email', email),
-    ]).then((results) => {
-      for (const r of results) {
-        if (r.status === 'rejected') {
-          console.error('[privacy-delete-account] Background task error:', r.reason);
-        }
-      }
-    })
-  );
+  // ── Code is valid — delete user + cleanup ────────
+  const { error: deleteError } = await admin.auth.admin.deleteUser(user.id);
+  
+  // Fire-and-forget cleanup of the deletion code
+  admin.from('pending_deletions').delete().eq('email', email).then();
+
+  if (deleteError) {
+    console.error('[privacy-delete-account] deleteUser error:', deleteError);
+    return json({ error: 'Failed to delete account. Please contact support.' }, 500);
+  }
 
   return json({ ok: true, message: 'Account successfully deleted' });
 });

@@ -1856,9 +1856,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
       // Instantly invoke doLogout to drop the user back to the signup screen within 100ms
       doLogout(true);
-      AuthFlowManager.stop();
     } catch (err) {
       toast(T('regInvalidCode') + ': ' + (err.message || ''), 'var(--red)');
+    } finally {
       AuthFlowManager.stop();
     }
   };
