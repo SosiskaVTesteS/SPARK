@@ -354,8 +354,13 @@ async function doSignIn() {
   if (!supa) { PROFILE.username = '@demo'; enterApp(); setBtnLoading('btnSI', false); return; }
 
   try {
-    var r = await supa.auth.signInWithPassword({ email: email, password: pass });
-    if (r.error) throw r.error;
+    var res = await safeSupabaseCall('auth', function () {
+      return supa.auth.signInWithPassword({ email: email, password: pass });
+    }, { timeout: 10000, silent: true });
+    
+    if (!res.ok) throw res.error;
+    var r = res.data;
+    if (r && r.error) throw r.error;
     ME = r.data.user;
     if (ME && !ME.email_confirmed_at) {
       PENDING_EMAIL = email;
@@ -1378,11 +1383,16 @@ async function doInvest() {
   try {
     if (supa && ME) {
       var rpcId = String(CUR_IDEA.id).length < 20 ? '00000000-0000-0000-0000-000000000000' : CUR_IDEA.id;
-      var rpc = await supa.rpc('invest_in_idea', {
-        p_idea_id: rpcId,
-        p_amount: amt
-      });
-      if (rpc.error) {
+      var res = await safeSupabaseCall('invest', function () {
+        return supa.rpc('invest_in_idea', {
+          p_idea_id: rpcId,
+          p_amount: amt
+        });
+      }, { timeout: 8000 });
+      
+      if (!res.ok) throw res.error;
+      var rpc = res.data;
+      if (rpc && rpc.error) {
           var rpcMsg = String(rpc.error.message || '').toLowerCase();
           var rpcMissing = rpcMsg.includes('function') && rpcMsg.includes('invest_in_idea');
           if (ALLOW_LEGACY_INVEST_FALLBACK && rpcMissing) {
@@ -1693,9 +1703,17 @@ async function restoreSession() {
         return true;
       }
     }
-    var r = await supa.auth.getSession();
-    if (r.error) {
-      console.warn('getSession error', r.error.message);
+    var res = await safeSupabaseCall('auth', function () {
+      return supa.auth.getSession();
+    }, { silent: true, timeout: 5000 });
+    
+    if (!res.ok) {
+      console.warn('getSession timeout/error', res.error);
+      return false;
+    }
+    var r = res.data;
+    if (r && r.error) {
+      console.warn('getSession error', r.error);
       return false;
     }
     if (r.data && r.data.session && r.data.session.user) {
