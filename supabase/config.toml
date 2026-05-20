@@ -9,4 +9,8 @@ verify_jwt = false
 [functions.register-verify]
 verify_jwt = false
 
+[functions.privacy-send-delete-code]
+verify_jwt = false
 
+[functions.privacy-delete-account]
+verify_jwt = false
