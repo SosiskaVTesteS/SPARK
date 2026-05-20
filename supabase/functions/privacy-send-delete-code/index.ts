@@ -200,12 +200,15 @@ Deno.serve(async (req) => {
     return json({ ok: true, message: 'Code created (dev)', dev_code: code });
   }
 
-  try {
-    await sendEmail(email, code, lang);
-  } catch (e: any) {
-    console.error('[delete-code] bg send error:', e?.message || e);
-    return json({ error: 'Failed to send confirmation email' }, 500);
-  }
+  (globalThis as any).EdgeRuntime.waitUntil(
+    (async () => {
+      try {
+        await sendEmail(email, code, lang);
+      } catch (e: any) {
+        console.error('[delete-code] bg send error:', e?.message || e);
+      }
+    })()
+  );
 
   return json({ ok: true, message: 'Confirmation code sent to your email' });
 });
