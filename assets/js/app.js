@@ -1378,12 +1378,10 @@ async function doInvest() {
   try {
     if (supa && ME) {
       if (String(CUR_IDEA.id).length < 20) {
-        // Mock idea - deduct balance directly for UI testing
+        // Mock idea - deduct balance directly for UI testing (local state only)
         var currentBalance = Number(PROFILE.spk_balance || 0);
         var nextBalance = currentBalance - amt;
         if (nextBalance < 0) throw new Error('insufficient_balance');
-        var upd = await supa.from('profiles').update({ spk_balance: nextBalance }).eq('id', ME.id);
-        if (upd.error) throw upd.error;
         PROFILE.spk_balance = nextBalance;
         updateHeader();
       } else {
