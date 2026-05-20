@@ -568,10 +568,31 @@ async function fetchProfile() {
   var r = await safeSupabaseCall('database', function () {
     return supa.from('profiles').select('*').eq('id', ME.id).single();
   }, { silent: true });
+
   if (r.ok && r.data && r.data.data) {
     var row = r.data.data;
     PROFILE.username = row.username || '@user';
-    PROFILE.spk_balance = row.spk_balance || 4520;
+    PROFILE.spk_balance = row.spk_balance || 0;
+  }
+
+  // Fetch sparks count (ideas)
+  var ideasRes = await safeSupabaseCall('database', function () {
+    return supa.from('ideas').select('id', { count: 'exact', head: true }).eq('author_id', ME.id);
+  }, { silent: true });
+  if (ideasRes.ok && ideasRes.data) {
+    PROFILE.ideas_count = ideasRes.data.count || 0;
+  } else {
+    PROFILE.ideas_count = 0;
+  }
+
+  // Fetch rank based on SPK balance
+  var rankRes = await safeSupabaseCall('database', function () {
+    return supa.from('profiles').select('id', { count: 'exact', head: true }).gt('spk_balance', PROFILE.spk_balance || 0);
+  }, { silent: true });
+  if (rankRes.ok && rankRes.data && rankRes.data.count !== null) {
+    PROFILE.rank = rankRes.data.count + 1;
+  } else {
+    PROFILE.rank = 1;
   }
 }
 
@@ -987,10 +1008,10 @@ function profileHTML(sfx) {
     + '<div class="pname">' + safeUser + '</div>'
     + '<span class="pbadge">' + T('verifiedInvestor') + '</span></div>'
     + '<div class="srow" style="margin-bottom:18px">'
-    + '<div class="sbox"><span class="sval">12</span><span class="skey">' + T('ideas') + '</span></div>'
+    + '<div class="sbox"><span class="sval">' + (PROFILE.ideas_count || 0) + '</span><span class="skey">' + T('ideas') + '</span></div>'
     + '<div class="sbox"><span class="sval">+84%</span><span class="skey">' + T('profit') + '</span></div>'
     + '<div class="sbox"><span class="sval">38</span><span class="skey">' + T('invested') + '</span></div>'
-    + '<div class="sbox"><span class="sval">#41</span><span class="skey">' + T('rank') + '</span></div></div>'
+    + '<div class="sbox"><span class="sval">#' + (PROFILE.rank || 1) + '</span><span class="skey">' + T('rank') + '</span></div></div>'
     + '<div class="divider"></div>'
     + '<div class="stitle" style="margin-top:14px">' + T('wallet') + '</div>'
     + '<div class="wcrd"><div><div class="wamt">' + PROFILE.spk_balance.toLocaleString() + ' <small>SPK</small></div><div class="wsub">' + T('availableBalance') + '</div></div>'
