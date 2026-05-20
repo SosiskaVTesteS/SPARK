@@ -1361,7 +1361,7 @@ async function doInvest() {
     return;
   }
   if (amt > PROFILE.spk_balance) {
-    toast('вќЊ ' + T('insufficientBalance'), 'var(--red)');
+    toast('❌ ' + T('insufficientBalance'), 'var(--red)');
     if (btn) btn.disabled = false;
     return;
   }
@@ -1378,7 +1378,7 @@ async function doInvest() {
           usingLegacyInvestFallback = true;
           if (!investFallbackNoticeShown) {
             investFallbackNoticeShown = true;
-            toast('вљ пёЏ ' + T('legacyInvestMode'), 'var(--ac2)');
+            toast('⚠️ ' + T('legacyInvestMode'), 'var(--ac2)');
           }
           var currentBalance = Number(PROFILE.spk_balance || 0);
           var nextBalance = currentBalance - amt;
@@ -1408,7 +1408,7 @@ async function doInvest() {
       updateHeader();
     }
     closeMo('moInvest');
-    toast('вњ… Invested ' + amt + ' SPK!', 'var(--ac)');
+    toast('✅ Invested ' + amt + ' SPK!', 'var(--ac)');
     renderFeed();
   } catch (e) {
     reportClientError('invest_failed', {
@@ -1418,11 +1418,11 @@ async function doInvest() {
     });
     console.warn(e);
     var msg = String((e && e.message) || '').toLowerCase();
-    if (msg.includes('insufficient_balance')) toast('вќЊ ' + T('insufficientBalance'), 'var(--red)');
-    else if (msg.includes('amount_below_min_bet')) toast('вќЊ ' + T('amountBelowMinBet'), 'var(--red)');
-    else if (msg.includes('idea_not_found')) toast('вќЊ ' + T('ideaNotFound'), 'var(--red)');
-    else if (msg.includes('auth_required')) toast('вќЊ ' + T('signInRequired'), 'var(--red)');
-    else toast('вќЊ ' + T('secureInvestFailed'), 'var(--red)');
+    if (msg.includes('insufficient_balance')) toast('❌ ' + T('insufficientBalance'), 'var(--red)');
+    else if (msg.includes('amount_below_min_bet')) toast('❌ ' + T('amountBelowMinBet'), 'var(--red)');
+    else if (msg.includes('idea_not_found')) toast('❌ ' + T('ideaNotFound'), 'var(--red)');
+    else if (msg.includes('auth_required')) toast('❌ ' + T('signInRequired'), 'var(--red)');
+    else toast('❌ ' + T('secureInvestFailed'), 'var(--red)');
   } finally {
     if (btn) btn.disabled = false;
   }
@@ -1472,7 +1472,7 @@ async function doPublish() {
       if (r.data) insertLive(r.data, uname, letter);
     } catch (e) {
       console.warn('insert error', e);
-      toast('вќЊ Publish failed. Try again.', 'var(--red)');
+      toast('❌ Publish failed. Try again.', 'var(--red)');
       return;
     }
   } else {
