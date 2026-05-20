@@ -1472,7 +1472,7 @@ async function doPublish() {
   var title = ciTitle.value.trim();
   var desc = ciDesc ? ciDesc.value.trim() : '';
   var min = ciMin ? clampAmount(ciMin.value, 1, 1000000) : 10;
-  if (!title) { toast('вќ— Add a title', 'var(--red)'); return; }
+  if (!title) { toast('❌ Add a title', 'var(--red)'); return; }
   var secs = { '24h': 86400, '7d': 604800 }[selDur] || 86400;
   var exp = new Date(Date.now() + secs * 1000).toISOString();
   var uname = PROFILE.username;
@@ -1481,9 +1481,9 @@ async function doPublish() {
     try {
       var r = await supa.from('ideas').insert({
         title: title,
-        desc: desc,
+        description: desc,
         min_bet: min,
-        target: ciTarget ? (parseInt(ciTarget.value, 10) || null) : null,
+        target_sum: ciTarget ? (parseInt(ciTarget.value, 10) || null) : null,
         expires_at: exp,
         created_at: new Date().toISOString(),
         author_id: ME ? ME.id : null,
