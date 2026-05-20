@@ -567,7 +567,7 @@ async function fetchProfile() {
   if (!supa || !ME) return;
   var r = await safeSupabaseCall('database', function () {
     return supa.from('profiles').select('*').eq('id', ME.id).single();
-  }, { silent: true });
+  }, { silent: true, timeout: 5000 });
 
   if (r.ok && r.data && r.data.data) {
     var row = r.data.data;
@@ -575,25 +575,35 @@ async function fetchProfile() {
     PROFILE.spk_balance = row.spk_balance || 0;
   }
 
-  // Fetch sparks count (ideas)
-  var ideasRes = await safeSupabaseCall('database', function () {
-    return supa.from('ideas').select('id', { count: 'exact', head: true }).eq('author_id', ME.id);
-  }, { silent: true });
-  if (ideasRes.ok && ideasRes.data) {
-    PROFILE.ideas_count = ideasRes.data.count || 0;
-  } else {
-    PROFILE.ideas_count = 0;
-  }
+  // Load secondary stats asynchronously without blocking the startup sequence
+  setTimeout(async function() {
+    var ideasPromise = safeSupabaseCall('database', function () {
+      return supa.from('ideas').select('id', { count: 'exact', head: true }).eq('author_id', ME.id);
+    }, { silent: true, timeout: 5000 });
 
-  // Fetch rank based on SPK balance
-  var rankRes = await safeSupabaseCall('database', function () {
-    return supa.from('profiles').select('id', { count: 'exact', head: true }).gt('spk_balance', PROFILE.spk_balance || 0);
-  }, { silent: true });
-  if (rankRes.ok && rankRes.data && rankRes.data.count !== null) {
-    PROFILE.rank = rankRes.data.count + 1;
-  } else {
-    PROFILE.rank = 1;
-  }
+    var rankPromise = safeSupabaseCall('database', function () {
+      return supa.from('profiles').select('id', { count: 'exact', head: true }).gt('spk_balance', PROFILE.spk_balance || 0);
+    }, { silent: true, timeout: 5000 });
+
+    var [ideasRes, rankRes] = await Promise.all([ideasPromise, rankPromise]);
+
+    if (ideasRes.ok && ideasRes.data) {
+      PROFILE.ideas_count = ideasRes.data.count || 0;
+    } else {
+      PROFILE.ideas_count = 0;
+    }
+
+    if (rankRes.ok && rankRes.data && rankRes.data.count !== null) {
+      PROFILE.rank = rankRes.data.count + 1;
+    } else {
+      PROFILE.rank = 1;
+    }
+
+    if (appEntered) {
+      updateHeader();
+      renderProfile();
+    }
+  }, 0);
 }
 
 async function doLogout(skipSignOut) {

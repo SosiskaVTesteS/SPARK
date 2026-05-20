@@ -98,8 +98,14 @@ async function safeSupabaseCall(feature, fn, options) {
     if (!options.silent) featureToast(feature);
     return { ok: false, error: new Error('supabase_unavailable'), demo: true };
   }
+  
+  var timeoutMs = options.timeout || 8000;
+  
   try {
-    var result = await fn();
+    var result = await Promise.race([
+      fn(),
+      new Promise(function(_, reject) { setTimeout(function() { reject(new Error('timeout')); }, timeoutMs); })
+    ]);
     if (result && result.error) {
       if (!options.silent) featureToast(feature, result.error);
       return { ok: false, error: result.error, data: result.data };
