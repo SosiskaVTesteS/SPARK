@@ -1,6 +1,4 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
-import { Pool } from 'https://deno.land/x/postgres@v0.17.0/mod.ts';
-import bcrypt from 'npm:bcryptjs';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -31,19 +29,13 @@ function pepper(): string {
   return Deno.env.get('REGISTRATION_PEPPER') || 'spark';
 }
 
-// Highly optimized persistent global PostgreSQL connection pool.
-// Keeps TCP/SSL connections open across warm Edge Function invocations,
-// saving 200ms - 500ms of latency per verification request!
-const dbUrl = Deno.env.get('SUPABASE_DB_URL') || '';
-const pool = new Pool(dbUrl, 3, true);
-
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   if (req.method !== 'POST') return json({ message: 'Method not allowed' }, 405);
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  if (!supabaseUrl || !serviceKey || !dbUrl) {
+  if (!supabaseUrl || !serviceKey) {
     return json({ message: 'Server configuration error' }, 500);
   }
 
@@ -99,80 +91,31 @@ Deno.serve(async (req) => {
     return json({ message: 'Invalid session password. Please restart registration.' }, 400);
   }
 
-  // Acquire a pre-established connection client from our global Pool for sub-millisecond database queries
-  const client = await pool.connect();
   let userId: string | null = null;
-
   try {
     // 1. Check if user already exists
-    const checkUser = await client.queryObject<{ id: string }>(
-      'select id from auth.users where email = $1',
-      [email]
-    );
-
-    if (checkUser.rows.length > 0) {
-      userId = checkUser.rows[0].id;
+    const { data: existingUser } = await admin.auth.admin.getUserByEmail(email);
+    if (existingUser && existingUser.user) {
+      userId = existingUser.user.id;
     } else {
-      // 2. Insert user directly to completely bypass slow/hanging GoTrue welcome emails
-      userId = crypto.randomUUID();
-      const identityId = crypto.randomUUID();
-      const salt = bcrypt.genSaltSync(10);
-      const encryptedPassword = bcrypt.hashSync(password, salt);
-      const now = new Date().toISOString();
-      const appMetadata = JSON.stringify({ provider: 'email', providers: ['email'] });
-      const userMetadata = JSON.stringify({ username: pending.username });
-      const identityData = JSON.stringify({
-        sub: userId,
+      // 2. Create the user natively via Supabase Admin API with confirmed email
+      const { data: createdUser, error: createError } = await admin.auth.admin.createUser({
         email: email,
-        email_verified: true,
-        phone_verified: false
+        password: password,
+        email_confirm: true,
+        user_metadata: { username: pending.username }
       });
-
-      // Insert user row
-      await client.queryObject(`
-        insert into auth.users (
-          instance_id, id, aud, role, email, encrypted_password,
-          email_confirmed_at, created_at, updated_at,
-          raw_app_meta_data, raw_user_meta_data, is_anonymous, is_sso_user,
-          confirmation_token, recovery_token, email_change_token_new, email_change,
-          phone_change, phone_change_token, email_change_token_current, reauthentication_token,
-          email_change_confirm_status
-        ) values (
-          '00000000-0000-0000-0000-000000000000', $1, 'authenticated', 'authenticated', $2, $3,
-          $4, $4, $4,
-          $5, $6, false, false,
-          '', '', '', '',
-          '', '', '', '',
-          0
-        )
-      `, [userId, email, encryptedPassword, now, appMetadata, userMetadata]);
-
-      // Insert identity row
-      try {
-        await client.queryObject(`
-          insert into auth.identities (
-            id, user_id, identity_data, provider, provider_id, created_at, updated_at
-          ) values (
-            $1, $2, $3, 'email', $4, $5, $6
-          )
-        `, [identityId, userId, identityData, userId, now, now]);
-      } catch (iErr: any) {
-        console.error('[register-verify] auth.identities insert failed, performing manual rollback:', iErr.message || iErr);
-        // Manual rollback: delete the created user
-        try {
-          await client.queryObject('delete from auth.users where id = $1', [userId]);
-        } catch (delErr: any) {
-          console.error('[register-verify] Rollback deletion of user failed:', delErr.message || delErr);
-        }
-        throw new Error('identities_insert_failed: ' + (iErr.message || String(iErr)));
+      if (createError) {
+        return json({ message: 'Could not complete registration: ' + createError.message }, 400);
       }
+      if (!createdUser || !createdUser.user) {
+        return json({ message: 'Could not complete registration: user creation returned no data' }, 500);
+      }
+      userId = createdUser.user.id;
     }
   } catch (err: any) {
     console.error('[register-verify] Direct DB execution failed:', err.message || err);
     return json({ message: 'Could not complete registration: ' + (err.message || String(err)) }, 500);
-  } finally {
-    // Crucial: Always release the client connection back to the persistent global pool!
-    client.release();
   }
 
   // --- Parallel background: profiles upsert + pending cleanup ---

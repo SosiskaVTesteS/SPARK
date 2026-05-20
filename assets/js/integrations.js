@@ -107,7 +107,7 @@ async function callEdgeFunction(name, body) {
   var controller = new AbortController();
   var timeoutId = setTimeout(function () {
     controller.abort();
-  }, 8000); // 8-second robust timeout to guarantee the loader stops quickly and handles network hangs elegantly
+  }, 15000); // 15-second robust timeout to guarantee the loader handles cold starts and network hangs gracefully
 
   try {
     var res = await fetch(url, {
