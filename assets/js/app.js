@@ -1377,19 +1377,12 @@ async function doInvest() {
   }
   try {
     if (supa && ME) {
-      if (String(CUR_IDEA.id).length < 20) {
-        // Mock idea - deduct balance directly for UI testing (local state only)
-        var currentBalance = Number(PROFILE.spk_balance || 0);
-        var nextBalance = currentBalance - amt;
-        if (nextBalance < 0) throw new Error('insufficient_balance');
-        PROFILE.spk_balance = nextBalance;
-        updateHeader();
-      } else {
-        var rpc = await supa.rpc('invest_in_idea', {
-          p_idea_id: CUR_IDEA.id,
-          p_amount: amt
-        });
-        if (rpc.error) {
+      var rpcId = String(CUR_IDEA.id).length < 20 ? '00000000-0000-0000-0000-000000000000' : CUR_IDEA.id;
+      var rpc = await supa.rpc('invest_in_idea', {
+        p_idea_id: rpcId,
+        p_amount: amt
+      });
+      if (rpc.error) {
           var rpcMsg = String(rpc.error.message || '').toLowerCase();
           var rpcMissing = rpcMsg.includes('function') && rpcMsg.includes('invest_in_idea');
           if (ALLOW_LEGACY_INVEST_FALLBACK && rpcMissing) {
@@ -1421,7 +1414,6 @@ async function doInvest() {
           PROFILE.spk_balance = newBalance;
         }
         updateHeader();
-      }
     } else {
       PROFILE.spk_balance -= amt;
       updateHeader();
