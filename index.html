@@ -17,10 +17,10 @@
 <meta name="twitter:description" content="Publish ideas, discover market signals, and invest with SPK.">
 <meta name="twitter:image" content="https://spark.app/assets/og-image.png">
 <link rel="canonical" href="https://spark.app/">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co; img-src 'self' data: https:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co; img-src 'self' data: https:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;">
 <title>SPARK — Idea Exchange</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" onerror="(function(){var s=document.createElement('script');s.src='https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js';document.head.appendChild(s);})()"></script>
 <link rel="stylesheet" href="assets/css/main.css">
 <!-- Мгновенное скрытие экрана входа при наличии сессии (до рендера) -->
 <style>
@@ -487,7 +487,7 @@
 <div id="toast"></div>
 
 <!-- Настройка: скопируйте assets/js/config.example.js → assets/js/config.js -->
-<script src="assets/js/config.js" onerror="document.write('&lt;script src=&quot;assets/js/config.example.js&quot;&gt;&lt;\/script&gt;')"></script>
+<script src="assets/js/config.js" onerror="window.SPARK_CONFIG=window.SPARK_CONFIG||{}"></script>
 <script src="assets/js/integrations.js"></script>
 <script src="assets/js/data.js"></script>
 <script src="assets/js/app.js"></script>
