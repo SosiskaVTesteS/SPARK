@@ -114,21 +114,14 @@ Deno.serve(async (req) => {
     });
 
     if (createError) {
-      // If the email already exists, reuse the existing account
       if (
         createError.message?.toLowerCase().includes('already') ||
         createError.message?.toLowerCase().includes('exists') ||
         createError.status === 422
       ) {
-        const { data: existing } = await admin.auth.admin.getUserByEmail(email);
-        if (existing?.user?.id) {
-          userId = existing.user.id;
-        } else {
-          return json({ message: 'Registration failed: ' + createError.message }, 400);
-        }
-      } else {
-        return json({ message: 'Registration failed: ' + createError.message }, 400);
+        return json({ message: 'User already registered. Please sign in.' }, 400);
       }
+      return json({ message: 'Registration failed: ' + createError.message }, 400);
     } else if (!createdUser?.user?.id) {
       return json({ message: 'Registration failed: no user data returned' }, 500);
     } else {
