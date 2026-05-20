@@ -74,12 +74,12 @@ Deno.serve(async (req) => {
   }
 
   if (new Date(pending.expires_at).getTime() < Date.now()) {
-    // Fire-and-forget cleanup
-    admin.from('pending_registrations').delete().eq('email', email);
+    await admin.from('pending_registrations').delete().eq('email', email);
     return json({ message: 'Verification code expired' }, 400);
   }
 
   if ((pending.attempts ?? 0) >= 5) {
+    await admin.from('pending_registrations').delete().eq('email', email);
     return json({ message: 'Too many attempts. Request a new code.' }, 429);
   }
 
@@ -90,8 +90,7 @@ Deno.serve(async (req) => {
   ]);
 
   if (codeHash !== pending.code_hash) {
-    // Fire-and-forget attempts increment
-    admin
+    await admin
       .from('pending_registrations')
       .update({ attempts: (pending.attempts || 0) + 1 })
       .eq('email', email);

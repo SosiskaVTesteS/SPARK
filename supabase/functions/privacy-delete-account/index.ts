@@ -63,19 +63,17 @@ Deno.serve(async (req) => {
   }
 
   if (pending.expires_at && new Date(pending.expires_at).getTime() < Date.now()) {
-    // Fire-and-forget cleanup
-    admin.from('pending_deletions').delete().eq('email', email);
+    await admin.from('pending_deletions').delete().eq('email', email);
     return json({ error: 'Code has expired. Please request a new one.' }, 400);
   }
 
   if ((pending.attempts ?? 0) >= 5) {
-    admin.from('pending_deletions').delete().eq('email', email);
+    await admin.from('pending_deletions').delete().eq('email', email);
     return json({ error: 'Too many failed attempts. Please request a new code.' }, 429);
   }
 
   if (pending.code !== code) {
-    // Fire-and-forget attempt increment
-    admin.from('pending_deletions')
+    await admin.from('pending_deletions')
       .update({ attempts: (pending.attempts || 0) + 1 })
       .eq('email', email);
     return json({ error: 'Invalid code' }, 400);
@@ -84,8 +82,7 @@ Deno.serve(async (req) => {
   // ── Code is valid — delete user + cleanup ────────
   const { error: deleteError } = await admin.auth.admin.deleteUser(user.id);
   
-  // Fire-and-forget cleanup of the deletion code
-  admin.from('pending_deletions').delete().eq('email', email).then();
+  await admin.from('pending_deletions').delete().eq('email', email);
 
   if (deleteError) {
     console.error('[privacy-delete-account] deleteUser error:', deleteError);
