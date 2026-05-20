@@ -134,13 +134,16 @@ document.addEventListener('DOMContentLoaded', function () {
       if (logoutBtn) doLogout();
     });
   });
-  // Dynamic verification code auto-sanitization
+  // Dynamic verification code auto-sanitization & instant auto-verification!
   var suCodeInput = document.getElementById('suCode');
   if (suCodeInput) {
     suCodeInput.addEventListener('input', function () {
       var cleaned = this.value.replace(/\D/g, '').slice(0, 6);
       if (this.value !== cleaned) {
         this.value = cleaned;
+      }
+      if (cleaned.length === 6 && !AuthFlowManager.isProcessing()) {
+        doVerifyRegistration();
       }
     });
   }
@@ -150,6 +153,9 @@ document.addEventListener('DOMContentLoaded', function () {
       var cleaned = this.value.replace(/\D/g, '').slice(0, 6);
       if (this.value !== cleaned) {
         this.value = cleaned;
+      }
+      if (cleaned.length === 6 && !AuthFlowManager.isProcessing()) {
+        doConfirmDeleteAccount();
       }
     });
   }
@@ -243,6 +249,31 @@ function setAuthErr(m) {
 
 var activeButtonTimers = new Map();
 
+// ════ Unified Auth State Machine ════
+var AuthFlowManager = {
+  state: 'IDLE',
+  btn: null,
+  isProcessing: function () {
+    return this.state !== 'IDLE';
+  },
+  start: function (stateName, btnEl) {
+    if (this.isProcessing()) return false;
+    this.state = stateName;
+    this.btn = btnEl;
+    if (btnEl) {
+      setBtnLoading(btnEl, true);
+    }
+    return true;
+  },
+  stop: function () {
+    if (this.btn) {
+      setBtnLoading(this.btn, false);
+    }
+    this.state = 'IDLE';
+    this.btn = null;
+  }
+};
+
 function setBtnLoading(idOrEl, isLoading) {
   var btn = typeof idOrEl === 'string' ? document.getElementById(idOrEl) : idOrEl;
   if (!btn) return;
@@ -259,7 +290,7 @@ function setBtnLoading(idOrEl, isLoading) {
       btn.dataset.originalHtml = btn.innerHTML;
     }
 
-    var isCountdownBtn = ['btnSU', 'btnSUVerify', 'btnSendDelCode', 'btnConfirmDel'].includes(btn.id);
+    var isCountdownBtn = ['btnSU', 'btnSUVerify', 'btnSendDelCode', 'btnConfirmDel', 'btnSUResend'].includes(btn.id);
 
     if (isCountdownBtn) {
       btn.classList.add('btn-timer-loading');
@@ -346,6 +377,8 @@ async function doSignIn() {
 }
 
 async function doSignUp() {
+  if (AuthFlowManager.isProcessing()) return;
+
   var nickEl = document.getElementById('suNick');
   var emailEl = document.getElementById('suEmail');
   var passEl = document.getElementById('suPass');
@@ -362,10 +395,15 @@ async function doSignUp() {
   if (pass !== pass2) { setAuthErr('Passwords do not match'); return; }
 
   var btn = document.getElementById('btnSU');
-  setBtnLoading(btn, true);
+  AuthFlowManager.start('REG_SENDING_CODE', btn);
   setAuthErr('');
 
-  if (!supa) { PROFILE.username = '@' + nick; enterApp(); setBtnLoading(btn, false); return; }
+  if (!supa) {
+    PROFILE.username = '@' + nick;
+    enterApp();
+    AuthFlowManager.stop();
+    return;
+  }
 
   PENDING_EMAIL = email;
   PENDING_NICK = nick;
@@ -381,6 +419,7 @@ async function doSignUp() {
       var regMsg = registrationErrorMessage(sent);
       setAuthErr(regMsg);
       toast(regMsg, 'var(--red)');
+      AuthFlowManager.stop();
       return;
     }
     toast(T('regCodeSent'), 'var(--ac2)');
@@ -394,13 +433,14 @@ async function doSignUp() {
     featureToast('registration', e);
     setAuthErr(integrationMessage('registration'));
   } finally {
-    setBtnLoading(btn, false);
+    AuthFlowManager.stop();
   }
 }
 
 async function doVerifyRegistration() {
+  if (AuthFlowManager.isProcessing()) return;
+
   var codeEl = document.getElementById('suCode');
-  // Sanitize the code to handle copy-pasting or autofilling with spaces/hyphens on mobile
   var code = codeEl ? codeEl.value.replace(/\D/g, '') : '';
   if (!/^\d{6}$/.test(code)) {
     setAuthErr(T('regInvalidCode'));
@@ -413,7 +453,7 @@ async function doVerifyRegistration() {
   }
 
   var btn = document.getElementById('btnSUVerify');
-  setBtnLoading(btn, true);
+  AuthFlowManager.start('REG_VERIFYING', btn);
   setAuthErr('');
 
   try {
@@ -426,67 +466,100 @@ async function doVerifyRegistration() {
       var vMsg = registrationErrorMessage(verified);
       setAuthErr(vMsg);
       toast(vMsg, 'var(--red)');
+      AuthFlowManager.stop();
       return;
     }
 
+    // ════ Optimistic UI Transition ════
+    // Transition IMMEDIATELY to application since database setup succeeded!
     toast(T('regComplete'), 'var(--ac2)');
 
-    // Use server-provided token_hash for instant, passwordless, bcryptless login
-    if (verified.data && verified.data.token_hash) {
-      var verifyRes = await supa.auth.verifyOtp({
-        token_hash: verified.data.token_hash,
-        type: 'magiclink'
-      });
-      if (!verifyRes.error && verifyRes.data && verifyRes.data.user) {
-        ME = verifyRes.data.user;
-      } else if (verifyRes.error) {
-        console.warn('verifyOtp error, trying fallback:', verifyRes.error.message);
-      }
-    }
-    // Fallback: sign in if session wasn't returned/established
-    if (!ME) {
-      var signIn = await supa.auth.signInWithPassword({
-        email: PENDING_EMAIL,
-        password: PENDING_REG_PASSWORD
-      });
-      if (signIn.error) throw signIn.error;
-      ME = signIn.data.user;
-    }
     PROFILE.username = '@' + PENDING_NICK;
-    PROFILE.spk_balance = 4520; // Устанавливаем баланс напрямую, так как мы точно знаем его при создании
-    PENDING_REG_PASSWORD = '';
+    PROFILE.spk_balance = 4520;
+
+    var tempUser = {
+      email: PENDING_EMAIL,
+      user_metadata: { username: '@' + PENDING_NICK }
+    };
+    ME = tempUser;
+
     showRegistrationForm();
     enterApp();
+    AuthFlowManager.stop();
+
+    // Async background session handshake
+    (async function () {
+      try {
+        var established = false;
+        if (verified.data && verified.data.token_hash) {
+          var verifyRes = await supa.auth.verifyOtp({
+            token_hash: verified.data.token_hash,
+            type: 'magiclink'
+          });
+          if (!verifyRes.error && verifyRes.data && verifyRes.data.user) {
+            ME = verifyRes.data.user;
+            established = true;
+            await fetchProfile();
+            updateHeader();
+          }
+        }
+        if (!established) {
+          var signIn = await supa.auth.signInWithPassword({
+            email: PENDING_EMAIL,
+            password: PENDING_REG_PASSWORD
+          });
+          if (signIn.error) throw signIn.error;
+          ME = signIn.data.user;
+          await fetchProfile();
+          updateHeader();
+        }
+      } catch (bgError) {
+        console.warn('[background session handshake failed]:', bgError);
+        toast('Session alignment failed. Re-authenticating...', 'var(--red)');
+        doLogout(true);
+      } finally {
+        PENDING_REG_PASSWORD = '';
+      }
+    })();
   } catch (e) {
     console.error('verify registration', e);
     var msg = isAuthError(e) ? integrationMessage('auth') : (e.message || T('regInvalidCode'));
     setAuthErr(msg);
     toast(msg, 'var(--red)');
-  } finally {
-    setBtnLoading(btn, false);
+    AuthFlowManager.stop();
   }
 }
 
 async function resendRegistrationCode() {
+  if (AuthFlowManager.isProcessing()) return;
   if (!PENDING_EMAIL || !PENDING_REG_PASSWORD || !PENDING_NICK) {
     backToRegistrationForm();
     return;
   }
+  var btn = document.getElementById('btnSUResend');
+  AuthFlowManager.start('REG_RESENDING_CODE', btn);
   setAuthErr('');
-  var sent = await callEdgeFunction('register-send-code', {
-    email: PENDING_EMAIL,
-    password: PENDING_REG_PASSWORD,
-    nickname: PENDING_NICK
-  });
-  if (!sent.ok) {
-    var resendMsg = registrationErrorMessage(sent);
-    toast(resendMsg, 'var(--red)');
-    setAuthErr(resendMsg);
-    return;
-  }
-  toast(T('regCodeSent'), 'var(--ac2)');
-  if (sent.data && sent.data.dev_code) {
-    console.info('[dev] registration code:', sent.data.dev_code);
+
+  try {
+    var sent = await callEdgeFunction('register-send-code', {
+      email: PENDING_EMAIL,
+      password: PENDING_REG_PASSWORD,
+      nickname: PENDING_NICK
+    });
+    if (!sent.ok) {
+      var resendMsg = registrationErrorMessage(sent);
+      toast(resendMsg, 'var(--red)');
+      setAuthErr(resendMsg);
+      return;
+    }
+    toast(T('regCodeSent'), 'var(--ac2)');
+    if (sent.data && sent.data.dev_code) {
+      console.info('[dev] registration code:', sent.data.dev_code);
+    }
+  } catch (e) {
+    console.error('resend registration code error:', e);
+  } finally {
+    AuthFlowManager.stop();
   }
 }
 
@@ -1758,22 +1831,62 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
+  window.doConfirmDeleteAccount = async function () {
+    if (!ME) return;
+    if (AuthFlowManager.isProcessing()) return;
+
+    var btn = document.getElementById('btnConfirmDel');
+    var rawCode = document.getElementById('delete-verify-code').value;
+    var code = rawCode.replace(/\D/g, '');
+
+    if (!/^\d{6}$/.test(code)) {
+      toast(T('regInvalidCode'), 'var(--red)');
+      return;
+    }
+
+    AuthFlowManager.start('DEL_CONFIRMING', btn);
+    try {
+      var r = await callEdgeFunction('privacy-delete-account', { code: code });
+      if (!r.ok) throw new Error(r.error?.message || r.error || 'Failed');
+
+      // Optimistic Deletion Close & Complete session wipe
+      toast(T('delSuccess'), 'var(--ac2)');
+      var moDel = document.getElementById('delete-modal');
+      if (moDel) moDel.classList.remove('active');
+
+      // Instantly invoke doLogout to drop the user back to the signup screen within 100ms
+      doLogout(true);
+      AuthFlowManager.stop();
+    } catch (err) {
+      toast(T('regInvalidCode') + ': ' + (err.message || ''), 'var(--red)');
+      AuthFlowManager.stop();
+    }
+  };
+
   var formDelPwd = document.getElementById('form-delete-pwd');
   if (formDelPwd) {
-    formDelPwd.addEventListener('submit', async function(e) {
+    formDelPwd.addEventListener('submit', async function (e) {
       e.preventDefault();
       if (!ME) return;
+      if (AuthFlowManager.isProcessing()) return;
+
       var btn = document.getElementById('btnSendDelCode');
       var currPwd = document.getElementById('delete-curr-pwd').value;
-      
-      setBtnLoading(btn, true);
+
+      AuthFlowManager.start('DEL_SENDING_CODE', btn);
       try {
         var r = await callEdgeFunction('privacy-send-delete-code', { password: currPwd });
         if (!r.ok) throw new Error((r.body && r.body.error) || r.error?.message || r.error || 'Failed');
-        
+
         toast(T('delCodeSent'), 'var(--ac2)');
         document.getElementById('confirm-step-password').classList.add('modal-step-hidden');
         document.getElementById('confirm-step-code').classList.remove('modal-step-hidden');
+
+        var codeEl = document.getElementById('delete-verify-code');
+        if (codeEl) {
+          codeEl.value = '';
+          codeEl.focus();
+        }
       } catch (err) {
         var errMsg = err.message || '';
         if (errMsg.indexOf('Incorrect password') !== -1 || errMsg.indexOf('Incorrect') !== -1) {
@@ -1781,33 +1894,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         toast(T('delErr') + ': ' + errMsg, 'var(--red)');
       } finally {
-        setBtnLoading(btn, false);
+        AuthFlowManager.stop();
       }
     });
   }
 
   var formDelCode = document.getElementById('form-delete-code');
   if (formDelCode) {
-    formDelCode.addEventListener('submit', async function(e) {
+    formDelCode.addEventListener('submit', function (e) {
       e.preventDefault();
-      if (!ME) return;
-      var btn = document.getElementById('btnConfirmDel');
-      var rawCode = document.getElementById('delete-verify-code').value;
-      var code = rawCode.replace(/\D/g, '');
-      
-      setBtnLoading(btn, true);
-      try {
-        var r = await callEdgeFunction('privacy-delete-account', { code: code });
-        if (!r.ok) throw new Error(r.error || 'Failed');
-        
-        toast(T('delSuccess'), 'var(--ac2)');
-        var moDel = document.getElementById('delete-modal');
-        if (moDel) moDel.classList.remove('active');
-        doLogout(true); // Pass true to skip synchronous signOut network call
-      } catch (err) {
-        toast(T('regInvalidCode') + ': ' + (err.message || ''), 'var(--red)');
-        setBtnLoading(btn, false);
-      }
+      doConfirmDeleteAccount();
     });
   }
 });
