@@ -1,7 +1,7 @@
 # Локальная конфигурация Supabase CLI (supabase link использует project_id).
-# Project ref: ykmtewsfkgduvkmguasv
+# Project ref: ppehttbtrlavnrytoweu
 
-project_id = "ykmtewsfkgduvkmguasv"
+project_id = "ppehttbtrlavnrytoweu"
 
 [functions.register-send-code]
 verify_jwt = false
