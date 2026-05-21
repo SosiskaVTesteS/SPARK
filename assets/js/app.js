@@ -588,6 +588,29 @@ async function fetchProfile() {
     PROFILE.username = row.username || '@user';
     PROFILE.spk_balance = Number(row.spk_balance) || 0;
     PROFILE.investments_count = Number(row.investments_count) || 0;
+    PROFILE.last_daily_bonus_claim = row.last_daily_bonus_claim || null;
+
+    // Check Daily Bonus Eligibility
+    var eligible = false;
+    if (!PROFILE.last_daily_bonus_claim) {
+      eligible = true;
+    } else {
+      var lastClaim = new Date(PROFILE.last_daily_bonus_claim);
+      var now = new Date();
+      // Compare UTC dates
+      if (lastClaim.getUTCFullYear() !== now.getUTCFullYear() ||
+          lastClaim.getUTCMonth() !== now.getUTCMonth() ||
+          lastClaim.getUTCDate() !== now.getUTCDate()) {
+        eligible = true;
+      }
+    }
+    
+    if (eligible && window.claimDailyBonus) {
+      // Prevent multiple simultaneous triggers locally
+      PROFILE.last_daily_bonus_claim = new Date().toISOString(); 
+      setTimeout(claimDailyBonus, 1500); // Small delay for nice UX after load
+    }
+
   } else {
     // Fallback if DB is blocked/timed out but session exists
     var fallbackName = '@user';
@@ -631,6 +654,27 @@ async function fetchProfile() {
     }
   }, 0);
 }
+
+window.claimDailyBonus = async function() {
+  if (!supa || !ME) return;
+  var r = await safeSupabaseCall('database', function() {
+    return supa.rpc('claim_daily_bonus');
+  }, { silent: true, timeout: 25000 });
+
+  if (r.ok && r.data && r.data.data && r.data.data.success) {
+    var bonusData = r.data.data;
+    PROFILE.spk_balance = Number(bonusData.new_balance) || (PROFILE.spk_balance + 10);
+    PROFILE.last_daily_bonus_claim = new Date().toISOString();
+    updateHeader();
+    if (appEntered) {
+      renderProfile();
+    }
+    toast('🎁 Ежедневный бонус: +' + (bonusData.amount || 10) + ' SPK!', 'var(--ac)');
+  } else if (r.ok && r.data && r.data.data && r.data.data.message === 'already_claimed') {
+    // Just quietly update local state to avoid further attempts today
+    PROFILE.last_daily_bonus_claim = new Date().toISOString();
+  }
+};
 
 // ═══ Load ideas from DB and populate LIVE array ═══
 async function loadIdeasFromDB() {
