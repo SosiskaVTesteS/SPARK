@@ -1251,7 +1251,7 @@ function profileHTML(sfx) {
     + '<span class="pbadge">' + T('verifiedInvestor') + '</span></div>'
     + '<div class="srow" style="margin-bottom:18px">'
     + '<div class="sbox"><span class="sval">' + (PROFILE.ideas_count || 0) + '</span><span class="skey">' + T('ideas') + '</span></div>'
-    + '<div class="sbox"><span class="sval">' + (PROFILE.spk_balance > 0 ? '+' + Math.round((PROFILE.spk_balance / Math.max(100, PROFILE.spk_balance) - 1) * 100).toFixed(0) + '%' : '—') + '</span><span class="skey">' + T('profit') + '</span></div>'
+    + '<div class="sbox"><span class="sval">' + (typeof PROFILE.profit_pct === 'number' && PROFILE.profit_pct !== 0 ? (PROFILE.profit_pct > 0 ? '+' : '') + PROFILE.profit_pct + '%' : '—') + '</span><span class="skey">' + T('profit') + '</span></div>'
     + '<div class="sbox"><span class="sval">' + (PROFILE.investments_count || 0) + '</span><span class="skey">' + T('invested') + '</span></div>'
     + '<div class="sbox"><span class="sval">' + (PROFILE.rank ? '#' + PROFILE.rank : '—') + '</span><span class="skey">' + T('rank') + '</span></div></div>'
     + '<div class="divider"></div>'
