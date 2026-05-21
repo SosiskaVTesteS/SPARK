@@ -794,8 +794,7 @@ function dbRowToLiveIdea(row, profilesMap) {
     pool: String(pool),
     cd: cdH,
     pct: pct,
-    investment_history: history,
-    author_id: row.author_id || null
+    investment_history: history
   };
 }
 
@@ -1532,9 +1531,7 @@ function cardHTML(x) {
   var safeAv = safeAvatar(x.av);
   return '<div class="card' + (fire ? ' fire' : '') + '" data-cid="' + x.id + '">'
     + '<div class="ch"><div class="cav" style="background:' + safeBg + '">' + safeAv + '</div>'
-    + '<div class="cm"><div class="cu" style="display:flex;align-items:center;">' + safeUser 
-    + (x.author_id && window.ME && x.author_id !== window.ME.id ? '<span class="c-chat" onclick="if(window.startDirectChat) startDirectChat(\'' + x.author_id + '\')" title="Message"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>' : '')
-    + '</div><div class="ct">' + safeTime + ' · #' + safeTag + '</div></div>'
+    + '<div class="cm"><div class="cu">' + safeUser + '</div><div class="ct">' + safeTime + ' · #' + safeTag + '</div></div>'
     + '<div class="cmen"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></div></div>'
     + '<div class="ctitle">' + safeTitle + '</div><div class="cbody">' + safeBody + '</div>'
     + investGraphHTML(x)

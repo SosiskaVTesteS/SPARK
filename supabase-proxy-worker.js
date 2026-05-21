@@ -1,71 +1,54 @@
 /**
  * Cloudflare Worker Proxy for Supabase (SPARK)
  *
- * ОПТИМИЗИРОВАННАЯ И ИСПРАВЛЕННАЯ ВЕРСИЯ (Fix: "failed to fetch" / Cloudflare 403 / CORS)
- * Этот скрипт проксирует запросы от фронтенда в Supabase для обхода блокировок.
- * 
- * ЧТО БЫЛО ИСПРАВЛЕНО:
- * 1. Убрана ручная установка заголовка Host (Cloudflare запрещает менять Host при запросах между CF-зонами, что вызывало 403/502).
- * 2. Добавлен динамический отзеркаливающий CORS для Access-Control-Allow-Headers, чтобы браузер 100% пропускал preflight-запросы (исправляет ошибку failed to fetch при логине/регистрации).
- * 3. Поддержка WebSocket для Realtime теперь удаляет заголовок Origin и Host перед проксированием.
+ * Этот скрипт проксирует запросы от вашего фронтенда в Supabase, чтобы обойти блокировки провайдеров.
+ * Он поддерживает стандартные HTTP-запросы (REST API, Auth, Edge Functions) и WebSocket-соединения для Realtime.
  *
- * КАК ОБНОВИТЬ ВОРКЕР:
- * 1. Зайдите в ваш Cloudflare Dashboard -> Workers & Pages -> spark-supabase-proxy -> Edit Code.
- * 2. Замените весь старый код на этот новый код.
- * 3. Нажмите "Save and deploy".
+ * КАК НАСТРОИТЬ И ЗАПУСТИТЬ:
+ * 1. Зарегистрируйтесь/войдите в бесплатный аккаунт Cloudflare (https://dash.cloudflare.com).
+ * 2. Перейдите во вкладку "Workers & Pages" в левом меню.
+ * 3. Нажмите "Create Application" -> "Create Worker".
+ * 4. Задайте имя (например, `spark-supabase-proxy`) и нажмите "Deploy".
+ * 5. Нажмите "Edit Code", вставьте содержимое этого файла полностью вместо стандартного кода.
+ * 6. Нажмите "Save and deploy" в верхнем правом углу.
+ * 7. Скопируйте URL вашего воркера (например, `https://spark-supabase-proxy.ваше-имя.workers.dev`).
+ * 8. Откройте файл `assets/js/config.js` в проекте SPARK и замените значение `SUPABASE_URL` на полученный URL воркера.
+ *    Пример: SUPABASE_URL: 'https://spark-supabase-proxy.ваше-имя.workers.dev'
  */
 
 const SUPABASE_HOST = 'ppehttbtrlavnrytoweu.supabase.co';
 
 export default {
   async fetch(request, env, ctx) {
-    const origin = request.headers.get('Origin') || '*';
-    
-    // 0. Базовые заголовки CORS, которые разрешают всё для браузера
-    const corsHeaders = {
-      'Access-Control-Allow-Origin': origin,
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-      'Access-Control-Max-Age': '86400',
-      'Access-Control-Allow-Credentials': 'true'
-    };
-    
-    // Динамически разрешаем любые заголовки, которые браузер просит отправить
-    const requestedHeaders = request.headers.get('Access-Control-Request-Headers');
-    if (requestedHeaders) {
-      corsHeaders['Access-Control-Allow-Headers'] = requestedHeaders;
-    } else {
-      corsHeaders['Access-Control-Allow-Headers'] = 'authorization, apikey, content-type, prefer, x-client-info';
-    }
+    const url = new URL(request.url);
+    const origin = request.headers.get('Origin');
 
     // 1. Обработка CORS preflight (OPTIONS)
     if (request.method === 'OPTIONS') {
       return new Response(null, {
         status: 204,
-        headers: corsHeaders
+        headers: getCorsHeaders(origin)
       });
     }
 
-    const targetUrl = new URL(request.url);
-    targetUrl.hostname = SUPABASE_HOST;
-
-    // 2. Обработка WebSocket (Supabase Realtime)
+    // 2. Обработка WebSocket для Supabase Realtime (подписки)
     const upgradeHeader = request.headers.get('Upgrade');
     if (upgradeHeader === 'websocket') {
-      targetUrl.protocol = 'wss:';
-      
+      const targetWsUrl = new URL(request.url);
+      targetWsUrl.hostname = SUPABASE_HOST;
+      targetWsUrl.protocol = 'wss:';
+
       const [client, server] = new WebSocketPair();
       server.accept();
 
-      const wsHeaders = new Headers(request.headers);
-      wsHeaders.delete('Host'); // Обязательно удаляем Host, fetch сам подставит нужный
-
-      const response = await fetch(targetUrl.toString(), {
-        headers: wsHeaders,
+      // Создаем WebSocket соединение с реальным сервером Supabase
+      const response = await fetch(targetWsUrl.toString(), {
+        headers: request.headers,
         webSocket: server
       });
 
       const responseHeaders = new Headers(response.headers);
-      Object.entries(corsHeaders).forEach(([key, value]) => {
+      Object.entries(getCorsHeaders(origin)).forEach(([key, value]) => {
         responseHeaders.set(key, value);
       });
 
@@ -76,15 +59,17 @@ export default {
       });
     }
 
-    // 3. Обработка стандартных HTTP запросов (REST, Auth)
+    // 3. Обработка обычных HTTP-запросов (REST, Auth, etc.)
+    const targetUrl = new URL(request.url);
+    targetUrl.hostname = SUPABASE_HOST;
     targetUrl.protocol = 'https:';
 
-    const httpHeaders = new Headers(request.headers);
-    httpHeaders.delete('Host'); // ВАЖНО: Cloudflare Worker выдаст ошибку, если вручную изменить Host для другой зоны CF.
+    const headers = new Headers(request.headers);
+    headers.set('Host', SUPABASE_HOST);
 
     const fetchOptions = {
       method: request.method,
-      headers: httpHeaders,
+      headers: headers,
       redirect: 'manual'
     };
 
@@ -95,35 +80,43 @@ export default {
     try {
       const response = await fetch(targetUrl.toString(), fetchOptions);
 
-      const proxyResponse = new Response(response.body, {
-        status: response.status,
-        statusText: response.statusText,
-        headers: new Headers(response.headers)
+      const responseHeaders = new Headers(response.headers);
+      Object.entries(getCorsHeaders(origin)).forEach(([key, value]) => {
+        responseHeaders.set(key, value);
       });
 
-      // Перезаписываем CORS-заголовки ответа, чтобы браузер 100% их принял
-      Object.entries(corsHeaders).forEach(([key, value]) => {
-        proxyResponse.headers.set(key, value);
-      });
-
-      // Корректировка Location для редиректов (например, OAuth)
+      // Перенаправляем редиректы, чтобы они оставались на домене прокси
       if (response.status >= 300 && response.status < 400) {
         const location = response.headers.get('Location');
         if (location && location.includes(SUPABASE_HOST)) {
-          const newUrl = new URL(request.url);
-          proxyResponse.headers.set('Location', location.replace(SUPABASE_HOST, newUrl.host));
+          const newLocation = location.replace(SUPABASE_HOST, url.host);
+          responseHeaders.set('Location', newLocation);
         }
       }
 
-      return proxyResponse;
+      return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: responseHeaders
+      });
     } catch (err) {
-      return new Response(JSON.stringify({ error: err.message, cause: 'Cloudflare Proxy Error' }), {
+      return new Response(JSON.stringify({ error: err.message }), {
         status: 502,
         headers: {
           'Content-Type': 'application/json',
-          ...corsHeaders
+          ...getCorsHeaders(origin)
         }
       });
     }
   }
 };
+
+function getCorsHeaders(origin) {
+  return {
+    'Access-Control-Allow-Origin': origin || '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
+    'Access-Control-Allow-Headers': 'authorization, apikey, content-type, prefer, x-client-info',
+    'Access-Control-Max-Age': '86400',
+    'Access-Control-Allow-Credentials': 'true'
+  };
+}
