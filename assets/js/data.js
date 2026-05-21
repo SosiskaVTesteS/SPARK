@@ -4,7 +4,7 @@
  */
 (function (global) {
   var DEFAULTS = {
-    SUPABASE_URL: 'https://spark-supabase-proxy.mtsoppe1.workers.dev',
+    SUPABASE_URL: 'https://urban-newt-63.7-melty-7.deno.net',
     SUPABASE_ANON_KEY: 'sb_publishable_9uAFLjS4AaElHus4hiUuQQ_PMSFNkb8',
     ALLOW_LEGACY_INVEST_FALLBACK: true,
     ENABLE_CLIENT_TELEMETRY: false
