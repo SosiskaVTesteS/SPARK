@@ -99,7 +99,7 @@ async function safeSupabaseCall(feature, fn, options) {
     return { ok: false, error: new Error('supabase_unavailable'), demo: true };
   }
   
-  var timeoutMs = options.timeout || 8000;
+  var timeoutMs = options.timeout || 25000;
   
   try {
     var result = await Promise.race([

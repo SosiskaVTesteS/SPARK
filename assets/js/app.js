@@ -365,7 +365,7 @@ async function doSignIn() {
   try {
     var res = await safeSupabaseCall('auth', function () {
       return supa.auth.signInWithPassword({ email: email, password: pass });
-    }, { timeout: 10000, silent: true });
+    }, { timeout: 25000, silent: true });
     
     if (!res.ok) throw res.error;
     var r = res.data;
@@ -581,24 +581,35 @@ async function fetchProfile() {
   if (!supa || !ME) return;
   var r = await safeSupabaseCall('database', function () {
     return supa.from('profiles').select('*').eq('id', ME.id).single();
-  }, { silent: true, timeout: 5000 });
+  }, { silent: true, timeout: 25000 });
 
   if (r.ok && r.data && r.data.data) {
     var row = r.data.data;
     PROFILE.username = row.username || '@user';
     PROFILE.spk_balance = Number(row.spk_balance) || 0;
     PROFILE.investments_count = Number(row.investments_count) || 0;
+  } else {
+    // Fallback if DB is blocked/timed out but session exists
+    var fallbackName = '@user';
+    if (ME.user_metadata && ME.user_metadata.username) {
+      fallbackName = ME.user_metadata.username;
+    } else if (ME.email) {
+      fallbackName = '@' + ME.email.split('@')[0];
+    }
+    PROFILE.username = fallbackName;
+    PROFILE.spk_balance = 0;
+    PROFILE.investments_count = 0;
   }
 
   // Load secondary stats asynchronously without blocking the startup sequence
   setTimeout(async function() {
     var ideasPromise = safeSupabaseCall('database', function () {
       return supa.from('ideas').select('id', { count: 'exact', head: true }).eq('author_id', ME.id);
-    }, { silent: true, timeout: 5000 });
+    }, { silent: true, timeout: 25000 });
 
     var rankPromise = safeSupabaseCall('database', function () {
       return supa.from('profiles').select('id', { count: 'exact', head: true }).gt('spk_balance', PROFILE.spk_balance || 0);
-    }, { silent: true, timeout: 5000 });
+    }, { silent: true, timeout: 25000 });
 
     var [ideasRes, rankRes] = await Promise.all([ideasPromise, rankPromise]);
 
@@ -640,7 +651,7 @@ async function loadIdeasFromDB() {
       .select('id, title, description, min_bet, total_invested, investment_history, expires_at, created_at, author_id, reactions')
       .order('created_at', { ascending: false })
       .limit(50);
-  }, { silent: true, timeout: 8000 });
+  }, { silent: true, timeout: 25000 });
 
   if (r.ok && r.data && r.data.data) {
     var rows = r.data.data;
@@ -650,7 +661,7 @@ async function loadIdeasFromDB() {
     if (authorIds.length > 0) {
       var pRes = await safeSupabaseCall('database', function () {
         return supa.from('profiles').select('id, username').in('id', authorIds);
-      }, { silent: true, timeout: 5000 });
+      }, { silent: true, timeout: 25000 });
       if (pRes.ok && pRes.data && pRes.data.data) {
         pRes.data.data.forEach(function(p) { profilesMap[p.id] = p.username || '@user'; });
       }
@@ -808,7 +819,7 @@ async function renderLeaders() {
       .select('id, username, spk_balance, investments_count')
       .order('spk_balance', { ascending: false })
       .limit(5);
-  }, { silent: true, timeout: 5000 });
+  }, { silent: true, timeout: 25000 });
 
   var html;
   if (r.ok && r.data && r.data.data && r.data.data.length > 0) {
@@ -1654,7 +1665,7 @@ async function doInvest() {
           p_idea_id: rpcId,
           p_amount: amt
         });
-      }, { timeout: 8000 });
+      }, { timeout: 25000 });
       
       if (!res.ok) throw res.error;
       var rpc = res.data;
@@ -2034,7 +2045,7 @@ async function restoreSession() {
     }
     var res = await safeSupabaseCall('auth', function () {
       return supa.auth.getSession();
-    }, { silent: true, timeout: 5000 });
+    }, { silent: true, timeout: 25000 });
     
     if (!res.ok) {
       console.warn('getSession timeout/error', res.error);
