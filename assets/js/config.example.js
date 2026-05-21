@@ -21,7 +21,7 @@
 window.SPARK_CONFIG = {
 
   // Базовый URL Supabase (REST / Auth / Edge Functions)
-  SUPABASE_URL: 'https://spark-supabase-proxy.mtsoppe1.workers.dev',
+  SUPABASE_URL: 'https://ppehttbtrlavnrytoweu.supabase.co',
 
   // Anon (публичный) ключ — безопасен для браузера; не service_role
   SUPABASE_ANON_KEY: 'sb_publishable_9uAFLjS4AaElHus4hiUuQQ_PMSFNkb8',

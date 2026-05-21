@@ -4,7 +4,7 @@
  */
 (function (global) {
   var DEFAULTS = {
-    SUPABASE_URL: 'https://spark-supabase-proxy.mtsoppe1.workers.dev',
+    SUPABASE_URL: 'https://ppehttbtrlavnrytoweu.supabase.co',
     SUPABASE_ANON_KEY: 'sb_publishable_9uAFLjS4AaElHus4hiUuQQ_PMSFNkb8',
     ALLOW_LEGACY_INVEST_FALLBACK: true,
     ENABLE_CLIENT_TELEMETRY: false
@@ -35,8 +35,7 @@
     if (!url || typeof url !== 'string') return false;
     try {
       var u = new URL(url.trim());
-      // Разрешаем стандартные URL Supabase и любые HTTPS-прокси (например, Cloudflare Workers)
-      return u.protocol === 'https:';
+      return u.protocol === 'https:' && u.hostname.endsWith('.supabase.co');
     } catch (e) {
       return false;
     }
