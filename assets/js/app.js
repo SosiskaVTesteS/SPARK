@@ -69,11 +69,18 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   var srchEl = document.getElementById('srchIn');
-  if (srchEl) srchEl.addEventListener('input', function (e) {
-    q = e.target.value.toLowerCase().trim();
-    page = 1;
-    renderFeed();
-  });
+  if (srchEl) {
+    var _srchDebounce = null;
+    srchEl.addEventListener('input', function (e) {
+      clearTimeout(_srchDebounce);
+      var val = e.target.value.toLowerCase().trim();
+      _srchDebounce = setTimeout(function () {
+        q = val;
+        page = 1;
+        renderFeed();
+      }, 220);
+    });
+  }
 
   var durGrid = document.getElementById('durGrid');
   if (durGrid) durGrid.addEventListener('click', function (e) {
@@ -92,12 +99,14 @@ document.addEventListener('DOMContentLoaded', function () {
     cardsList.addEventListener('click', function (event) {
       var investBtn = event.target.closest('[data-invest-id]');
       if (investBtn) {
-        openInvest(parseInt(investBtn.dataset.investId, 10));
+        // Pass ID as string — UUIDs must not be parsed as integers
+        openInvest(investBtn.dataset.investId);
         return;
       }
       var reactBtn = event.target.closest('.rbbl[data-id][data-e]');
       if (reactBtn) {
-        react(parseInt(reactBtn.dataset.id, 10), reactBtn.dataset.e, reactBtn);
+        // Reactions use idea id directly (string UUID)
+        react(reactBtn.dataset.id, reactBtn.dataset.e, reactBtn);
       }
     });
   }
@@ -657,6 +666,9 @@ async function loadIdeasFromDB() {
   renderFeed();
   renderTrends();
   renderLeaders();
+  // Update observatory and live activity once after data is loaded
+  renderObservatoryData();
+  applyLiveActivityI18n();
 }
 
 // ═══ Convert a DB ideas row to LIVE array object ═══
@@ -709,7 +721,8 @@ function dbRowToLiveIdea(row, profilesMap) {
     'linear-gradient(135deg,#e8a55a,#e8c55a)',
     'linear-gradient(135deg,#c55ae8,#e85a7a)'
   ];
-  var idxSeed = String(row.id || '').split('').reduce(function(a, c) { return a + c.charCodeAt(0); }, 0);
+  // Fast gradient seed from first 8 chars of UUID (much cheaper than full string)
+  var idxSeed = String(row.id || '').slice(0, 8).split('').reduce(function(a, c) { return a + c.charCodeAt(0); }, 0);
   var bg = gradients[idxSeed % gradients.length];
   return {
     id: row.id,
@@ -1206,24 +1219,37 @@ function renderObservatoryData() {
   });
 }
 
+// Live Activity: show real recent investments from LIVE data, or hide if no data
 function applyLiveActivityI18n() {
   var row1 = document.getElementById('actRow1');
   var row2 = document.getElementById('actRow2');
   var row3 = document.getElementById('actRow3');
-  if (row1) {
-    row1.innerHTML = LANG === 'ru'
-      ? '<span style="color:var(--ac2)">@sarah_angel</span> вложил(а) <strong style="color:var(--tx)">50 SPK</strong> в AI code review<div style="font-size:10px;margin-top:1px">2 мин назад</div>'
-      : '<span style="color:var(--ac2)">@sarah_angel</span> invested <strong style="color:var(--tx)">50 SPK</strong> in AI code review<div style="font-size:10px;margin-top:1px">2 min ago</div>';
+  // Build from actual LIVE data if available
+  var recent = LIVE.slice().filter(function(x) { return x.investors > 0 || Number(x.pool) > 0; })
+    .sort(function(a, b) { return (b.investors || 0) - (a.investors || 0); });
+  if (recent.length === 0) {
+    if (row1) row1.innerHTML = '';
+    if (row2) row2.innerHTML = '';
+    if (row3) row3.innerHTML = '';
+    return;
   }
-  if (row2) {
-    row2.innerHTML = LANG === 'ru'
-      ? '<span style="color:var(--red)">@dima_builds</span> раскритиковал(а) Solar Leasing<div style="font-size:10px;margin-top:1px">7 мин назад</div>'
-      : '<span style="color:var(--red)">@dima_builds</span> critiqued Solar Leasing<div style="font-size:10px;margin-top:1px">7 min ago</div>';
-  }
-  if (row3) {
-    row3.innerHTML = LANG === 'ru'
-      ? 'Опубликована новая идея: <strong style="color:var(--tx)">#DeFi lending for SMEs</strong><div style="font-size:10px;margin-top:1px">12 мин назад</div>'
-      : 'New idea posted: <strong style="color:var(--tx)">#DeFi lending for SMEs</strong><div style="font-size:10px;margin-top:1px">12 min ago</div>';
+  var entries = recent.slice(0, 3);
+  var rows = [row1, row2, row3];
+  entries.forEach(function(idea, i) {
+    var r = rows[i];
+    if (!r) return;
+    var u = escapeHTML(idea.u || '@user');
+    var title = escapeHTML((idea.title || '').slice(0, 22));
+    var pool = Number(idea.pool) || 0;
+    r.innerHTML = '<span style="color:var(--ac2)">' + u + '</span> '
+      + (LANG === 'ru' ? 'вложил(а) ' : 'invested ')
+      + '<strong style="color:var(--tx)">' + pool + ' SPK</strong> '
+      + (LANG === 'ru' ? 'в "' : 'in "') + title + '"'
+      + '<div style="font-size:10px;margin-top:1px">' + escapeHTML(idea.tm || '—') + '</div>';
+  });
+  // Clear unused rows
+  for (var j = entries.length; j < 3; j++) {
+    if (rows[j]) rows[j].innerHTML = '';
   }
 }
 
@@ -1256,7 +1282,7 @@ function profileHTML(sfx) {
     + '<div class="sbox"><span class="sval">' + (PROFILE.rank ? '#' + PROFILE.rank : '—') + '</span><span class="skey">' + T('rank') + '</span></div></div>'
     + '<div class="divider"></div>'
     + '<div class="stitle" style="margin-top:14px">' + T('wallet') + '</div>'
-    + '<div class="wcrd"><div><div class="wamt">' + PROFILE.spk_balance.toLocaleString() + ' <small>SPK</small></div><div class="wsub">' + T('availableBalance') + '</div></div>'
+    + '<div class="wcrd"><div><div class="wamt">' + (Number(PROFILE.spk_balance) || 0).toLocaleString() + ' <small>SPK</small></div><div class="wsub">' + T('availableBalance') + '</div></div>'
     + '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--ac);opacity:.55"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8L2 7h20l-6-4z"/></svg></div>'
     + '<div class="divider"></div>'
     + '<div class="stitle" style="margin-top:14px">' + T('settings') + '</div>'
@@ -1383,6 +1409,9 @@ function drawInvestmentGraph(svgEl, history, dur) {
   });
 }
 
+// Cache the graph IntersectionObserver to avoid creating a new instance per render
+var _graphObserver = null;
+
 function animateAllGraphs(container) {
   if (!container) return;
   var svgs = container.querySelectorAll('svg.igsvg[data-history]');
@@ -1390,7 +1419,9 @@ function animateAllGraphs(container) {
     svgs.forEach(function (svg) { try { drawInvestmentGraph(svg, JSON.parse(svg.dataset.history)); } catch (e) {} });
     return;
   }
-  var obs = new IntersectionObserver(function (entries, o) {
+  // Reuse existing observer — disconnect old targets by creating fresh one
+  if (_graphObserver) { _graphObserver.disconnect(); }
+  _graphObserver = new IntersectionObserver(function (entries, o) {
     entries.forEach(function (entry) {
       if (entry.isIntersecting) {
         var svg = entry.target;
@@ -1398,8 +1429,8 @@ function animateAllGraphs(container) {
         o.unobserve(svg);
       }
     });
-  }, { threshold: 0.2 });
-  svgs.forEach(function (svg) { obs.observe(svg); });
+  }, { threshold: 0.15 });
+  svgs.forEach(function (svg) { _graphObserver.observe(svg); });
 }
 
 var page = 1, sort = 'new', ftag = 'all', q = '';
@@ -1413,7 +1444,13 @@ function filtered() {
   });
   if (sort === 'popular') a.sort(function (a1, b1) { return b1.investors - a1.investors; });
   if (sort === 'profit') a.sort(function (a2, b2) { return b2.pct - a2.pct; });
-  if (sort === 'ending') a.sort(function (a3, b3) { return parseInt(a3.cd, 10) - parseInt(b3.cd, 10); });
+  // Safe parseInt: '—' or empty string returns Infinity (shown last in ending-soon)
+  if (sort === 'ending') a.sort(function (a3, b3) {
+    var va = parseInt(a3.cd, 10); var vb = parseInt(b3.cd, 10);
+    va = Number.isFinite(va) ? va : Infinity;
+    vb = Number.isFinite(vb) ? vb : Infinity;
+    return va - vb;
+  });
   return a;
 }
 
@@ -1455,10 +1492,11 @@ function renderFeed() {
   if (!cl) return;
   cl.innerHTML = sl.length ? sl.map(cardHTML).join('') : '<div style="text-align:center;padding:48px 0;color:var(--mu);font-size:13px">' + T('noResults') + '</div>';
   renderPgn(tp);
-  renderObservatoryData();
+  // Observatory only needs update after full data load, not on every render
   var f = document.querySelector('.feed');
   if (f) f.scrollTop = 0;
-  setTimeout(function () { animateAllGraphs(cl); }, 60);
+  // Defer graph animation to avoid blocking render
+  setTimeout(function () { animateAllGraphs(cl); }, 80);
 }
 
 function renderPgn(tp) {
@@ -1529,7 +1567,8 @@ var usingLegacyInvestFallback = false;
 var investFallbackNoticeShown = false;
 
 function openInvest(id) {
-  var idea = LIVE.filter(function (x) { return x.id === id; })[0];
+  // id is a UUID string; find matching idea by string comparison
+  var idea = LIVE.filter(function (x) { return String(x.id) === String(id); })[0];
   if (!idea) return;
   CUR_IDEA = idea;
   var min = idea.minBet || 10;
@@ -1819,9 +1858,27 @@ function initRealtime() {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ideas' }, function (p) {
         var r = p.new;
         if (!LIVE.filter(function (x) { return x.id === r.id; }).length) {
-          insertLive(r, r.author_username || '@anon', (r.author_username || 'A').charAt(1) || 'A');
+          var rtUsername = r.author_username || '@anon';
+          insertLive(r, rtUsername, rtUsername.replace('@', '').charAt(0).toUpperCase() || 'A');
         }
-        toast('вњЁ New: ' + (r.title || '').slice(0, 26), 'var(--ac2)');
+        toast('✨ New: ' + (r.title || '').slice(0, 26), 'var(--ac2)');
+      }).on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'ideas' }, function (p2) {
+        // Update existing idea in LIVE with fresh investment data
+        var updated = p2.new;
+        var idx = LIVE.findIndex(function(x) { return x.id === updated.id; });
+        if (idx !== -1) {
+          if (updated.total_invested !== undefined) LIVE[idx].pool = String(Number(updated.total_invested) || 0);
+          if (Array.isArray(updated.investment_history)) {
+            LIVE[idx].investment_history = updated.investment_history;
+            LIVE[idx].investors = updated.investment_history.length;
+            var newPool2 = Number(LIVE[idx].pool) || 0;
+            var mb2 = LIVE[idx].minBet || 10;
+            LIVE[idx].pct = newPool2 > 0 ? Math.min(Math.round((newPool2 / Math.max(mb2 * 5, 1)) * 100), 999) : 0;
+          }
+          // Re-render only if the updated idea is visible on current page
+          var visibleIds = LIVE.slice((page - 1) * PER, page * PER).map(function(x) { return x.id; });
+          if (visibleIds.indexOf(updated.id) !== -1) { renderFeed(); renderTrends(); }
+        }
       }).subscribe();
     if (ME) {
       realtimeBalanceChannel = supa.channel('bal-rt');

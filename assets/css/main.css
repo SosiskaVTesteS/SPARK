@@ -637,3 +637,61 @@ input[type=range].inv-sl::-webkit-slider-thumb{-webkit-appearance:none;width:18p
     filter: drop-shadow(0 0 1px currentColor);
   }
 }
+
+/* ════════════════════════════════════════════
+   ОПТИМИЗАЦИИ ПРОИЗВОДИТЕЛЬНОСТИ
+   ════════════════════════════════════════════ */
+
+/* GPU composition hints — prevent layout thrash */
+.orb{contain:layout style paint;}
+.card{contain:layout style;}
+.igraph-wrap{contain:layout style;}
+
+/* Limit repaints on sticky/fixed elements */
+.fbar,.mob-nav{contain:layout paint;}
+.dp-panel{will-change:transform;}
+
+/* ════ PREFERS-REDUCED-MOTION ════ */
+@media (prefers-reduced-motion: reduce) {
+  .orb-b,.orb-g,.orb-v{display:none;}
+  body::before{display:none;}
+  .obs-stub-icon{animation:none !important;}
+  .obs-orbit,.obs-planet,.obs-sun{animation:none !important;}
+  .card{animation:none !important;transform:none !important;opacity:1 !important;}
+  .ig-line.animated{animation:none !important;stroke-dashoffset:0 !important;}
+  .ig-dot{opacity:1 !important;}
+  .mo-box{transition:none !important;}
+  .dp-panel{animation:none !important;}
+}
+
+/* ════ СЛАБЫЕ УСТРОЙСТВА (coarse pointer, max 1.5dppx) ════ */
+@media (max-resolution: 1.5dppx) and (pointer: coarse) {
+  /* Замедляем сферы и снижаем blur */
+  .orb-b,.orb-g,.orb-v{
+    animation-duration:120s;
+    filter:blur(40px);
+    opacity:0.5;
+  }
+  /* Сетку фона убираем — перерисовывается при скролле */
+  body::before{display:none;}
+  /* backdrop-filter тяжёл на слабых GPU */
+  .mo{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(0,0,0,.8);}
+  .obs-coming-soon{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(8,8,18,.92);}
+  .obs-dimmer{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(0,0,0,.8);}
+  .dp-overlay{backdrop-filter:none;-webkit-backdrop-filter:none;}
+  /* Орбиты замедляем */
+  .obs-orbit{animation-duration:44s;}
+  /* Быстрее анимируем граф */
+  .ig-line.animated{animation-duration:0.8s;}
+}
+
+/* ════ ОЧЕНЬ СЛАБЫЕ МОБИЛЬНЫЕ (узкий экран + touch) ════ */
+@media (max-width:480px) and (pointer:coarse) {
+  /* Полностью убираем фоновые сферы */
+  .orb{display:none;}
+  /* Убираем backdrop-filter на sticky элементах (перерисовка при скролле) */
+  .hdr{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(8,8,15,.97);}
+  .fbar{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(8,8,15,.97);}
+  .mob-nav{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(8,8,15,.97);}
+  .chat-tabs{backdrop-filter:none;-webkit-backdrop-filter:none;}
+}
