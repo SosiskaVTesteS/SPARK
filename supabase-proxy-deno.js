@@ -94,6 +94,7 @@ Deno.serve(async (request) => {
 
   const httpHeaders = new Headers(request.headers);
   httpHeaders.delete('Host'); // Удаляем оригинальный Host
+  httpHeaders.delete('Content-Length'); // Удаляем оригинальный Content-Length, так как мы буферизируем тело
 
   const fetchOptions = {
     method: request.method,
@@ -101,8 +102,9 @@ Deno.serve(async (request) => {
     redirect: 'manual'
   };
 
+  // Читаем тело целиком, чтобы избежать Transfer-Encoding: chunked (PostgREST зависает на нём)
   if (request.method !== 'GET' && request.method !== 'HEAD') {
-    fetchOptions.body = request.body; 
+    fetchOptions.body = await request.arrayBuffer(); 
   }
 
   try {
