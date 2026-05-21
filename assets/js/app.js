@@ -1326,16 +1326,25 @@ function toggleDD(e, id) {
 
 function profileHTML(sfx) {
   var L = PROFILE.username.replace('@', '').charAt(0).toUpperCase();
-  var safeUser = escapeHTML(PROFILE.username);
+  var safeUser  = escapeHTML(PROFILE.username);
+  var safeBio   = PROFILE.bio ? escapeHTML(PROFILE.bio) : '';
+  var avIdx     = Number(PROFILE.avatar_color) || 0;
+  var avGrad    = window.ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avIdx) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
+  var activeTheme = window.ThemeEngine ? ThemeEngine.getActive() : {};
+  var themeIcon = activeTheme.icon || '🌌';
+
   return '<div class="phero">'
-    + '<div class="pav-lg">' + L + '</div>'
+    + '<div class="pav-lg" style="background:' + avGrad + '">' + L + '</div>'
     + '<div class="pname">' + safeUser + '</div>'
+    + (safeBio ? '<div class="pbio">' + safeBio + '</div>' : '')
     + '<span class="pbadge">' + T('verifiedInvestor') + '</span></div>'
     + '<div class="srow" style="margin-bottom:18px">'
     + '<div class="sbox"><span class="sval">' + (PROFILE.ideas_count || 0) + '</span><span class="skey">' + T('ideas') + '</span></div>'
     + '<div class="sbox"><span class="sval">' + (typeof PROFILE.profit_pct === 'number' && PROFILE.profit_pct !== 0 ? (PROFILE.profit_pct > 0 ? '+' : '') + PROFILE.profit_pct + '%' : '—') + '</span><span class="skey">' + T('profit') + '</span></div>'
     + '<div class="sbox"><span class="sval">' + (PROFILE.investments_count || 0) + '</span><span class="skey">' + T('invested') + '</span></div>'
     + '<div class="sbox"><span class="sval">' + (PROFILE.rank ? '#' + PROFILE.rank : '—') + '</span><span class="skey">' + T('rank') + '</span></div></div>'
+    /* Profile Edit section */
+    + (window.ProfileEditEngine ? ProfileEditEngine.renderEditSection(sfx) : '')
     + '<div class="divider"></div>'
     + '<div class="stitle" style="margin-top:14px">' + T('wallet') + '</div>'
     + '<div class="wcrd"><div><div class="wamt">' + (Number(PROFILE.spk_balance) || 0).toLocaleString() + ' <small>SPK</small></div><div class="wsub">' + T('availableBalance') + '</div></div>'
@@ -1343,6 +1352,13 @@ function profileHTML(sfx) {
     + '<div class="divider"></div>'
     + '<div class="stitle" style="margin-top:14px">' + T('settings') + '</div>'
     + '<div style="display:flex;flex-direction:column;gap:2px">'
+    /* Theme Studio row */
+    + '<div class="sset-theme" onclick="window.showThemeStudio && showThemeStudio()">'
+    + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--ac)"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20"/><path d="M2 12h20"/></svg>'
+    + '<span style="font-size:13px">Theme Studio</span>'
+    + '<div class="sset-theme-dots"><div class="sset-theme-dot" style="background:var(--vl)"></div><div class="sset-theme-dot" style="background:var(--ac)"></div><div class="sset-theme-dot" style="background:var(--ac2)"></div></div>'
+    + '<span style="font-size:14px">' + themeIcon + '</span>'
+    + '</div>'
     + '<div class="lang-row" data-dd-id="ldd-' + sfx + '">'
     + '<span style="font-size:13px">' + T('language') + '</span>'
     + '<span class="lang-cur" id="lc' + sfx + '">' + LANG.toUpperCase() + '</span>'
@@ -1363,9 +1379,15 @@ function profileHTML(sfx) {
 
 function renderProfile() {
   var dp = document.getElementById('dpPanel');
-  if (dp) dp.innerHTML = profileHTML('D');
+  if (dp) {
+    dp.innerHTML = profileHTML('D');
+    if (window.ProfileEditEngine) ProfileEditEngine.initSection('D');
+  }
   var mb = document.getElementById('mobProfInner');
-  if (mb) mb.innerHTML = profileHTML('M');
+  if (mb) {
+    mb.innerHTML = profileHTML('M');
+    if (window.ProfileEditEngine) ProfileEditEngine.initSection('M');
+  }
 }
 
 function toggleDeskProf() {
@@ -1434,7 +1456,10 @@ function drawInvestmentGraph(svgEl, history, dur) {
   var NS = 'http://www.w3.org/2000/svg';
   svgEl.innerHTML = '';
   var defs = document.createElementNS(NS, 'defs');
-  defs.innerHTML = '<linearGradient id="igf-' + gid + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e8c55a" stop-opacity="0.22"/><stop offset="100%" stop-color="#e8c55a" stop-opacity="0"/></linearGradient>';
+  var graphColor = (window.ThemeEngine ? ThemeEngine.getGraphColor() : null)
+    || getComputedStyle(document.documentElement).getPropertyValue('--graph-line').trim()
+    || '#e8c55a';
+  defs.innerHTML = '<linearGradient id="igf-' + gid + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="' + graphColor + '" stop-opacity="0.22"/><stop offset="100%" stop-color="' + graphColor + '" stop-opacity="0"/></linearGradient>';
   svgEl.appendChild(defs);
   var fill = document.createElementNS(NS, 'path');
   fill.setAttribute('d', gp.d + ' L' + (GW - GPX) + ',' + GH + ' L' + GPX + ',' + GH + ' Z');
@@ -1999,23 +2024,37 @@ function switchChatTab(tab) {
 function openMo(id) { var el = document.getElementById(id); if (el) { el.classList.add('open'); triggerVibration(15); } }
 function closeMo(id) { var el = document.getElementById(id); if (el) { el.classList.remove('open'); triggerVibration(10); } }
 
-function toast(msg, color) {
+function toast(msg, color, type) {
   var t = document.getElementById('toast');
   if (!t) return;
   t.textContent = msg;
-  t.style.background = color;
+  /* Remove old type classes */
+  t.classList.remove('toast-success', 'toast-error', 'toast-info');
+  /* Determine type from CSS colour string if not passed explicitly */
+  var resolvedType = type;
+  if (!resolvedType) {
+    if (color && (color.indexOf('red') !== -1 || color.indexOf('--red') !== -1)) resolvedType = 'error';
+    else if (color && (color.indexOf('ac2') !== -1 || color.indexOf('ac)') !== -1)) resolvedType = 'success';
+    else if (color && (color.indexOf('vl') !== -1 || color.indexOf('vl)') !== -1)) resolvedType = 'info';
+  }
+  if (resolvedType === 'success') { t.classList.add('toast-success'); t.style.background = ''; }
+  else if (resolvedType === 'error') { t.classList.add('toast-error'); t.style.background = ''; }
+  else if (resolvedType === 'info') { t.classList.add('toast-info'); t.style.background = ''; }
+  else { t.style.background = color || 'rgba(8,12,28,0.95)'; }
   t.style.opacity = '1';
   t.style.transform = 'translateX(-50%) translateY(0)';
   clearTimeout(t._t);
   t._t = setTimeout(function () {
     t.style.opacity = '0';
     t.style.transform = 'translateX(-50%) translateY(14px)';
-  }, 2200);
-  if (color && (color.indexOf('red') !== -1 || color.indexOf('#e25c5c') !== -1)) {
+  }, 2600);
+  if (resolvedType === 'error' || (color && (color.indexOf('red') !== -1 || color.indexOf('#e25c5c') !== -1))) {
     triggerVibration([60, 60, 60]);
   } else {
     triggerVibration(30);
   }
+  /* Alias for profile-edit.js */
+  window.showToast = toast;
 }
 
 async function reportClientError(kind, details) {

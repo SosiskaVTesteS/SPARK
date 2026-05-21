@@ -399,6 +399,221 @@ body.intro-active #launchOverlay { display: none !important; }
 }
 
 /* ════════════════════════════════════════════════
+   V3 — STAR FIELD
+   ════════════════════════════════════════════════ */
+
+@keyframes starTwinkle {
+  0%,100% { opacity: var(--star-min, 0.15); transform: scale(1); }
+  50%      { opacity: var(--star-max, 0.7);  transform: scale(1.4); }
+}
+
+#sparkBg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.star-dot {
+  position: absolute;
+  border-radius: 50%;
+  background: #fff;
+  animation: starTwinkle var(--star-dur, 3s) var(--star-del, 0s) ease-in-out infinite;
+}
+
+/* ════════════════════════════════════════════════
+   V3 — INVEST BUTTON PULSE RING
+   ════════════════════════════════════════════════ */
+
+@keyframes pulseRingOut {
+  0%   { transform: scale(1);    opacity: 0.7; }
+  100% { transform: scale(2.4);  opacity: 0; }
+}
+
+.binv-wrap {
+  position: relative;
+  flex: 1;
+}
+.binv-wrap .binv {
+  width: 100%;
+}
+.binv-wrap::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  border: 2px solid rgba(var(--vl-rgb, 123,92,250), 0.6);
+  pointer-events: none;
+  animation: pulseRingOut 2.6s var(--ease-smooth) 1.8s infinite;
+}
+
+/* ════════════════════════════════════════════════
+   V3 — CARD AURORA (inner glow follows cursor)
+   ════════════════════════════════════════════════ */
+
+.card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    300px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(var(--vl-rgb, 123,92,250), 0.12) 0%,
+    transparent 70%
+  );
+  transition: opacity 0.4s ease;
+  z-index: 0;
+}
+.card:hover::after { opacity: 1; }
+.card > * { position: relative; z-index: 1; }
+
+/* ════════════════════════════════════════════════
+   V3 — ANIMATED CARD BORDER ON HOVER
+   ════════════════════════════════════════════════ */
+
+@keyframes borderShimmer {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.card:hover {
+  --card-animated-border: 1;
+}
+
+/* ════════════════════════════════════════════════
+   V3 — INVESTMENT PROGRESS BAR
+   ════════════════════════════════════════════════ */
+
+@keyframes progressFill {
+  from { width: 0%; }
+  to   { width: var(--prog, 0%); }
+}
+
+.inv-progress-wrap {
+  height: 3px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 2px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+.inv-progress-bar {
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--vl, #7B5CFA), var(--ac, #E8C55A));
+  width: 0%;
+  animation: progressFill 1.2s var(--ease-enter) 0.4s forwards;
+}
+
+/* ════════════════════════════════════════════════
+   V3 — TOAST COLOUR VARIANTS
+   ════════════════════════════════════════════════ */
+
+#toast {
+  border-left: 3px solid transparent;
+}
+#toast.toast-success {
+  background: rgba(10,30,25,0.95) !important;
+  border-left-color: var(--ac2, #5AE8C5);
+  color: var(--ac2, #5AE8C5) !important;
+}
+#toast.toast-error {
+  background: rgba(30,8,12,0.95) !important;
+  border-left-color: var(--red, #E85A7A);
+  color: #fff !important;
+}
+#toast.toast-info {
+  background: rgba(8,10,28,0.95) !important;
+  border-left-color: var(--vl, #7B5CFA);
+  color: #fff !important;
+}
+
+/* ════════════════════════════════════════════════
+   V3 — LEADERBOARD PODIUM GLOW
+   ════════════════════════════════════════════════ */
+
+.li-rank-gold   { box-shadow: 0 0 18px rgba(255,215,0,0.35) !important; }
+.li-rank-silver { box-shadow: 0 0 12px rgba(192,192,192,0.2) !important; }
+.li-rank-bronze { box-shadow: 0 0 12px rgba(205,127,50,0.2) !important; }
+
+/* ════════════════════════════════════════════════
+   V3 — MOBILE HEADER SCROLL-HIDE
+   ════════════════════════════════════════════════ */
+
+@keyframes headerSlideUp   { to { transform: translateY(-100%); } }
+@keyframes headerSlideDown { to { transform: translateY(0); } }
+
+header.hdr-hidden { transform: translateY(-100%); }
+header { transition: transform 0.3s var(--ease-smooth); }
+
+/* ════════════════════════════════════════════════
+   V3 — MOBILE SWIPE PARALLAX HINT
+   ════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  .card {
+    transition: transform 0.35s var(--ease-smooth), box-shadow 0.35s ease, opacity 0.35s ease;
+  }
+  /* Haptic-feel spring on tap */
+  .card:active {
+    transform: scale(0.985) !important;
+  }
+  /* Full-bleed mobile cards */
+  .cards {
+    padding: 12px 0;
+    gap: 10px;
+  }
+  .card {
+    border-radius: 16px;
+    margin: 0 14px;
+  }
+  /* Invest button full-width on mobile */
+  .cact {
+    gap: 8px;
+  }
+}
+
+/* ════════════════════════════════════════════════
+   V3 — NUMBER GLOW (balance update flash)
+   ════════════════════════════════════════════════ */
+
+@keyframes spkGlow {
+  0%   { text-shadow: 0 0 0px transparent; }
+  35%  { text-shadow: 0 0 18px var(--ac-glow, rgba(232,197,90,0.7)); }
+  100% { text-shadow: 0 0 0px transparent; }
+}
+.spk-glow {
+  animation: spkGlow 1.1s var(--ease-smooth) forwards;
+}
+
+/* ════════════════════════════════════════════════
+   V3 — MOBILE BOTTOM NAV ACTIVE PILL
+   ════════════════════════════════════════════════ */
+
+@keyframes pillSlide {
+  from { opacity: 0; transform: scaleX(0.6); }
+  to   { opacity: 1; transform: scaleX(1); }
+}
+.mob-tab-pill {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 28px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--vl, #7B5CFA);
+  box-shadow: 0 0 8px rgba(var(--vl-rgb, 123,92,250), 0.6);
+  display: none;
+  animation: pillSlide 0.28s var(--ease-spring) forwards;
+}
+.mob-tab.active .mob-tab-pill { display: block; }
+.mob-tab::after { display: none; } /* disable old dot */
+
+/* ════════════════════════════════════════════════
    REDUCED MOTION — turn off everything
    ════════════════════════════════════════════════ */
 
@@ -408,11 +623,22 @@ body.intro-active #launchOverlay { display: none !important; }
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  #sparkIntro { display: none !important; }
+  #sparkIntro       { display: none !important; }
+  #sparkBg          { display: none !important; }
+  .binv-wrap::after { display: none !important; }
+  .card::after      { display: none !important; }
   .ir-text {
     background: linear-gradient(90deg, #9B5FFF, #E8C55A);
     background-size: 100%;
     animation: none !important;
   }
   .si-s-path { stroke-dashoffset: 0 !important; animation: none !important; }
+  .inv-progress-bar { animation: none !important; width: var(--prog, 0%); }
+}
+
+/* Disable heavy aurora on coarse-pointer (mobile/tablet) devices */
+@media (pointer: coarse) {
+  .card::after { display: none; }
+  .binv-wrap::after { animation-duration: 4s; opacity: 0.5; }
+  #sparkBg .star-dot { animation-duration: calc(var(--star-dur, 3s) * 2); }
 }

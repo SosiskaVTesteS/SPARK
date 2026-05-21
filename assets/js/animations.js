@@ -260,8 +260,134 @@ var CardTiltEngine = {
 };
 
 /* ════════════════════════════════════════════════
-   HEADER LOGO — re-apply iridescent animation after
-   dynamic content changes (called by app.js if needed)
+   V3 — STAR FIELD ENGINE
+   Generates 80 twinkling micro-dots in #sparkBg
+   ════════════════════════════════════════════════ */
+var StarFieldEngine = {
+  COUNT: 80,
+
+  init: function () {
+    var container = document.getElementById('sparkBg');
+    if (!container) return;
+
+    /* Use DocumentFragment for one-shot DOM write */
+    var frag = document.createDocumentFragment();
+    var colors = ['#fff', '#C4B5FD', '#A5F3FC', '#FDE68A', '#FDA4AF', '#BBFBD4'];
+
+    for (var i = 0; i < this.COUNT; i++) {
+      var dot  = document.createElement('span');
+      dot.className = 'star-dot';
+      var size  = (0.8 + Math.random() * 1.8).toFixed(2);
+      var left  = (Math.random() * 100).toFixed(2);
+      var top   = (Math.random() * 100).toFixed(2);
+      var dur   = (2.2 + Math.random() * 4).toFixed(2);
+      var del   = (Math.random() * 6).toFixed(2);
+      var minOp = (0.08 + Math.random() * 0.1).toFixed(2);
+      var maxOp = (0.35 + Math.random() * 0.45).toFixed(2);
+      var color = colors[Math.floor(Math.random() * colors.length)];
+
+      dot.style.cssText = [
+        'width:'       + size + 'px',
+        'height:'      + size + 'px',
+        'left:'        + left + '%',
+        'top:'         + top  + '%',
+        'background:'  + color,
+        '--star-dur:'  + dur  + 's',
+        '--star-del:'  + del  + 's',
+        '--star-min:'  + minOp,
+        '--star-max:'  + maxOp
+      ].join(';');
+
+      frag.appendChild(dot);
+    }
+    container.appendChild(frag);
+  }
+};
+
+/* ════════════════════════════════════════════════
+   V3 — AURORA ENGINE
+   Tracks mouse inside each .card, updates --mx/--my
+   so the card::after radial-gradient follows the cursor
+   ════════════════════════════════════════════════ */
+var AuroraEngine = {
+  init: function () {
+    /* Skip on coarse-pointer (touch) devices — CSS already hides the ::after */
+    if (window.matchMedia('(pointer: coarse)').matches) return;
+
+    document.addEventListener('mousemove', function (e) {
+      var card = e.target.closest('.card');
+      if (!card) return;
+      var r  = card.getBoundingClientRect();
+      var mx = ((e.clientX - r.left) / r.width  * 100).toFixed(1) + '%';
+      var my = ((e.clientY - r.top)  / r.height * 100).toFixed(1) + '%';
+      card.style.setProperty('--mx', mx);
+      card.style.setProperty('--my', my);
+    }, { passive: true });
+  }
+};
+
+/* ════════════════════════════════════════════════
+   V3 — MOBILE HEADER ENGINE
+   Hides header on scroll-down, reveals on scroll-up
+   ════════════════════════════════════════════════ */
+var MobileHeaderEngine = {
+  _lastY:   0,
+  _ticking: false,
+
+  init: function () {
+    /* Only on narrow screens */
+    if (!window.matchMedia('(max-width: 768px)').matches) return;
+
+    var hdr = document.querySelector('header');
+    if (!hdr) return;
+
+    window.addEventListener('scroll', function () {
+      if (MobileHeaderEngine._ticking) return;
+      MobileHeaderEngine._ticking = true;
+      requestAnimationFrame(function () {
+        var y = window.scrollY;
+        if (y > MobileHeaderEngine._lastY + 8 && y > 60) {
+          hdr.classList.add('hdr-hidden');
+        } else if (y < MobileHeaderEngine._lastY - 5 || y < 40) {
+          hdr.classList.remove('hdr-hidden');
+        }
+        MobileHeaderEngine._lastY = y;
+        MobileHeaderEngine._ticking = false;
+      });
+    }, { passive: true });
+  }
+};
+
+/* ════════════════════════════════════════════════
+   V3 — NUMBER GLOW ENGINE
+   Flashes gold text-shadow on SPK balance when it changes
+   ════════════════════════════════════════════════ */
+var NumberGlowEngine = {
+  pulse: function (el) {
+    if (!el) return;
+    el.classList.remove('spk-glow');
+    void el.offsetHeight; /* force reflow to restart animation */
+    el.classList.add('spk-glow');
+    setTimeout(function () { el.classList.remove('spk-glow'); }, 1200);
+  },
+
+  /* Observe SPK balance element and pulse on text change */
+  observe: function (elId) {
+    var el = document.getElementById(elId);
+    if (!el || !window.MutationObserver) return;
+    var prev = el.textContent;
+    var obs  = new MutationObserver(function () {
+      if (el.textContent !== prev) {
+        prev = el.textContent;
+        NumberGlowEngine.pulse(el);
+      }
+    });
+    obs.observe(el, { childList: true, characterData: true, subtree: true });
+  }
+};
+
+/* ════════════════════════════════════════════════
+   HEADER LOGO ANIMATION REFRESH
    ════════════════════════════════════════════════ */
 function refreshLogoAnimation () {
   var logos = document.querySelectorAll('.logo, .auth-logo');
@@ -282,16 +408,26 @@ function bootAnimations () {
   /* Ripples — always on */
   RippleEngine.init();
 
-  /* Magnetic & tilt — after a tick so DOM is settled */
+  /* Star field — V3 background effect */
+  StarFieldEngine.init();
+
+  /* Aurora — cursor-tracked glow inside cards (desktop) */
+  AuroraEngine.init();
+
+  /* Mobile header scroll-hide */
+  MobileHeaderEngine.init();
+
+  /* Magnetic & 3D tilt — after a tick so DOM is settled */
   setTimeout(function () {
     MagneticEngine.init();
     CardTiltEngine.init();
   }, 400);
 
-  /* Nav bounce — after panels are wired by app.js */
+  /* Nav bounce, scroll-reveal, and number glow */
   setTimeout(function () {
     NavEngine.init();
     RevealEngine.init();
+    NumberGlowEngine.observe('hdrSpk');
   }, 600);
 }
 
@@ -305,8 +441,13 @@ if (document.readyState === 'loading') {
    GLOBAL EXPORT  (used by app.js showToast, etc.)
    ════════════════════════════════════════════════ */
 window.SparkAnimations = {
-  IntroEngine:    IntroEngine,
-  CountUpEngine:  CountUpEngine,
-  RevealEngine:   RevealEngine,
-  refreshLogo:    refreshLogoAnimation
+  IntroEngine:       IntroEngine,
+  CountUpEngine:     CountUpEngine,
+  RevealEngine:      RevealEngine,
+  StarFieldEngine:   StarFieldEngine,
+  AuroraEngine:      AuroraEngine,
+  NumberGlowEngine:  NumberGlowEngine,
+  MobileHeaderEngine: MobileHeaderEngine,
+  refreshLogo:       refreshLogoAnimation
 };
+
