@@ -43,18 +43,18 @@ var ProfileEditEngine = (function () {
       + '<div class="pedit-section" id="peditSec-' + sfx + '">'
       + '<button type="button" class="pedit-toggle" id="peditToggle-' + sfx + '">'
       + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'
-      + 'Edit Profile'
+      + (window.T ? T('editProfile') : 'Edit Profile')
       + '<svg class="pedit-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>'
       + '</button>'
       + '<div class="pedit-body" id="peditBody-' + sfx + '">'
       /* Avatar row */
       + '<div class="pedit-av-row">'
       + '<div class="pedit-av-preview" id="peditAvPrev-' + sfx + '" style="background:' + getAvatarGradient(avatarIdx) + '">' + (username.charAt(0).toUpperCase() || 'U') + '</div>'
-      + '<div class="pedit-av-right"><div class="pedit-sublabel">Avatar Colour</div><div class="avatar-grid" id="peditAvGrid-' + sfx + '">' + avatarDots + '</div></div>'
+      + '<div class="pedit-av-right"><div class="pedit-sublabel">' + (window.T ? T('avatarColor') : 'Avatar Colour') + '</div><div class="avatar-grid" id="peditAvGrid-' + sfx + '">' + avatarDots + '</div></div>'
       + '</div>'
       /* Username */
       + '<div class="pedit-field">'
-      + '<label>Username <span class="pedit-sublabel">(letters, numbers, _)</span></label>'
+      + '<label>Username <span class="pedit-sublabel">' + (window.T ? T('usernameLetters') : '(letters, numbers, _)') + '</span></label>'
       + '<div class="pedit-input-wrap"><span class="pedit-at">@</span>'
       + '<input type="text" class="pedit-input" id="peditNick-' + sfx + '" value="' + _esc(username) + '" maxlength="29" placeholder="your_name" autocomplete="off" spellcheck="false">'
       + '</div>'
@@ -62,11 +62,11 @@ var ProfileEditEngine = (function () {
       + '</div>'
       /* Bio */
       + '<div class="pedit-field">'
-      + '<label>Bio <span class="pedit-char-count" id="peditBioCount-' + sfx + '">' + bio.length + '/120</span></label>'
-      + '<textarea class="pedit-input pedit-bio" id="peditBio-' + sfx + '" maxlength="120" rows="3" placeholder="A short bio about you…">' + _esc(bio) + '</textarea>'
+      + '<label>' + (window.T ? T('bioLabel') : 'Bio') + ' <span class="pedit-char-count" id="peditBioCount-' + sfx + '">' + bio.length + '/160</span></label>'
+      + '<textarea class="pedit-input pedit-bio" id="peditBio-' + sfx + '" maxlength="160" rows="3" placeholder="' + (window.T ? T('bioPlaceholder') : 'A short bio about you…') + '">' + _esc(bio) + '</textarea>'
       + '</div>'
       /* Save */
-      + '<button type="button" class="pedit-save-btn" id="peditSave-' + sfx + '">Save Changes</button>'
+      + '<button type="button" class="pedit-save-btn" id="peditSave-' + sfx + '">' + (window.T ? T('saveChanges') : 'Save Changes') + '</button>'
       + '<div class="pedit-status" id="peditStatus-' + sfx + '"></div>'
       + '</div>'
       + '</div>';
@@ -103,7 +103,7 @@ var ProfileEditEngine = (function () {
     var bioCount = document.getElementById('peditBioCount-' + sfx);
     if (bioEl && bioCount) {
       bioEl.addEventListener('input', function () {
-        bioCount.textContent = bioEl.value.length + '/120';
+        bioCount.textContent = bioEl.value.length + '/160';
       });
     }
 
@@ -113,8 +113,8 @@ var ProfileEditEngine = (function () {
     if (nickEl && nickHint) {
       nickEl.addEventListener('input', function () {
         var v = nickEl.value;
-        if (v && v.length < 3)                       { _hint(nickHint, 'Minimum 3 characters', 'err'); }
-        else if (v && !/^[a-zA-Z0-9_]+$/.test(v))   { _hint(nickHint, 'Only letters, numbers, _',  'err'); }
+        if (v && v.length < 3)                       { _hint(nickHint, (window.T ? T('min3chars') : 'Minimum 3 characters'), 'err'); }
+        else if (v && !/^[a-zA-Z0-9_]+$/.test(v))   { _hint(nickHint, (window.T ? T('onlyLettersNums') : 'Only letters, numbers, _'),  'err'); }
         else                                          { _hint(nickHint, '', ''); }
       });
     }
@@ -145,14 +145,20 @@ var ProfileEditEngine = (function () {
     var selectedDot = sec ? sec.querySelector('.avatar-dot.selected') : null;
     var avatarColor = selectedDot ? parseInt(selectedDot.dataset.avIdx, 10) : (window.PROFILE && window.PROFILE.avatar_color || 0);
 
-    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving…'; }
+    var lblSaving = window.T ? T('saving') : 'Saving…';
+    var lblSaved = window.T ? T('saved') : '✓ Saved';
+    var lblSaveBtn = window.T ? T('saveChanges') : 'Save Changes';
+    var lblNetErr = window.T ? T('networkError') : '✗ Network error. Try again.';
+    var lblProfUpdated = window.T ? T('profileUpdated') : '✓ Profile updated!';
+
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = lblSaving; }
     _status(status, '', '');
 
     try {
       if (!window.supa || !window.ME) {
         /* Offline fallback */
         _applyProfileLocally('@' + newNick, newBio, avatarColor);
-        _status(status, '✓ Saved', 'success');
+        _status(status, lblSaved, 'success');
         return;
       }
       var res = await window.supa.from('profiles').update({
@@ -165,13 +171,13 @@ var ProfileEditEngine = (function () {
         _status(status, '✗ ' + res.error.message, 'error');
       } else {
         _applyProfileLocally('@' + newNick, newBio, avatarColor);
-        _status(status, '✓ Profile updated!', 'success');
-        if (window.toast) window.toast('Profile updated ✓', 'var(--ac2)');
+        _status(status, lblProfUpdated, 'success');
+        if (window.toast) window.toast(lblProfUpdated, 'var(--ac2)');
       }
     } catch (e) {
-      _status(status, '✗ Network error. Try again.', 'error');
+      _status(status, lblNetErr, 'error');
     } finally {
-      if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save Changes'; }
+      if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = lblSaveBtn; }
     }
   }
 
@@ -194,18 +200,19 @@ var ProfileEditEngine = (function () {
     var presetCards = Object.keys(presets).map(function (id) {
       var p = presets[id];
       var isActive = active && active.id === id;
+      var locName = window.T ? T(id) : p.name;
       return '<button type="button" class="ts-preset-card' + (isActive ? ' active' : '') + '" data-ts-preset="' + id + '" style="--p-vl:' + p.vl + ';--p-ac:' + p.ac + '">'
         + '<span class="ts-preset-icon">' + p.icon + '</span>'
-        + '<span class="ts-preset-name">' + p.name + '</span>'
+        + '<span class="ts-preset-name">' + locName + '</span>'
         + '</button>';
     }).join('');
 
     var pickerRows = [
-      { label: 'Primary / Buttons',   key: 'vl',    tip: 'Invest button, active tabs, links' },
-      { label: 'SPK / Gold Accent',   key: 'ac',    tip: 'Balance display, number highlights' },
-      { label: 'Cyan / Secondary',    key: 'ac2',   tip: 'Verified badge, countdown, success' },
-      { label: 'Graph Line',          key: 'graph', tip: 'Investment chart line' },
-      { label: 'Muted Text',         key: 'mu2',   tip: 'Secondary labels, timestamps' }
+      { label: window.T ? T('tsPrimary') : 'Primary / Buttons',   key: 'vl',    tip: window.T ? T('tsPrimaryTip') : 'Invest button, active tabs, links' },
+      { label: window.T ? T('tsAccent') : 'SPK / Gold Accent',   key: 'ac',    tip: window.T ? T('tsAccentTip') : 'Balance display, number highlights' },
+      { label: window.T ? T('tsSecondary') : 'Cyan / Secondary',    key: 'ac2',   tip: window.T ? T('tsSecondaryTip') : 'Verified badge, countdown, success' },
+      { label: window.T ? T('tsGraph') : 'Graph Line',          key: 'graph', tip: window.T ? T('tsGraphTip') : 'Investment chart line' },
+      { label: window.T ? T('tsMuted') : 'Muted Text',         key: 'mu2',   tip: window.T ? T('tsMutedTip') : 'Secondary labels, timestamps' }
     ].map(function (row) {
       var val = (active && active[row.key]) || '#888888';
       return '<div class="ts-picker-row">'
@@ -217,15 +224,15 @@ var ProfileEditEngine = (function () {
         + '</div>';
     }).join('');
 
-    return '<div class="ts-header"><div class="ts-title">🎨 Theme Studio</div><button class="ts-close" id="tsClose">✕</button></div>'
-      + '<div class="stitle" style="margin:16px 0 10px">Presets</div>'
+    return '<div class="ts-header"><div class="ts-title">' + (window.T ? T('themeStudioTitle') : '🎨 Theme Studio') + '</div><button class="ts-close" id="tsClose">✕</button></div>'
+      + '<div class="stitle" style="margin:16px 0 10px">' + (window.T ? T('presets') : 'Presets') + '</div>'
       + '<div class="ts-preset-grid">' + presetCards + '</div>'
       + '<div class="divider" style="margin:18px 0"></div>'
-      + '<div class="stitle" style="margin-bottom:12px">Custom Colours</div>'
+      + '<div class="stitle" style="margin-bottom:12px">' + (window.T ? T('customColors') : 'Custom Colours') + '</div>'
       + '<div class="ts-pickers">' + pickerRows + '</div>'
       + '<div class="ts-footer">'
-      + '<button type="button" class="ts-reset-btn" id="tsReset">↺ Reset Default</button>'
-      + '<button type="button" class="hbtn hbtn-gold" id="tsApply">Apply →</button>'
+      + '<button type="button" class="ts-reset-btn" id="tsReset">' + (window.T ? T('resetDefault') : '↺ Reset Default') + '</button>'
+      + '<button type="button" class="hbtn hbtn-gold" id="tsApply">' + (window.T ? T('applyTheme') : 'Apply →') + '</button>'
       + '</div>';
   }
 
@@ -284,7 +291,7 @@ var ProfileEditEngine = (function () {
         });
         if (window.ThemeEngine) ThemeEngine.applyCustom(overrides);
         modal.classList.remove('open');
-        if (window.toast) window.toast('Theme applied ✓', 'var(--ac2)');
+        if (window.toast) window.toast(window.T ? T('themeApplied') : 'Theme applied ✓', 'var(--ac2)');
       });
     }
 
