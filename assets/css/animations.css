@@ -1,0 +1,418 @@
+/* ═══════════════════════════════════════════════════════
+   SPARK — animations.css   Premium animation system
+   ═══════════════════════════════════════════════════════ */
+
+/* ─── EASE TOKENS ─── */
+:root {
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-enter:  cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-exit:   cubic-bezier(0.4, 0, 1, 1);
+}
+
+/* ════════════════════════════════════════════════
+   KEYFRAMES
+   ════════════════════════════════════════════════ */
+
+@keyframes fadeIn  { from{opacity:0} to{opacity:1} }
+@keyframes fadeOut { from{opacity:1} to{opacity:0} }
+
+@keyframes slideUpFade {
+  from { opacity:0; transform:translateY(28px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+@keyframes slideDownFade {
+  from { opacity:0; transform:translateY(-18px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+@keyframes slideRightIn {
+  from { opacity:0; transform:translateX(20px); }
+  to   { opacity:1; transform:translateX(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity:0; transform:scale(0.88); }
+  to   { opacity:1; transform:scale(1); }
+}
+
+@keyframes springPop {
+  0%   { transform:scale(1); }
+  35%  { transform:scale(1.2); }
+  65%  { transform:scale(0.93); }
+  100% { transform:scale(1); }
+}
+
+@keyframes bounceIn {
+  0%   { transform:scale(0.3); opacity:0; }
+  60%  { transform:scale(1.1); opacity:1; }
+  80%  { transform:scale(0.95); }
+  100% { transform:scale(1); }
+}
+
+/* Card staggered entrance */
+@keyframes cardReveal {
+  from { opacity:0; transform:translateY(30px) scale(0.97); }
+  to   { opacity:1; transform:translateY(0) scale(1); }
+}
+
+/* Click ripple */
+@keyframes rippleOut {
+  from { transform:scale(0); opacity:0.55; }
+  to   { transform:scale(5);  opacity:0; }
+}
+
+/* Iridescent colour shimmer */
+@keyframes iridescentShift {
+  0%   { background-position:0% 50%; }
+  50%  { background-position:100% 50%; }
+  100% { background-position:0% 50%; }
+}
+
+/* Glow breathe */
+@keyframes glowBreathe {
+  0%,100% { opacity:0.6; }
+  50%      { opacity:1; }
+}
+
+/* Skeleton loading wave */
+@keyframes skelWave {
+  0%   { background-position:-200% 0; }
+  100% { background-position:200% 0; }
+}
+
+/* SVG stroke draw */
+@keyframes strokeDraw {
+  from { stroke-dashoffset: var(--path-len, 320); }
+  to   { stroke-dashoffset: 0; }
+}
+
+/* Per-letter wordmark entry */
+@keyframes letterEntry {
+  from { opacity:0; transform:translateY(24px) rotateX(-40deg); }
+  to   { opacity:1; transform:translateY(0) rotateX(0deg); }
+}
+
+/* Decorative ring expand */
+@keyframes ringExpand {
+  from { opacity:0; transform:scale(0.5); }
+  to   { opacity:1; transform:scale(1); }
+}
+
+/* Particle burst */
+@keyframes particleBurst {
+  0%   { transform:translate(0,0) scale(1); opacity:1; }
+  100% { transform:translate(var(--ptx,0px), var(--pty,0px)) scale(0); opacity:0; }
+}
+
+/* Intro overlay exit */
+@keyframes introExit {
+  0%   { opacity:1; }
+  65%  { opacity:1; }
+  100% { opacity:0; }
+}
+
+/* Tab icon bounce on switch */
+@keyframes tabBounce {
+  0%   { transform:translateY(0) scale(1); }
+  30%  { transform:translateY(-7px) scale(1.15); }
+  60%  { transform:translateY(2px) scale(0.94); }
+  100% { transform:translateY(0) scale(1); }
+}
+
+/* Number reveal blur-in */
+@keyframes numIn {
+  from { opacity:0; filter:blur(8px); transform:translateY(12px); }
+  to   { opacity:1; filter:blur(0);   transform:translateY(0); }
+}
+
+/* Toast slide up */
+@keyframes toastReveal {
+  from { opacity:0; transform:translateX(-50%) translateY(16px) scale(0.9); }
+  to   { opacity:1; transform:translateX(-50%) translateY(0) scale(1); }
+}
+
+/* Spinner */
+@keyframes spinCW { to { transform:rotate(360deg); } }
+
+/* Observatory float */
+@keyframes obsFloat {
+  0%,100% { transform:translateY(0); }
+  50%      { transform:translateY(-5px); }
+}
+
+
+/* ════════════════════════════════════════════════
+   INTRO SCREEN  #sparkIntro
+   ════════════════════════════════════════════════ */
+
+#sparkIntro {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #05060F;
+  overflow: hidden;
+  perspective: 800px;
+}
+
+#sparkIntro.si-hidden  { display: none; }
+#sparkIntro.si-exiting {
+  animation: introExit 0.9s var(--ease-smooth) forwards;
+  pointer-events: none;
+}
+
+/* While intro plays, keep launchOverlay hidden */
+body.intro-active #launchOverlay { display: none !important; }
+
+/* Radial mesh background */
+.si-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 75% 55% at 50% 42%, rgba(123,92,250,0.25) 0%, transparent 65%),
+    radial-gradient(ellipse 50% 40% at 18% 80%,  rgba(232,90,160,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 55% 45% at 82% 22%,  rgba(232,197,90,0.07) 0%, transparent 60%);
+  animation: fadeIn 0.7s ease forwards;
+}
+
+/* Decorative concentric rings */
+.si-rings {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.si-ring {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0;
+}
+.si-ring--1 {
+  width: 210px; height: 210px;
+  border: 1px solid rgba(123,92,250,0.22);
+  animation: ringExpand 0.6s var(--ease-enter) 0.5s forwards;
+}
+.si-ring--2 {
+  width: 330px; height: 330px;
+  border: 1px solid rgba(232,90,160,0.11);
+  animation: ringExpand 0.7s var(--ease-enter) 0.65s forwards;
+}
+.si-ring--3 {
+  width: 470px; height: 470px;
+  border: 1px solid rgba(90,232,197,0.06);
+  animation: ringExpand 0.8s var(--ease-enter) 0.8s forwards;
+}
+
+/* Logo wrapper */
+.si-logo-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 38px;
+  z-index: 2;
+}
+
+/* Ambient glow behind logo */
+.si-glow {
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(123,92,250,0.45) 0%, transparent 70%);
+  filter: blur(22px);
+  opacity: 0;
+  animation: fadeIn 0.5s ease 0.72s forwards, glowBreathe 2.5s ease 1.2s infinite;
+}
+
+/* SVG logo */
+.si-logo {
+  width: 108px;
+  height: 108px;
+  position: relative;
+  z-index: 2;
+  filter:
+    drop-shadow(0 0 18px rgba(123,92,250,0.55))
+    drop-shadow(0 0 44px rgba(123,92,250,0.22));
+}
+
+/* S-path: drawn via stroke animation */
+.si-s-path {
+  stroke-dasharray: 310;
+  stroke-dashoffset: 310;
+  animation: strokeDraw 0.95s var(--ease-smooth) 0.1s forwards;
+}
+
+/* SVG outer ring fades in */
+.si-ring-svg {
+  opacity: 0;
+  animation: fadeIn 0.5s ease 0.55s forwards;
+}
+
+/* Terminal spark dots */
+.si-dot--top {
+  opacity: 0;
+  animation: bounceIn 0.4s var(--ease-spring) 0.88s forwards;
+}
+.si-dot--bot {
+  opacity: 0;
+  animation: bounceIn 0.4s var(--ease-spring) 1.05s forwards;
+}
+
+/* Wordmark letter-by-letter */
+.si-wordmark {
+  display: flex;
+  gap: 0.03em;
+  font-family: 'Syne', sans-serif;
+  font-size: 46px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  perspective: 500px;
+  z-index: 2;
+}
+.si-letter {
+  display: inline-block;
+  background: linear-gradient(135deg, #9B5FFF 0%, #E85AA0 45%, #E8C55A 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  opacity: 0;
+  animation: letterEntry 0.5s var(--ease-enter) calc(0.92s + var(--i) * 0.065s) forwards;
+}
+
+/* Tagline */
+.si-tagline {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  margin-top: 12px;
+  z-index: 2;
+  opacity: 0;
+  animation: slideUpFade 0.5s var(--ease-enter) 1.35s forwards;
+}
+
+/* Particle container */
+.si-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+.si-particle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border-radius: 50%;
+  opacity: 0;
+}
+.si-particle.active {
+  animation: particleBurst var(--p-dur, 1.1s) var(--p-del, 0s) var(--ease-smooth) forwards;
+}
+
+
+/* ════════════════════════════════════════════════
+   RIPPLE
+   ════════════════════════════════════════════════ */
+
+.spark-ripple {
+  position: absolute;
+  border-radius: 50%;
+  width: 6px;
+  height: 6px;
+  margin: -3px;
+  background: rgba(255,255,255,0.22);
+  pointer-events: none;
+  animation: rippleOut 0.65s var(--ease-smooth) forwards;
+}
+
+/* ════════════════════════════════════════════════
+   SKELETON LOADER
+   ════════════════════════════════════════════════ */
+
+.skel {
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.03) 0%,
+    rgba(255,255,255,0.08) 50%,
+    rgba(255,255,255,0.03) 100%
+  );
+  background-size: 200% 100%;
+  animation: skelWave 1.8s ease infinite;
+  border-radius: 6px;
+}
+
+/* ════════════════════════════════════════════════
+   IRIDESCENT TEXT UTILITY
+   ════════════════════════════════════════════════ */
+
+.ir-text {
+  background: linear-gradient(
+    90deg,
+    #9B5FFF  0%,
+    #E85AA0 22%,
+    #E8C55A 44%,
+    #5AE8C5 66%,
+    #9B5FFF 88%,
+    #E85AA0 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: iridescentShift 7s linear infinite;
+}
+
+/* ════════════════════════════════════════════════
+   SCROLL REVEAL
+   ════════════════════════════════════════════════ */
+
+.sr-init {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 0.5s var(--ease-enter),
+    transform 0.5s var(--ease-enter);
+  transition-delay: var(--sr-delay, 0ms);
+}
+.sr-init.sr-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ════════════════════════════════════════════════
+   NUMBER COUNT-UP
+   ════════════════════════════════════════════════ */
+
+.num-in {
+  display: inline-block;
+  animation: numIn 0.5s var(--ease-enter) forwards;
+}
+
+/* ════════════════════════════════════════════════
+   REDUCED MOTION — turn off everything
+   ════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  #sparkIntro { display: none !important; }
+  .ir-text {
+    background: linear-gradient(90deg, #9B5FFF, #E8C55A);
+    background-size: 100%;
+    animation: none !important;
+  }
+  .si-s-path { stroke-dashoffset: 0 !important; animation: none !important; }
+}
