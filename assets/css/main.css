@@ -108,6 +108,54 @@ header{position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:14p
 .t-tag{font-size:13px;font-weight:500;flex:1;line-height:1.4;}.t-cnt{font-size:11px;color:var(--mu);}
 .t-hot{font-size:10px;color:var(--ac);background:rgba(232,197,90,.1);border-radius:4px;padding:1px 5px;}
 
+/* ════ ЗАГЛУШКА ОБСЕРВАТОРИИ ════ */
+.obs-coming-soon{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(8,8,18,.72);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  border-radius:14px;
+  z-index:10;
+  border:1px solid rgba(90,232,197,.12);
+}
+.obs-stub-inner{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+  text-align:center;
+  padding:12px 20px;
+}
+.obs-stub-icon{
+  font-size:32px;
+  line-height:1;
+  animation:obs-float 3s ease-in-out infinite;
+}
+.obs-stub-title{
+  font-size:14px;
+  font-weight:600;
+  color:var(--tx);
+  letter-spacing:.02em;
+}
+.obs-stub-sub{
+  font-size:11px;
+  color:var(--ac2);
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  background:rgba(90,232,197,.1);
+  border:1px solid rgba(90,232,197,.2);
+  border-radius:20px;
+  padding:2px 10px;
+}
+@keyframes obs-float{
+  0%,100%{transform:translateY(0);}
+  50%{transform:translateY(-5px);}
+}
+
 /* ════ ОБСЕРВАТОРИЯ ════ */
 .obs-shell{
   position:relative;

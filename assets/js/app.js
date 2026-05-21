@@ -577,7 +577,8 @@ async function fetchProfile() {
   if (r.ok && r.data && r.data.data) {
     var row = r.data.data;
     PROFILE.username = row.username || '@user';
-    PROFILE.spk_balance = row.spk_balance || 0;
+    PROFILE.spk_balance = Number(row.spk_balance) || 0;
+    PROFILE.investments_count = Number(row.investments_count) || 0;
   }
 
   // Load secondary stats asynchronously without blocking the startup sequence
@@ -611,6 +612,230 @@ async function fetchProfile() {
   }, 0);
 }
 
+// ═══ Load ideas from DB and populate LIVE array ═══
+async function loadIdeasFromDB() {
+  // Show loading state in feed
+  var cl = document.getElementById('cardsList');
+  if (cl) cl.innerHTML = '<div style="text-align:center;color:var(--mu);padding:40px 20px;font-size:14px">Loading ideas...</div>';
+
+  if (!supa) {
+    // No DB — show empty state
+    renderFeed();
+    renderTrends();
+    renderLeaders();
+    return;
+  }
+
+  var r = await safeSupabaseCall('database', function () {
+    return supa.from('ideas')
+      .select('id, title, description, min_bet, total_invested, investment_history, expires_at, created_at, author_id, reactions')
+      .order('created_at', { ascending: false })
+      .limit(50);
+  }, { silent: true, timeout: 8000 });
+
+  if (r.ok && r.data && r.data.data) {
+    var rows = r.data.data;
+    // Fetch author usernames from profiles
+    var authorIds = rows.map(function(row) { return row.author_id; }).filter(Boolean);
+    var profilesMap = {};
+    if (authorIds.length > 0) {
+      var pRes = await safeSupabaseCall('database', function () {
+        return supa.from('profiles').select('id, username').in('id', authorIds);
+      }, { silent: true, timeout: 5000 });
+      if (pRes.ok && pRes.data && pRes.data.data) {
+        pRes.data.data.forEach(function(p) { profilesMap[p.id] = p.username || '@user'; });
+      }
+    }
+
+    LIVE = rows.map(function(row) {
+      return dbRowToLiveIdea(row, profilesMap);
+    });
+  } else {
+    LIVE = [];
+  }
+
+  renderFeed();
+  renderTrends();
+  renderLeaders();
+}
+
+// ═══ Convert a DB ideas row to LIVE array object ═══
+function dbRowToLiveIdea(row, profilesMap) {
+  var uname = (profilesMap && profilesMap[row.author_id]) || '@user';
+  var letter = uname.replace('@', '').charAt(0).toUpperCase();
+  var history = Array.isArray(row.investment_history) ? row.investment_history : [];
+  var investorCount = history.length;
+  var pool = Number(row.total_invested) || 0;
+  // Calculate pct as growth: (pool / minBet) relative to an arbitrary baseline
+  var minBet = Number(row.min_bet) || 10;
+  var pct = pool > 0 ? Math.min(Math.round((pool / Math.max(minBet * 5, 1)) * 100), 999) : 0;
+  // Calculate hours left from expires_at
+  var cdH = '—';
+  if (row.expires_at) {
+    var msLeft = new Date(row.expires_at).getTime() - Date.now();
+    if (msLeft > 0) {
+      var hoursLeft = Math.floor(msLeft / 3600000);
+      cdH = String(hoursLeft);
+    } else {
+      cdH = '0';
+    }
+  }
+  // Calculate 'tm' (time since posted)
+  var tm = '—';
+  if (row.created_at) {
+    var msSince = Date.now() - new Date(row.created_at).getTime();
+    var minSince = Math.floor(msSince / 60000);
+    if (minSince < 60) tm = minSince + 'm';
+    else if (minSince < 1440) tm = Math.floor(minSince / 60) + 'h';
+    else tm = Math.floor(minSince / 1440) + 'd';
+  }
+  // Restore reactions from DB reactions jsonb
+  var reactions = row.reactions || {};
+  var rsObj = { counts: Object.fromEntries(EMOJIS.map(function(e) { return [e, 0]; })), pick: null };
+  EMOJIS.forEach(function(e) {
+    if (reactions[e] !== undefined) rsObj.counts[e] = Number(reactions[e]) || 0;
+  });
+  RS[row.id] = rsObj;
+  // Pick tag from title keywords
+  var tag = detectTag(row.title || '');
+  // Random-ish gradient based on id
+  var gradients = [
+    'linear-gradient(135deg,#e8c55a,#e87a5a)',
+    'linear-gradient(135deg,#5ae8c5,#5a90e8)',
+    'linear-gradient(135deg,#e85a7a,#c55ae8)',
+    'linear-gradient(135deg,#cd7f32,#aa5a22)',
+    'linear-gradient(135deg,#c0c0c0,#8888aa)',
+    'linear-gradient(135deg,#5a90e8,#5ae8c5)',
+    'linear-gradient(135deg,#e8a55a,#e8c55a)',
+    'linear-gradient(135deg,#c55ae8,#e85a7a)'
+  ];
+  var idxSeed = String(row.id || '').split('').reduce(function(a, c) { return a + c.charCodeAt(0); }, 0);
+  var bg = gradients[idxSeed % gradients.length];
+  return {
+    id: row.id,
+    u: uname,
+    av: letter,
+    bg: bg,
+    tm: tm,
+    tag: tag,
+    minBet: minBet,
+    title: row.title || '',
+    body: row.description || '',
+    investors: investorCount,
+    pool: String(pool),
+    cd: cdH,
+    pct: pct,
+    investment_history: history
+  };
+}
+
+// Simple tag detection from title keywords
+function detectTag(title) {
+  var t = title.toLowerCase();
+  if (t.includes('ai') || t.includes('ml') || t.includes('gpt') || t.includes('code') || t.includes('review')) return 'AI Tools';
+  if (t.includes('solar') || t.includes('energy') || t.includes('ev') || t.includes('carbon') || t.includes('green')) return 'CleanEnergy';
+  if (t.includes('defi') || t.includes('yield') || t.includes('lending') || t.includes('chain') || t.includes('liquidity')) return 'DeFi';
+  if (t.includes('web3') || t.includes('token') || t.includes('nft') || t.includes('blockchain')) return 'Web3';
+  if (t.includes('hardware') || t.includes('device') || t.includes('keyboard') || t.includes('sensor') || t.includes('chip')) return 'Hardware';
+  if (t.includes('saas') || t.includes('crm') || t.includes('b2b') || t.includes('slack') || t.includes('productivity')) return 'B2B SaaS';
+  return 'B2B SaaS';
+}
+
+// ═══ Render live trends table from LIVE data ═══
+function renderTrends() {
+  var tagTotals = {};
+  LIVE.forEach(function(idea) {
+    var tag = idea.tag || 'Other';
+    if (!tagTotals[tag]) tagTotals[tag] = 0;
+    tagTotals[tag] += Number(idea.pool) || 0;
+  });
+
+  var sorted = Object.keys(tagTotals).sort(function(a, b) { return tagTotals[b] - tagTotals[a]; });
+
+  function buildHtml(list) {
+    if (list.length === 0) {
+      return '<div style="color:var(--mu);font-size:12px;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных — опубликуйте первую идею!' : 'No data yet — publish the first idea!') + '</div>';
+    }
+    return list.map(function(tag, i) {
+      var total = tagTotals[tag];
+      var isHot = i === 0 && total > 0;
+      var cntHtml = total > 0 ? total.toLocaleString() + ' SPK' : '0 SPK';
+      return '<div class="trend-item">'
+        + '<span class="t-rank">' + (i + 1) + '</span>'
+        + '<span class="t-tag">#' + escapeHTML(tag) + '</span>'
+        + '<span class="t-cnt">' + escapeHTML(cntHtml) + '</span>'
+        + (isHot ? '<span class="t-hot">\uD83D\uDD25</span>' : '')
+        + '</div>';
+    }).join('');
+  }
+
+  var html = buildHtml(sorted);
+  var desk = document.getElementById('trendListDesk');
+  if (desk) desk.innerHTML = html;
+  var mob = document.getElementById('trendListMob');
+  if (mob) mob.innerHTML = html;
+}
+
+// ═══ Render leaders from profiles DB ═══
+async function renderLeaders() {
+  var rankColors = ['gold', 'silver', 'bronze'];
+  var loadingHtml = '<div style="color:var(--mu);font-size:12px;padding:8px 0">Loading...</div>';
+
+  if (!supa) {
+    var emptyHtml = '<div style="color:var(--mu);font-size:12px;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных' : 'No data yet') + '</div>';
+    var ld = document.getElementById('leaderListDesk');
+    if (ld) ld.innerHTML = emptyHtml;
+    var lm = document.getElementById('leaderListMob');
+    if (lm) lm.innerHTML = emptyHtml;
+    return;
+  }
+
+  var r = await safeSupabaseCall('database', function () {
+    return supa.from('profiles')
+      .select('id, username, spk_balance, investments_count')
+      .order('spk_balance', { ascending: false })
+      .limit(5);
+  }, { silent: true, timeout: 5000 });
+
+  var html;
+  if (r.ok && r.data && r.data.data && r.data.data.length > 0) {
+    var leaders = r.data.data;
+    html = leaders.map(function(p, i) {
+      var uname = escapeHTML(p.username || '@user');
+      var letter = uname.replace('@', '').charAt(0).toUpperCase();
+      var rankClass = rankColors[i] ? 'lrank ' + rankColors[i] : 'lrank';
+      var rankStyle = i >= 3 ? ' style="color:var(--mu)"' : '';
+      var bal = Number(p.spk_balance) || 0;
+      var invCount = Number(p.investments_count) || 0;
+      // Gradient based on rank
+      var gradients = [
+        'linear-gradient(135deg,#ffd700,#e8a55a)',
+        'linear-gradient(135deg,#c0c0c0,#8888aa)',
+        'linear-gradient(135deg,#cd7f32,#aa5a22)',
+        'linear-gradient(135deg,#5ae8c5,#5a90e8)',
+        'linear-gradient(135deg,#e85a7a,#c55ae8)'
+      ];
+      var profitColor = i < 3 ? '' : ' style="color:var(--ac)"';
+      return '<div class="li">'
+        + '<span class="' + rankClass + '"' + rankStyle + '>' + (i + 1) + '</span>'
+        + '<div class="lav" style="background:' + gradients[i] + '">' + letter + '</div>'
+        + '<div class="linf">'
+        + '<div class="lname">' + uname + '</div>'
+        + '<div class="lsub">' + invCount + ' ' + (LANG === 'ru' ? 'вложений' : 'investments') + '</div>'
+        + '</div>'
+        + '<div class="lprofit"' + profitColor + '>' + bal.toLocaleString() + ' SPK</div>'
+        + '</div>';
+    }).join('');
+  } else {
+    html = '<div style="color:var(--mu);font-size:12px;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных' : 'No data yet') + '</div>';
+  }
+
+  var ld = document.getElementById('leaderListDesk');
+  if (ld) ld.innerHTML = html;
+  var lm = document.getElementById('leaderListMob');
+  if (lm) lm.innerHTML = html;
+}
+
 async function doLogout(skipSignOut) {
   // First, completely obliterate all session and local storage to prevent any session restoring!
   var savedLang = null;
@@ -640,7 +865,7 @@ async function doLogout(skipSignOut) {
 
   // Explicitly reset session state to guarantee immediate redirection to sign-in page
   ME = null;
-  PROFILE = { username: '@user', spk_balance: 0 };
+  PROFILE = { username: '@user', spk_balance: 0, ideas_count: 0, rank: null, investments_count: 0 };
   appEntered = false;
   document.documentElement.classList.remove('spark-presession');
   document.documentElement.classList.add('auth-active');
@@ -668,6 +893,8 @@ function enterApp() {
   renderProfile();
   initRealtime();
   applyLang();
+  // Load real ideas from DB, then render trends and leaders
+  loadIdeasFromDB();
 }
 
 function updateHeader() {
@@ -1024,9 +1251,9 @@ function profileHTML(sfx) {
     + '<span class="pbadge">' + T('verifiedInvestor') + '</span></div>'
     + '<div class="srow" style="margin-bottom:18px">'
     + '<div class="sbox"><span class="sval">' + (PROFILE.ideas_count || 0) + '</span><span class="skey">' + T('ideas') + '</span></div>'
-    + '<div class="sbox"><span class="sval">+84%</span><span class="skey">' + T('profit') + '</span></div>'
-    + '<div class="sbox"><span class="sval">38</span><span class="skey">' + T('invested') + '</span></div>'
-    + '<div class="sbox"><span class="sval">#' + (PROFILE.rank || 1) + '</span><span class="skey">' + T('rank') + '</span></div></div>'
+    + '<div class="sbox"><span class="sval">' + (PROFILE.spk_balance > 0 ? '+' + Math.round((PROFILE.spk_balance / Math.max(100, PROFILE.spk_balance) - 1) * 100).toFixed(0) + '%' : '—') + '</span><span class="skey">' + T('profit') + '</span></div>'
+    + '<div class="sbox"><span class="sval">' + (PROFILE.investments_count || 0) + '</span><span class="skey">' + T('invested') + '</span></div>'
+    + '<div class="sbox"><span class="sval">' + (PROFILE.rank ? '#' + PROFILE.rank : '—') + '</span><span class="skey">' + T('rank') + '</span></div></div>'
     + '<div class="divider"></div>'
     + '<div class="stitle" style="margin-top:14px">' + T('wallet') + '</div>'
     + '<div class="wcrd"><div><div class="wamt">' + PROFILE.spk_balance.toLocaleString() + ' <small>SPK</small></div><div class="wsub">' + T('availableBalance') + '</div></div>'
@@ -1430,7 +1657,29 @@ async function doInvest() {
     }
     closeMo('moInvest');
     toast('✅ Invested ' + amt + ' SPK!', 'var(--ac)');
+    // Update the local idea object with new totals from DB response
+    if (CUR_IDEA) {
+      var ideaIdx = LIVE.findIndex(function(x) { return x.id === CUR_IDEA.id; });
+      if (ideaIdx !== -1) {
+        var payload2 = rpc && rpc.data;
+        if (Array.isArray(payload2) && payload2[0]) {
+          if (payload2[0].new_total !== undefined) LIVE[ideaIdx].pool = String(payload2[0].new_total);
+          if (Array.isArray(payload2[0].new_history) && payload2[0].new_history.length > 0) {
+            LIVE[ideaIdx].investment_history = payload2[0].new_history;
+            LIVE[ideaIdx].investors = payload2[0].new_history.length;
+          }
+          // Recalculate pct
+          var newPool = Number(LIVE[ideaIdx].pool) || 0;
+          var minBet2 = LIVE[ideaIdx].minBet || 10;
+          LIVE[ideaIdx].pct = newPool > 0 ? Math.min(Math.round((newPool / Math.max(minBet2 * 5, 1)) * 100), 999) : 0;
+        }
+      }
+    }
+    // Update investments_count locally
+    PROFILE.investments_count = (PROFILE.investments_count || 0) + 1;
     renderFeed();
+    renderTrends();
+    renderProfile();
   } catch (e) {
     reportClientError('invest_failed', {
       message: e && e.message ? e.message : String(e),
@@ -1503,12 +1752,35 @@ async function doPublish() {
 }
 
 function insertLive(row, uname, letter) {
-  if (LIVE.filter(function (x) { return x.id === row.id; }).length) return;
-  LIVE.unshift({
-    id: row.id, u: uname, av: letter, bg: 'linear-gradient(135deg,#e8c55a,#5ae8c5)', tm: 'just now', tag: 'AI Tools', minBet: row.min_bet || 10,
-    title: row.title, body: row.desc || '', investors: 0, pool: '0', cd: '24', pct: 0
-  });
+  var idStr = String(row.id || '');
+  if (LIVE.filter(function (x) { return String(x.id) === idStr; }).length) return;
+  // Use full mapping if possible, otherwise minimal fallback
+  var ideaObj;
+  if (row.author_id) {
+    var fakeProfilesMap = {};
+    fakeProfilesMap[row.author_id] = uname;
+    ideaObj = dbRowToLiveIdea(row, fakeProfilesMap);
+  } else {
+    ideaObj = {
+      id: row.id,
+      u: uname,
+      av: letter || uname.replace('@', '').charAt(0).toUpperCase(),
+      bg: 'linear-gradient(135deg,#e8c55a,#5ae8c5)',
+      tm: 'just now',
+      tag: detectTag(row.title || ''),
+      minBet: row.min_bet || 10,
+      title: row.title || '',
+      body: row.description || row.body || '',
+      investors: 0,
+      pool: '0',
+      cd: '24',
+      pct: 0,
+      investment_history: []
+    };
+  }
+  LIVE.unshift(ideaObj);
   renderFeed();
+  renderTrends();
 }
 
 function attachHold(id, ms, cb) {
@@ -1653,7 +1925,7 @@ function bindAuthListener() {
   supa.auth.onAuthStateChange(function (event, session) {
     if (event === 'SIGNED_OUT') {
       ME = null;
-      PROFILE = { username: '@user', spk_balance: 0 };
+      PROFILE = { username: '@user', spk_balance: 0, ideas_count: 0, rank: null, investments_count: 0 };
       appEntered = false;
       document.documentElement.classList.remove('spark-presession');
       document.documentElement.classList.add('auth-active');

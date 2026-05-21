@@ -114,7 +114,7 @@ try {
 var db = supa;
 
 var ME = null;
-var PROFILE = { username: '@user123', spk_balance: 4520 };
+var PROFILE = { username: '@user', spk_balance: 0, ideas_count: 0, rank: null, investments_count: 0 };
 var PENDING_EMAIL = '';
 var PENDING_NICK = '';
 var PENDING_REG_PASSWORD = '';
@@ -131,27 +131,11 @@ function getRS(id) {
   if (!RS[id]) RS[id] = { counts: Object.fromEntries(EMOJIS.map(function (e) { return [e, 0]; })), pick: null };
   return RS[id];
 }
-getRS(1).counts['🔥'] = 99;
-getRS(1).counts['💎'] = 44;
+// No mock reaction seeds — real data loaded from DB
 
-var SEEDS = [
-  { id: 1, u: '@alex_ventures', av: 'A', bg: 'linear-gradient(135deg,#e8c55a,#e87a5a)', tm: '2h', tag: 'AI Tools', minBet: 10, title: 'AI-powered code review for solo devs', body: 'Automated PR review that learns your codebase style. Catches bugs, suggests refactors, and writes commit messages - all in under 10 seconds.', investors: 320, pool: '12,500', cd: '24', pct: 34 },
-  { id: 2, u: '@maria_builds', av: 'M', bg: 'linear-gradient(135deg,#5ae8c5,#5a90e8)', tm: '5h', tag: 'CleanEnergy', minBet: 25, title: 'Rooftop solar leasing - zero upfront cost', body: 'Homeowners lease their roof space, we install panels, they get 15% energy bill reduction instantly. Revenue from grid surplus.', investors: 184, pool: '7,200', cd: '11', pct: 18 },
-  { id: 3, u: '@kirill_vc', av: 'K', bg: 'linear-gradient(135deg,#e85a7a,#c55ae8)', tm: '8h', tag: 'B2B SaaS', minBet: 10, title: 'Async meeting summaries for Slack-heavy teams', body: 'Records voice memos in Slack, transcribes + summarises with action points, posts back to thread. No Zoom needed.', investors: 97, pool: '3,400', cd: '6', pct: 9 },
-  { id: 4, u: '@dima_builds', av: 'D', bg: 'linear-gradient(135deg,#cd7f32,#aa5a22)', tm: '10h', tag: 'DeFi', minBet: 50, title: 'DeFi micro-lending for SME supply chains', body: 'Businesses unlock liquidity from unpaid invoices. Smart contracts settle in 48h. No credit check, no bank.', investors: 241, pool: '9,800', cd: '18', pct: 27 },
-  { id: 5, u: '@sarah_angel', av: 'S', bg: 'linear-gradient(135deg,#c0c0c0,#8888aa)', tm: '13h', tag: 'Hardware', minBet: 10, title: 'Modular keyboard with swappable OS chips', body: 'Each chip runs a different OS profile. Swap from dev mode to design mode in seconds. MagSafe-style attachment.', investors: 156, pool: '5,100', cd: '32', pct: 41 },
-  { id: 6, u: '@leo_founder', av: 'L', bg: 'linear-gradient(135deg,#5a90e8,#5ae8c5)', tm: '16h', tag: 'AI Tools', minBet: 10, title: 'Voice journal that auto-detects your mood trends', body: 'Record 30-second voice notes. AI extracts sentiment, energy, stress. Weekly report shows your emotional patterns.', investors: 88, pool: '2,900', cd: '40', pct: 15 },
-  { id: 7, u: '@nina_builds', av: 'N', bg: 'linear-gradient(135deg,#e8a55a,#e8c55a)', tm: '20h', tag: 'Web3', minBet: 10, title: 'On-chain reputation score for freelancers', body: 'Client reviews stored on-chain, portable across platforms. No more starting from zero on every marketplace.', investors: 203, pool: '7,700', cd: '22', pct: 31 },
-  { id: 8, u: '@tom_ideas', av: 'T', bg: 'linear-gradient(135deg,#c55ae8,#e85a7a)', tm: '1d', tag: 'B2B SaaS', minBet: 10, title: 'CRM built for indie consultants - single person', body: 'Full pipeline, invoicing, and follow-up automation. No seats, no bloat. Syncs with Gmail and Notion.', investors: 67, pool: '1,800', cd: '48', pct: 7 },
-  { id: 9, u: '@vera_eco', av: 'V', bg: 'linear-gradient(135deg,#5ae8c5,#5a90e8)', tm: '1d', tag: 'CleanEnergy', minBet: 10, title: 'Community EV charging co-ops for apartment blocks', body: 'Residents collectively own charging infra in their parking lot. Monthly earnings split by share.', investors: 119, pool: '4,200', cd: '36', pct: 22 },
-  { id: 10, u: '@boris_vc', av: 'B', bg: 'linear-gradient(135deg,#e8c55a,#5ae8c5)', tm: '2d', tag: 'DeFi', minBet: 100, title: 'Yield optimizer that auto-rebalances between chains', body: 'Set risk profile once. Smart contract moves your liquidity to highest-yield pools across 6 chains every 12h.', investors: 178, pool: '6,500', cd: '15', pct: 38 },
-  { id: 11, u: '@kat_design', av: 'K', bg: 'linear-gradient(135deg,#e85a7a,#e8a55a)', tm: '2d', tag: 'AI Tools', minBet: 10, title: 'AI brand identity kit from a single mood board', body: 'Upload 5 images. Get logo options, color palette, font pair, and brand guide PDF in 2 minutes.', investors: 144, pool: '5,500', cd: '28', pct: 29 },
-  { id: 12, u: '@pete_saas', av: 'P', bg: 'linear-gradient(135deg,#5a90e8,#c55ae8)', tm: '2d', tag: 'Hardware', minBet: 10, title: 'Posture sensor clip for remote workers', body: 'Attaches to shirt collar. Vibrates when you hunch. Weekly report shows posture score. $29 device, $0 subscription.', investors: 92, pool: '3,100', cd: '52', pct: 12 },
-  { id: 13, u: '@mira_web3', av: 'M', bg: 'linear-gradient(135deg,#c55ae8,#5a90e8)', tm: '3d', tag: 'Web3', minBet: 10, title: 'Token-gated coworking memberships in 40 cities', body: 'Hold 100 $WORK tokens, access any partner coworking space worldwide.', investors: 231, pool: '8,900', cd: '10', pct: 44 },
-  { id: 14, u: '@sam_builds', av: 'S', bg: 'linear-gradient(135deg,#e8c55a,#e87a5a)', tm: '3d', tag: 'B2B SaaS', minBet: 10, title: 'One-click privacy audit for SaaS companies', body: 'Scans your app, finds GDPR/CCPA gaps, generates remediation plan with priority order.', investors: 55, pool: '1,500', cd: '60', pct: 6 },
-  { id: 15, u: '@olga_impact', av: 'O', bg: 'linear-gradient(135deg,#5ae8c5,#e8c55a)', tm: '3d', tag: 'CleanEnergy', minBet: 10, title: 'Carbon credit marketplace for urban gardeners', body: "Measure your garden's CO2 absorption. Sell certified credits to corporates.", investors: 109, pool: '3,800', cd: '44', pct: 20 }
-];
-var LIVE = SEEDS.slice();
+// SEEDS cleared — feed now loads from Supabase database
+var SEEDS = [];
+var LIVE = [];
 
 var I18N = {
   en: {

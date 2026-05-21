@@ -179,37 +179,41 @@
 <div class="layout">
   <aside class="sidebar">
     <div class="stitle">Trending Now</div>
-    <div class="trend-item"><span class="t-rank">1</span><span class="t-tag">#AI Tools</span><span class="t-cnt">84</span><span class="t-hot">🔥</span></div>
-    <div class="trend-item"><span class="t-rank">2</span><span class="t-tag">#DeFi</span><span class="t-cnt">61</span></div>
-    <div class="trend-item"><span class="t-rank">3</span><span class="t-tag">#CleanEnergy</span><span class="t-cnt">55</span></div>
-    <div class="trend-item"><span class="t-rank">4</span><span class="t-tag">#B2B SaaS</span><span class="t-cnt">47</span></div>
-    <div class="trend-item"><span class="t-rank">5</span><span class="t-tag">#Hardware</span><span class="t-cnt">39</span></div>
-    <div class="trend-item"><span class="t-rank">6</span><span class="t-tag">#Web3</span><span class="t-cnt">31</span></div>
+    <div id="trendListDesk"><div style="color:var(--mu);font-size:12px;padding:8px 0">Loading...</div></div>
     <div class="divider"></div>
     <div class="stitle" id="obsTitleDesk">Market Observatory</div>
-    <div class="obs-shell" id="obsDesk" aria-label="Market observatory map">
-      <div class="obs-dimmer"></div>
-      <div class="obs-core"></div>
-      <button class="obs-system pos-tech" type="button" data-obs-system>
-        <span class="obs-sun"></span>
-        <span class="obs-system-label" data-obs-label="tech">Technology</span>
-        <span class="obs-orbit orbit-1"><span class="obs-planet mint p-45"><span class="obs-info"><span class="obs-n">AI</span><span class="obs-v">12k</span></span></span></span>
-        <span class="obs-orbit orbit-2"><span class="obs-planet azure p-180"><span class="obs-info"><span class="obs-n">Cloud</span><span class="obs-v">8k</span></span></span></span>
-        <span class="obs-orbit orbit-3"><span class="obs-planet mint p-300"><span class="obs-info"><span class="obs-n">Cyber</span><span class="obs-v">5k</span></span></span></span>
-      </button>
-      <button class="obs-system pos-eco" type="button" data-obs-system>
-        <span class="obs-sun"></span>
-        <span class="obs-system-label" data-obs-label="eco">Ecology</span>
-        <span class="obs-orbit orbit-1"><span class="obs-planet mint p-220"><span class="obs-info"><span class="obs-n">Solar</span><span class="obs-v">9k</span></span></span></span>
-        <span class="obs-orbit orbit-2"><span class="obs-planet azure p-45"><span class="obs-info"><span class="obs-n">Recycle</span><span class="obs-v">4k</span></span></span></span>
-      </button>
-      <button class="obs-system pos-social" type="button" data-obs-system>
-        <span class="obs-sun"></span>
-        <span class="obs-system-label" data-obs-label="social">Society</span>
-        <span class="obs-orbit orbit-1"><span class="obs-planet mint p-90"><span class="obs-info"><span class="obs-n">Study</span><span class="obs-v">7k</span></span></span></span>
-        <span class="obs-orbit orbit-2"><span class="obs-planet azure p-270"><span class="obs-info"><span class="obs-n">Unity</span><span class="obs-v">3k</span></span></span></span>
-        <span class="obs-orbit orbit-3"><span class="obs-planet mint p-10"><span class="obs-info"><span class="obs-n">Charity</span><span class="obs-v">2k</span></span></span></span>
-      </button>
+    <div style="position:relative">
+      <div class="obs-shell" id="obsDesk" aria-label="Market observatory map" style="pointer-events:none;opacity:0.35">
+        <div class="obs-dimmer"></div>
+        <div class="obs-core"></div>
+        <button class="obs-system pos-tech" type="button" data-obs-system>
+          <span class="obs-sun"></span>
+          <span class="obs-system-label" data-obs-label="tech">Technology</span>
+          <span class="obs-orbit orbit-1"><span class="obs-planet mint p-45"><span class="obs-info"><span class="obs-n">AI</span><span class="obs-v">—</span></span></span></span>
+          <span class="obs-orbit orbit-2"><span class="obs-planet azure p-180"><span class="obs-info"><span class="obs-n">SaaS</span><span class="obs-v">—</span></span></span></span>
+          <span class="obs-orbit orbit-3"><span class="obs-planet mint p-300"><span class="obs-info"><span class="obs-n">Web3</span><span class="obs-v">—</span></span></span></span>
+        </button>
+        <button class="obs-system pos-eco" type="button" data-obs-system>
+          <span class="obs-sun"></span>
+          <span class="obs-system-label" data-obs-label="eco">Ecology</span>
+          <span class="obs-orbit orbit-1"><span class="obs-planet mint p-220"><span class="obs-info"><span class="obs-n">Solar</span><span class="obs-v">—</span></span></span></span>
+          <span class="obs-orbit orbit-2"><span class="obs-planet azure p-45"><span class="obs-info"><span class="obs-n">Energy</span><span class="obs-v">—</span></span></span></span>
+        </button>
+        <button class="obs-system pos-social" type="button" data-obs-system>
+          <span class="obs-sun"></span>
+          <span class="obs-system-label" data-obs-label="social">Society</span>
+          <span class="obs-orbit orbit-1"><span class="obs-planet mint p-90"><span class="obs-info"><span class="obs-n">HW</span><span class="obs-v">—</span></span></span></span>
+          <span class="obs-orbit orbit-2"><span class="obs-planet azure p-270"><span class="obs-info"><span class="obs-n">DeFi</span><span class="obs-v">—</span></span></span></span>
+          <span class="obs-orbit orbit-3"><span class="obs-planet mint p-10"><span class="obs-info"><span class="obs-n">Other</span><span class="obs-v">—</span></span></span></span>
+        </button>
+      </div>
+      <div class="obs-coming-soon" id="obsStubDesk">
+        <div class="obs-stub-inner">
+          <span class="obs-stub-icon">🔭</span>
+          <span class="obs-stub-title">Market Observatory</span>
+          <span class="obs-stub-sub">Coming soon</span>
+        </div>
+      </div>
     </div>
   </aside>
 
@@ -243,17 +247,13 @@
 
   <aside class="sidebar">
     <div class="stitle">Prophet Leaderboard</div>
-    <div class="li"><span class="lrank gold">1</span><div class="lav" style="background:linear-gradient(135deg,#ffd700,#e8a55a)">A</div><div class="linf"><div class="lname">@alex_ventures</div><div class="lsub">14 ideas · 89% hit rate</div></div><div class="lprofit">+210%</div></div>
-    <div class="li"><span class="lrank silver">2</span><div class="lav" style="background:linear-gradient(135deg,#c0c0c0,#8888aa)">S</div><div class="linf"><div class="lname">@sarah_angel</div><div class="lsub">9 ideas · 78% hit rate</div></div><div class="lprofit">+180%</div></div>
-    <div class="li"><span class="lrank bronze">3</span><div class="lav" style="background:linear-gradient(135deg,#cd7f32,#aa5a22)">D</div><div class="linf"><div class="lname">@dima_builds</div><div class="lsub">21 ideas · 71% hit rate</div></div><div class="lprofit">+110%</div></div>
-    <div class="li"><span class="lrank" style="color:var(--mu)">4</span><div class="lav" style="background:linear-gradient(135deg,#5ae8c5,#5a90e8)">M</div><div class="linf"><div class="lname">@maria_builds</div><div class="lsub">7 ideas · 67% hit rate</div></div><div class="lprofit" style="color:var(--ac)">+88%</div></div>
-    <div class="li"><span class="lrank" style="color:var(--mu)">5</span><div class="lav" style="background:linear-gradient(135deg,#e85a7a,#c55ae8)">K</div><div class="linf"><div class="lname">@kirill_vc</div><div class="lsub">11 ideas · 63% hit rate</div></div><div class="lprofit" style="color:var(--ac)">+72%</div></div>
+    <div id="leaderListDesk"><div style="color:var(--mu);font-size:12px;padding:8px 0">Loading...</div></div>
     <div class="divider"></div>
     <div class="stitle">Live Activity</div>
     <div id="liveActivityList" style="display:flex;flex-direction:column;gap:7px;font-size:12px;color:var(--mu);line-height:1.55">
-      <div id="actRow1" style="padding:7px 0;border-bottom:1px solid var(--bd)"><span style="color:var(--ac2)">@sarah_angel</span> invested <strong style="color:var(--tx)">50 SPK</strong> in AI code review<div style="font-size:10px;margin-top:1px">2 min ago</div></div>
-      <div id="actRow2" style="padding:7px 0;border-bottom:1px solid var(--bd)"><span style="color:var(--red)">@dima_builds</span> critiqued Solar Leasing<div style="font-size:10px;margin-top:1px">7 min ago</div></div>
-      <div id="actRow3" style="padding:7px 0">New idea posted: <strong style="color:var(--tx)">#DeFi lending for SMEs</strong><div style="font-size:10px;margin-top:1px">12 min ago</div></div>
+      <div id="actRow1" style="padding:7px 0;border-bottom:1px solid var(--bd)"></div>
+      <div id="actRow2" style="padding:7px 0;border-bottom:1px solid var(--bd)"></div>
+      <div id="actRow3" style="padding:7px 0"></div>
     </div>
   </aside>
 </div>
@@ -288,43 +288,46 @@
 <!-- МОБИЛЬНЫЕ ПАНЕЛИ -->
 <div class="mpanel" id="panel-trends">
   <div class="stitle">Trending Now</div>
-  <div class="trend-item"><span class="t-rank">1</span><span class="t-tag">#AI Tools</span><span class="t-cnt">84</span><span class="t-hot">🔥</span></div>
-  <div class="trend-item"><span class="t-rank">2</span><span class="t-tag">#DeFi</span><span class="t-cnt">61</span></div>
-  <div class="trend-item"><span class="t-rank">3</span><span class="t-tag">#CleanEnergy</span><span class="t-cnt">55</span></div>
-  <div class="trend-item"><span class="t-rank">4</span><span class="t-tag">#B2B SaaS</span><span class="t-cnt">47</span></div>
-  <div class="trend-item"><span class="t-rank">5</span><span class="t-tag">#Hardware</span><span class="t-cnt">39</span></div>
-  <div class="trend-item"><span class="t-rank">6</span><span class="t-tag">#Web3</span><span class="t-cnt">31</span></div>
+  <div id="trendListMob"><div style="color:var(--mu);font-size:12px;padding:8px 0">Loading...</div></div>
   <div class="divider"></div>
   <div class="stitle" id="obsTitleMob">Market Observatory</div>
-  <div class="obs-shell obs-mobile" id="obsMobile" aria-label="Market observatory map">
-    <div class="obs-dimmer"></div>
-    <div class="obs-core"></div>
-    <button class="obs-system pos-tech" type="button" data-obs-system>
-      <span class="obs-sun"></span>
-      <span class="obs-system-label" data-obs-label="tech">Technology</span>
-      <span class="obs-orbit orbit-1"><span class="obs-planet mint p-45"><span class="obs-info"><span class="obs-n">AI</span><span class="obs-v">12k</span></span></span></span>
-      <span class="obs-orbit orbit-2"><span class="obs-planet azure p-180"><span class="obs-info"><span class="obs-n">Cloud</span><span class="obs-v">8k</span></span></span></span>
-      <span class="obs-orbit orbit-3"><span class="obs-planet mint p-300"><span class="obs-info"><span class="obs-n">Cyber</span><span class="obs-v">5k</span></span></span></span>
-    </button>
-    <button class="obs-system pos-eco" type="button" data-obs-system>
-      <span class="obs-sun"></span>
-      <span class="obs-system-label" data-obs-label="eco">Ecology</span>
-      <span class="obs-orbit orbit-1"><span class="obs-planet mint p-220"><span class="obs-info"><span class="obs-n">Solar</span><span class="obs-v">9k</span></span></span></span>
-      <span class="obs-orbit orbit-2"><span class="obs-planet azure p-45"><span class="obs-info"><span class="obs-n">Recycle</span><span class="obs-v">4k</span></span></span></span>
-    </button>
-    <button class="obs-system pos-social" type="button" data-obs-system>
-      <span class="obs-sun"></span>
-      <span class="obs-system-label" data-obs-label="social">Society</span>
-      <span class="obs-orbit orbit-1"><span class="obs-planet mint p-90"><span class="obs-info"><span class="obs-n">Study</span><span class="obs-v">7k</span></span></span></span>
-      <span class="obs-orbit orbit-2"><span class="obs-planet azure p-270"><span class="obs-info"><span class="obs-n">Unity</span><span class="obs-v">3k</span></span></span></span>
-      <span class="obs-orbit orbit-3"><span class="obs-planet mint p-10"><span class="obs-info"><span class="obs-n">Charity</span><span class="obs-v">2k</span></span></span></span>
-    </button>
+  <div style="position:relative">
+    <div class="obs-shell obs-mobile" id="obsMobile" aria-label="Market observatory map" style="pointer-events:none;opacity:0.35">
+      <div class="obs-dimmer"></div>
+      <div class="obs-core"></div>
+      <button class="obs-system pos-tech" type="button" data-obs-system>
+        <span class="obs-sun"></span>
+        <span class="obs-system-label" data-obs-label="tech">Technology</span>
+        <span class="obs-orbit orbit-1"><span class="obs-planet mint p-45"><span class="obs-info"><span class="obs-n">AI</span><span class="obs-v">—</span></span></span></span>
+        <span class="obs-orbit orbit-2"><span class="obs-planet azure p-180"><span class="obs-info"><span class="obs-n">SaaS</span><span class="obs-v">—</span></span></span></span>
+        <span class="obs-orbit orbit-3"><span class="obs-planet mint p-300"><span class="obs-info"><span class="obs-n">Web3</span><span class="obs-v">—</span></span></span></span>
+      </button>
+      <button class="obs-system pos-eco" type="button" data-obs-system>
+        <span class="obs-sun"></span>
+        <span class="obs-system-label" data-obs-label="eco">Ecology</span>
+        <span class="obs-orbit orbit-1"><span class="obs-planet mint p-220"><span class="obs-info"><span class="obs-n">Solar</span><span class="obs-v">—</span></span></span></span>
+        <span class="obs-orbit orbit-2"><span class="obs-planet azure p-45"><span class="obs-info"><span class="obs-n">Energy</span><span class="obs-v">—</span></span></span></span>
+      </button>
+      <button class="obs-system pos-social" type="button" data-obs-system>
+        <span class="obs-sun"></span>
+        <span class="obs-system-label" data-obs-label="social">Society</span>
+        <span class="obs-orbit orbit-1"><span class="obs-planet mint p-90"><span class="obs-info"><span class="obs-n">HW</span><span class="obs-v">—</span></span></span></span>
+        <span class="obs-orbit orbit-2"><span class="obs-planet azure p-270"><span class="obs-info"><span class="obs-n">DeFi</span><span class="obs-v">—</span></span></span></span>
+        <span class="obs-orbit orbit-3"><span class="obs-planet mint p-10"><span class="obs-info"><span class="obs-n">Other</span><span class="obs-v">—</span></span></span></span>
+      </button>
+    </div>
+    <div class="obs-coming-soon" id="obsStubMob">
+      <div class="obs-stub-inner">
+        <span class="obs-stub-icon">🔭</span>
+        <span class="obs-stub-title">Market Observatory</span>
+        <span class="obs-stub-sub">Coming soon</span>
+      </div>
+    </div>
   </div>
 </div>
 <div class="mpanel right" id="panel-leaders">
   <div class="stitle">Leaders</div>
-  <div class="li"><span class="lrank gold">1</span><div class="lav" style="background:linear-gradient(135deg,#ffd700,#e8a55a)">A</div><div class="linf"><div class="lname">@alex_ventures</div><div class="lsub">14 ideas · 89%</div></div><div class="lprofit">+210%</div></div>
-  <div class="li"><span class="lrank silver">2</span><div class="lav" style="background:linear-gradient(135deg,#c0c0c0,#8888aa)">S</div><div class="linf"><div class="lname">@sarah_angel</div><div class="lsub">9 ideas · 78%</div></div><div class="lprofit">+180%</div></div>
+  <div id="leaderListMob"><div style="color:var(--mu);font-size:12px;padding:8px 0">Loading...</div></div>
 </div>
 <div class="mpanel up" id="panel-chats" style="padding:0">
   <div class="chat-hub">
