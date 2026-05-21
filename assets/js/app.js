@@ -714,7 +714,8 @@ function dbRowToLiveIdea(row, profilesMap) {
   }
   // Restore reactions from DB reactions jsonb
   var reactions = row.reactions || {};
-  var rsObj = { counts: Object.fromEntries(EMOJIS.map(function(e) { return [e, 0]; })), pick: null };
+  var oldPick = RS[row.id] ? RS[row.id].pick : null;
+  var rsObj = { counts: Object.fromEntries(EMOJIS.map(function(e) { return [e, 0]; })), pick: oldPick };
   EMOJIS.forEach(function(e) {
     if (reactions[e] !== undefined) rsObj.counts[e] = Number(reactions[e]) || 0;
   });
@@ -1541,10 +1542,21 @@ function renderPgn(tp) {
 function react(ideaId, emoji, btn) {
   var rs = getRS(ideaId);
   var prev = rs.pick;
-  if (prev === emoji) { rs.counts[emoji] = Math.max(0, (rs.counts[emoji] || 0) - 1); rs.pick = null; } else {
-    if (prev) rs.counts[prev] = Math.max(0, (rs.counts[prev] || 0) - 1);
+  if (prev === emoji) {
+    rs.counts[emoji] = Math.max(0, (rs.counts[emoji] || 0) - 1);
+    rs.pick = null;
+    if (supa) {
+      safeSupabaseCall('database', function() { return supa.from('ideas').update({ reactions: rs.counts }).eq('id', ideaId); }, { silent: true });
+    }
+  } else {
+    if (prev) {
+      rs.counts[prev] = Math.max(0, (rs.counts[prev] || 0) - 1);
+    }
     rs.counts[emoji] = (rs.counts[emoji] || 0) + 1;
     rs.pick = emoji;
+    if (supa) {
+      safeSupabaseCall('database', function() { return supa.from('ideas').update({ reactions: rs.counts }).eq('id', ideaId); }, { silent: true });
+    }
   }
   btn.classList.add('pop');
   setTimeout(function () { btn.classList.remove('pop'); }, 300);
