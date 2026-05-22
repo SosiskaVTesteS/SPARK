@@ -267,6 +267,7 @@ var ProfileEditEngine = (function () {
       var id = card.dataset.tsPreset;
       if (window.ThemeEngine && ThemeEngine.PRESETS[id]) {
         var t = ThemeEngine.PRESETS[id];
+        content.dataset.selectedPreset = id;
         content.querySelectorAll('.ts-preset-card').forEach(function (c) {
           c.classList.toggle('active', c.dataset.tsPreset === id);
         });
@@ -278,15 +279,35 @@ var ProfileEditEngine = (function () {
       }
     });
 
+    /* Clear preset selection if custom color is manually tweaked */
+    content.addEventListener('input', function (e) {
+      if (e.target.classList.contains('ts-color-input')) {
+        content.removeAttribute('data-selected-preset');
+        content.querySelectorAll('.ts-preset-card').forEach(function (c) {
+          c.classList.remove('active');
+        });
+      }
+    });
+
     /* Apply and Reset via delegation */
     content.addEventListener('click', function (e) {
       var applyBtn = e.target.closest('#tsApply');
       if (applyBtn) {
-        var overrides = {};
+        var presetId = content.dataset.selectedPreset;
+        var base = (presetId && window.ThemeEngine && ThemeEngine.PRESETS[presetId]) 
+                    ? ThemeEngine.PRESETS[presetId] 
+                    : (window.ThemeEngine ? ThemeEngine.getActive() : {});
+        var merged = Object.assign({}, base);
+        
         content.querySelectorAll('.ts-color-input').forEach(function (input) {
-          overrides[input.dataset.tsVar] = input.value;
+          merged[input.dataset.tsVar] = input.value;
         });
-        if (window.ThemeEngine) ThemeEngine.applyCustom(overrides);
+
+        if (window.ThemeEngine) {
+          if (!presetId) delete merged.id;
+          ThemeEngine.apply(merged);
+          ThemeEngine.save(merged);
+        }
         modal.classList.remove('open');
         if (window.toast) window.toast(window.T ? T('themeApplied') : 'Theme applied ✓', 'var(--ac2)');
         return;
@@ -296,6 +317,7 @@ var ProfileEditEngine = (function () {
       if (resetBtn) {
         if (window.ThemeEngine && ThemeEngine.PRESETS.cosmos) {
           var t = ThemeEngine.PRESETS.cosmos;
+          content.dataset.selectedPreset = 'cosmos';
           content.querySelectorAll('.ts-preset-card').forEach(function (c) {
             c.classList.toggle('active', c.dataset.tsPreset === 'cosmos');
           });
