@@ -2508,5 +2508,12 @@ document.addEventListener('DOMContentLoaded', function() {
         box.style.transform = '';
       }
     });
+
+    if (handle) {
+      handle.addEventListener('click', function() {
+        var mo = box.closest('.mo');
+        if (mo) closeMo(mo.id);
+      });
+    }
   });
 });

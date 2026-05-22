@@ -1031,7 +1031,7 @@ svg.igsvg { width:100%; height:68px; display:block; overflow:visible; }
 }
 .mob-tab.active { 
   color: var(--vl2); 
-  background: rgba(123,92,250,0.14);
+  background: color-mix(in srgb, var(--vl2) 15%, transparent);
   flex: 2.2; /* expand */
 }
 .mob-tab.active span:not(.mob-tab-pill):not(.unread-dot) {
@@ -1040,22 +1040,17 @@ svg.igsvg { width:100%; height:68px; display:block; overflow:visible; }
   transform: translateX(0);
 }
 .mob-tab svg { transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
-.mob-tab.active svg { filter: drop-shadow(0 0 6px rgba(123,92,250,0.6)); transform: scale(1.1); }
+.mob-tab.active svg { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--vl2) 60%, transparent)); transform: scale(1.1); }
 
 /* Chats tab special */
 .mob-tab.tab-chats { color: var(--ac); flex: 0.8; }
-.mob-tab.tab-chats.active { color: var(--ac); background: rgba(232,197,90,0.12); flex: 2.2; }
-.tab-icon-wrap {
-  display: flex; align-items: center; justify-content: center;
-  width: 40px; height: 40px; border-radius: 50%;
-  background: transparent;
-  transition: all 0.3s ease;
-  position: relative;
+.mob-tab.tab-chats.active { 
+  color: var(--ac); 
+  background: color-mix(in srgb, var(--ac) 15%, transparent); 
+  flex: 2.2; 
 }
-.mob-tab.tab-chats.active .tab-icon-wrap {
-  background: rgba(232,197,90,0.18);
-  box-shadow: 0 0 22px rgba(232,197,90,0.4);
-}
+.mob-tab.tab-chats.active svg { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--ac) 60%, transparent)); transform: scale(1.1); }
+
 .unread-dot { position:absolute; top:8px; right:calc(50% - 14px); width:7px; height:7px; border-radius:50%; background:var(--red); border:1.5px solid var(--bg); display:none; }
 .unread-dot.show { display:block; }
 

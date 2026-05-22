@@ -249,11 +249,18 @@ var ProfileEditEngine = (function () {
 
     /* Re-render content each time it opens (so preset active state is fresh) */
     content.innerHTML = renderThemeStudio();
-    _wireThemeStudio(modal, content);
+    
+    if (!content.dataset.wired) {
+      _wireThemeStudio(modal, content);
+      content.dataset.wired = "true";
+    } else {
+      /* Re-bind the palette reference since innerHTML was replaced */
+      content._tsPalette = document.getElementById('tsPalette');
+    }
   }
 
   function _wireThemeStudio(modal, content) {
-    var palette = document.getElementById('tsPalette');
+    content._tsPalette = document.getElementById('tsPalette');
     var currentVar = null;
     var currentSwatch = null;
 
@@ -266,9 +273,11 @@ var ProfileEditEngine = (function () {
       if (swatch) {
         currentVar = swatch.dataset.tsVar;
         currentSwatch = swatch;
-        palette.style.top = (swatch.offsetTop + 32) + 'px';
-        palette.style.right = '0px';
-        palette.classList.add('active');
+        if (content._tsPalette) {
+          content._tsPalette.style.top = (swatch.offsetTop + 32) + 'px';
+          content._tsPalette.style.right = '0px';
+          content._tsPalette.classList.add('active');
+        }
         return;
       }
       var pColor = e.target.closest('.ts-palette-color');
@@ -276,12 +285,12 @@ var ProfileEditEngine = (function () {
         var c = pColor.dataset.color;
         currentSwatch.style.background = c;
         if (window.ThemeEngine) ThemeEngine.updateVar(currentVar, c);
-        palette.classList.remove('active');
+        if (content._tsPalette) content._tsPalette.classList.remove('active');
         return;
       }
       /* Click outside closes palette */
       if (!e.target.closest('#tsPalette')) {
-        if(palette) palette.classList.remove('active');
+        if(content._tsPalette) content._tsPalette.classList.remove('active');
       }
     });
 
@@ -324,7 +333,7 @@ var ProfileEditEngine = (function () {
       resetBtn.addEventListener('click', function () {
         if (window.ThemeEngine) ThemeEngine.reset();
         content.innerHTML = renderThemeStudio();
-        _wireThemeStudio(modal, content);
+        content._tsPalette = document.getElementById('tsPalette');
       });
     }
   }
@@ -334,9 +343,16 @@ var ProfileEditEngine = (function () {
     var modal   = document.getElementById('themeStudioModal');
     var content = document.getElementById('tsContent');
     if (!modal) return;
-    if (content) content.innerHTML = renderThemeStudio();
+    if (content) {
+      content.innerHTML = renderThemeStudio();
+      if (!content.dataset.wired) {
+        _wireThemeStudio(modal, content);
+        content.dataset.wired = "true";
+      } else {
+        content._tsPalette = document.getElementById('tsPalette');
+      }
+    }
     modal.classList.add('open');
-    if (content) _wireThemeStudio(modal, content);
   }
 
   /* ────── Helpers ────── */
