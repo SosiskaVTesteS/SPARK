@@ -40,7 +40,7 @@ window.SPARK_CONFIG = {
 
   // Способ получения данных в реальном времени.
   // 'websocket' - для Deno / Cloudflare (использует WebSockets).
-  // 'polling' - для Vercel и других (использует легкие фоновые HTTP запросы).
+  // 'polling' - для Netlify и других (использует легкие фоновые HTTP запросы).
   REALTIME_MODE: 'polling'
 
 };

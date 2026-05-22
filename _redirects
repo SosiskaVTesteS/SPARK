@@ -1,0 +1,4 @@
+/rest/v1/*  https://ppehttbtrlavnrytoweu.supabase.co/rest/v1/:splat  200
+/auth/v1/*  https://ppehttbtrlavnrytoweu.supabase.co/auth/v1/:splat  200
+/storage/v1/*  https://ppehttbtrlavnrytoweu.supabase.co/storage/v1/:splat  200
+/functions/v1/*  https://ppehttbtrlavnrytoweu.supabase.co/functions/v1/:splat  200
