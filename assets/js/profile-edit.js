@@ -218,23 +218,17 @@ var ProfileEditEngine = (function () {
       return '<div class="ts-picker-row">'
         + '<div class="ts-picker-info"><div class="ts-picker-label">' + row.label + '</div><div class="ts-picker-tip">' + row.tip + '</div></div>'
         + '<div class="ts-picker-right">'
-        + '<div class="ts-color-swatch ts-custom-swatch" data-ts-var="' + row.key + '" style="background:' + val + '"></div>'
+        + '<input type="color" class="ts-color-input" data-ts-var="' + row.key + '" id="tsPicker-' + row.key + '" value="' + val + '">'
         + '</div>'
         + '</div>';
     }).join('');
-
-    var v3Colors = ['#9B5FFF', '#7B5CFA', '#5AE8C5', '#E8C55A', '#E85AA0', '#FF9EDB', '#A5F3FC', '#FDE68A', '#FDA4AF', '#C4B5FD', '#F43F5E', '#10B981', '#3B82F6', '#8B5CF6', '#F59E0B', '#FFFFFF'];
-    var paletteGrid = v3Colors.map(function(c) {
-      return '<div class="ts-palette-color" style="background:'+c+'" data-color="'+c+'"></div>';
-    }).join('');
-    var paletteHTML = '<div class="ts-palette" id="tsPalette"><div class="ts-palette-grid">' + paletteGrid + '</div></div>';
 
     return '<div class="ts-header"><div class="ts-title">' + (window.T ? T('themeStudioTitle') : '🎨 Theme Studio') + '</div><button class="ts-close" id="tsClose">✕</button></div>'
       + '<div class="stitle" style="margin:16px 0 10px">' + (window.T ? T('presets') : 'Presets') + '</div>'
       + '<div class="ts-preset-grid">' + presetCards + '</div>'
       + '<div class="divider" style="margin:18px 0"></div>'
       + '<div class="stitle" style="margin-bottom:12px">' + (window.T ? T('customColors') : 'Custom Colours') + '</div>'
-      + '<div class="ts-pickers" style="position:relative;">' + pickerRows + paletteHTML + '</div>'
+      + '<div class="ts-pickers">' + pickerRows + '</div>'
       + '<div class="ts-footer">'
       + '<button type="button" class="ts-reset-btn" id="tsReset">' + (window.T ? T('resetDefault') : '↺ Reset Default') + '</button>'
       + '<button type="button" class="hbtn hbtn-gold" id="tsApply">' + (window.T ? T('applyTheme') : 'Apply →') + '</button>'
@@ -260,38 +254,10 @@ var ProfileEditEngine = (function () {
   }
 
   function _wireThemeStudio(modal, content) {
-    content._tsPalette = document.getElementById('tsPalette');
-    var currentVar = null;
-    var currentSwatch = null;
-
     /* Close */
     content.addEventListener('click', function (e) {
       var closeBtn = e.target.closest('#tsClose');
       if (closeBtn || e.target === modal) { modal.classList.remove('open'); return; }
-
-      var swatch = e.target.closest('.ts-custom-swatch');
-      if (swatch) {
-        currentVar = swatch.dataset.tsVar;
-        currentSwatch = swatch;
-        if (content._tsPalette) {
-          content._tsPalette.style.top = (swatch.offsetTop + 32) + 'px';
-          content._tsPalette.style.right = '0px';
-          content._tsPalette.classList.add('active');
-        }
-        return;
-      }
-      var pColor = e.target.closest('.ts-palette-color');
-      if (pColor && currentVar) {
-        var c = pColor.dataset.color;
-        currentSwatch.style.background = c;
-        if (window.ThemeEngine) ThemeEngine.updateVar(currentVar, c);
-        if (content._tsPalette) content._tsPalette.classList.remove('active');
-        return;
-      }
-      /* Click outside closes palette */
-      if (!e.target.closest('#tsPalette')) {
-        if(content._tsPalette) content._tsPalette.classList.remove('active');
-      }
     });
 
     /* Preset cards */
@@ -299,16 +265,15 @@ var ProfileEditEngine = (function () {
       var card = e.target.closest('[data-ts-preset]');
       if (!card) return;
       var id = card.dataset.tsPreset;
-      if (window.ThemeEngine) {
-        ThemeEngine.applyPreset(id);
+      if (window.ThemeEngine && ThemeEngine.PRESETS[id]) {
+        var t = ThemeEngine.PRESETS[id];
         content.querySelectorAll('.ts-preset-card').forEach(function (c) {
           c.classList.toggle('active', c.dataset.tsPreset === id);
         });
         /* Sync pickers */
-        var t = ThemeEngine.getActive();
-        content.querySelectorAll('.ts-custom-swatch').forEach(function (sw) {
-          var k = sw.dataset.tsVar;
-          if (t[k]) sw.style.background = t[k];
+        content.querySelectorAll('.ts-color-input').forEach(function (input) {
+          var k = input.dataset.tsVar;
+          if (t[k]) input.value = t[k];
         });
       }
     });
@@ -318,8 +283,8 @@ var ProfileEditEngine = (function () {
     if (applyBtn) {
       applyBtn.addEventListener('click', function () {
         var overrides = {};
-        content.querySelectorAll('.ts-custom-swatch').forEach(function (sw) {
-          overrides[sw.dataset.tsVar] = sw.style.background;
+        content.querySelectorAll('.ts-color-input').forEach(function (input) {
+          overrides[input.dataset.tsVar] = input.value;
         });
         if (window.ThemeEngine) ThemeEngine.applyCustom(overrides);
         modal.classList.remove('open');
@@ -331,9 +296,16 @@ var ProfileEditEngine = (function () {
     var resetBtn = content.querySelector('#tsReset');
     if (resetBtn) {
       resetBtn.addEventListener('click', function () {
-        if (window.ThemeEngine) ThemeEngine.reset();
-        content.innerHTML = renderThemeStudio();
-        content._tsPalette = document.getElementById('tsPalette');
+        if (window.ThemeEngine && ThemeEngine.PRESETS.cosmos) {
+          var t = ThemeEngine.PRESETS.cosmos;
+          content.querySelectorAll('.ts-preset-card').forEach(function (c) {
+            c.classList.toggle('active', c.dataset.tsPreset === 'cosmos');
+          });
+          content.querySelectorAll('.ts-color-input').forEach(function (input) {
+            var k = input.dataset.tsVar;
+            if (t[k]) input.value = t[k];
+          });
+        }
       });
     }
   }
@@ -348,8 +320,6 @@ var ProfileEditEngine = (function () {
       if (!content.dataset.wired) {
         _wireThemeStudio(modal, content);
         content.dataset.wired = "true";
-      } else {
-        content._tsPalette = document.getElementById('tsPalette');
       }
     }
     modal.classList.add('open');
