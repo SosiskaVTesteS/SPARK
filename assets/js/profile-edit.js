@@ -218,18 +218,23 @@ var ProfileEditEngine = (function () {
       return '<div class="ts-picker-row">'
         + '<div class="ts-picker-info"><div class="ts-picker-label">' + row.label + '</div><div class="ts-picker-tip">' + row.tip + '</div></div>'
         + '<div class="ts-picker-right">'
-        + '<div class="ts-color-swatch" style="background:' + val + '"></div>'
-        + '<input type="color" class="ts-color-input" id="tsPicker-' + row.key + '" data-ts-var="' + row.key + '" value="' + val + '">'
+        + '<div class="ts-color-swatch ts-custom-swatch" data-ts-var="' + row.key + '" style="background:' + val + '"></div>'
         + '</div>'
         + '</div>';
     }).join('');
+
+    var v3Colors = ['#9B5FFF', '#7B5CFA', '#5AE8C5', '#E8C55A', '#E85AA0', '#FF9EDB', '#A5F3FC', '#FDE68A', '#FDA4AF', '#C4B5FD', '#F43F5E', '#10B981', '#3B82F6', '#8B5CF6', '#F59E0B', '#FFFFFF'];
+    var paletteGrid = v3Colors.map(function(c) {
+      return '<div class="ts-palette-color" style="background:'+c+'" data-color="'+c+'"></div>';
+    }).join('');
+    var paletteHTML = '<div class="ts-palette" id="tsPalette"><div class="ts-palette-grid">' + paletteGrid + '</div></div>';
 
     return '<div class="ts-header"><div class="ts-title">' + (window.T ? T('themeStudioTitle') : '🎨 Theme Studio') + '</div><button class="ts-close" id="tsClose">✕</button></div>'
       + '<div class="stitle" style="margin:16px 0 10px">' + (window.T ? T('presets') : 'Presets') + '</div>'
       + '<div class="ts-preset-grid">' + presetCards + '</div>'
       + '<div class="divider" style="margin:18px 0"></div>'
       + '<div class="stitle" style="margin-bottom:12px">' + (window.T ? T('customColors') : 'Custom Colours') + '</div>'
-      + '<div class="ts-pickers">' + pickerRows + '</div>'
+      + '<div class="ts-pickers" style="position:relative;">' + pickerRows + paletteHTML + '</div>'
       + '<div class="ts-footer">'
       + '<button type="button" class="ts-reset-btn" id="tsReset">' + (window.T ? T('resetDefault') : '↺ Reset Default') + '</button>'
       + '<button type="button" class="hbtn hbtn-gold" id="tsApply">' + (window.T ? T('applyTheme') : 'Apply →') + '</button>'
@@ -248,10 +253,36 @@ var ProfileEditEngine = (function () {
   }
 
   function _wireThemeStudio(modal, content) {
+    var palette = document.getElementById('tsPalette');
+    var currentVar = null;
+    var currentSwatch = null;
+
     /* Close */
     content.addEventListener('click', function (e) {
       var closeBtn = e.target.closest('#tsClose');
-      if (closeBtn || e.target === modal) { modal.classList.remove('open'); }
+      if (closeBtn || e.target === modal) { modal.classList.remove('open'); return; }
+
+      var swatch = e.target.closest('.ts-custom-swatch');
+      if (swatch) {
+        currentVar = swatch.dataset.tsVar;
+        currentSwatch = swatch;
+        palette.style.top = (swatch.offsetTop + 32) + 'px';
+        palette.style.right = '0px';
+        palette.classList.add('active');
+        return;
+      }
+      var pColor = e.target.closest('.ts-palette-color');
+      if (pColor && currentVar) {
+        var c = pColor.dataset.color;
+        currentSwatch.style.background = c;
+        if (window.ThemeEngine) ThemeEngine.updateVar(currentVar, c);
+        palette.classList.remove('active');
+        return;
+      }
+      /* Click outside closes palette */
+      if (!e.target.closest('#tsPalette')) {
+        if(palette) palette.classList.remove('active');
+      }
     });
 
     /* Preset cards */
@@ -266,19 +297,11 @@ var ProfileEditEngine = (function () {
         });
         /* Sync pickers */
         var t = ThemeEngine.getActive();
-        content.querySelectorAll('.ts-color-input').forEach(function (inp) {
-          var k = inp.dataset.tsVar;
-          if (t[k]) { inp.value = t[k]; inp.previousElementSibling && (inp.previousElementSibling.style.background = t[k]); }
+        content.querySelectorAll('.ts-custom-swatch').forEach(function (sw) {
+          var k = sw.dataset.tsVar;
+          if (t[k]) sw.style.background = t[k];
         });
       }
-    });
-
-    /* Live colour picker preview */
-    content.addEventListener('input', function (e) {
-      var inp = e.target.closest('.ts-color-input');
-      if (!inp) return;
-      var swatch = inp.previousElementSibling;
-      if (swatch) swatch.style.background = inp.value;
     });
 
     /* Apply custom */
@@ -286,8 +309,8 @@ var ProfileEditEngine = (function () {
     if (applyBtn) {
       applyBtn.addEventListener('click', function () {
         var overrides = {};
-        content.querySelectorAll('.ts-color-input').forEach(function (inp) {
-          overrides[inp.dataset.tsVar] = inp.value;
+        content.querySelectorAll('.ts-custom-swatch').forEach(function (sw) {
+          overrides[sw.dataset.tsVar] = sw.style.background;
         });
         if (window.ThemeEngine) ThemeEngine.applyCustom(overrides);
         modal.classList.remove('open');

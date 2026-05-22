@@ -108,10 +108,7 @@ var RippleEngine = {
       r.style.left = x + 'px';
       r.style.top  = y + 'px';
 
-      /* Ensure overflow hidden */
-      var pos = window.getComputedStyle(target).position;
-      if (pos === 'static') target.style.position = 'relative';
-      target.style.overflow = 'hidden';
+      /* overflow: hidden is now handled in CSS */
 
       target.appendChild(r);
       setTimeout(function () { if (r.parentNode) r.parentNode.removeChild(r); }, 700);

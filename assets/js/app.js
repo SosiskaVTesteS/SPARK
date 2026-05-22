@@ -2466,3 +2466,47 @@ window.showPrivacy = function() {
   if (pwdForm) pwdForm.reset();
   openMo('moPrivacy');
 };
+
+/* Modal swipe-down-to-close logic */
+document.addEventListener('DOMContentLoaded', function() {
+  var moBoxes = document.querySelectorAll('.mo-box');
+  moBoxes.forEach(function(box) {
+    var startY = 0;
+    var currentY = 0;
+    var isDragging = false;
+    var handle = box.querySelector('.mo-handle');
+    var dragTarget = handle || box; /* fallback to box if no handle */
+
+    dragTarget.addEventListener('touchstart', function(e) {
+      if (box.scrollTop > 0 && e.target !== handle) return; /* don't drag if scrolled down, unless handle */
+      startY = e.touches[0].clientY;
+      isDragging = true;
+      box.style.transition = 'none';
+    }, {passive: true});
+
+    dragTarget.addEventListener('touchmove', function(e) {
+      if (!isDragging) return;
+      currentY = e.touches[0].clientY;
+      var dy = currentY - startY;
+      if (dy > 0) {
+        box.style.transform = 'translateY(' + dy + 'px)';
+      }
+    }, {passive: true});
+
+    dragTarget.addEventListener('touchend', function(e) {
+      if (!isDragging) return;
+      isDragging = false;
+      var dy = currentY - startY;
+      box.style.transition = 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
+      if (dy > 80) {
+        /* close */
+        var mo = box.closest('.mo');
+        if (mo) closeMo(mo.id);
+        setTimeout(function() { box.style.transform = ''; }, 300);
+      } else {
+        /* snap back */
+        box.style.transform = '';
+      }
+    });
+  });
+});
