@@ -1,0 +1,20 @@
+{
+  "rewrites": [
+    {
+      "source": "/rest/v1/:match*",
+      "destination": "https://ppehttbtrlavnrytoweu.supabase.co/rest/v1/:match*"
+    },
+    {
+      "source": "/auth/v1/:match*",
+      "destination": "https://ppehttbtrlavnrytoweu.supabase.co/auth/v1/:match*"
+    },
+    {
+      "source": "/storage/v1/:match*",
+      "destination": "https://ppehttbtrlavnrytoweu.supabase.co/storage/v1/:match*"
+    },
+    {
+      "source": "/functions/v1/:match*",
+      "destination": "https://ppehttbtrlavnrytoweu.supabase.co/functions/v1/:match*"
+    }
+  ]
+}
