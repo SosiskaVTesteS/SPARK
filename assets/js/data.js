@@ -87,6 +87,7 @@ var SUPABASE_URL = '';
 var SUPABASE_ANON_KEY = '';
 var ALLOW_LEGACY_INVEST_FALLBACK = true;
 var ENABLE_CLIENT_TELEMETRY = false;
+var REALTIME_MODE = 'polling'; // 'websocket' | 'polling' | 'none'
 var SUPABASE_CONFIGURED = false;
 
 var runtime = window.SPARK_RUNTIME;
@@ -95,6 +96,7 @@ if (runtime) {
   SUPABASE_ANON_KEY = runtime.get('SUPABASE_ANON_KEY') || '';
   ALLOW_LEGACY_INVEST_FALLBACK = runtime.get('ALLOW_LEGACY_INVEST_FALLBACK') !== false;
   ENABLE_CLIENT_TELEMETRY = !!runtime.get('ENABLE_CLIENT_TELEMETRY');
+  REALTIME_MODE = runtime.get('REALTIME_MODE') || 'polling';
   SUPABASE_CONFIGURED = runtime.isSupabaseConfigured();
 }
 

@@ -36,7 +36,11 @@ window.SPARK_CONFIG = {
 
   // Телеметрия в public.client_events (нужна миграция 20260508_client_events_optional.sql)
 
-  ENABLE_CLIENT_TELEMETRY: false
+  ENABLE_CLIENT_TELEMETRY: false,
+
+  // Способ получения данных в реальном времени.
+  // 'websocket' - для Deno / Cloudflare (использует WebSockets).
+  // 'polling' - для Vercel и других (использует легкие фоновые HTTP запросы).
+  REALTIME_MODE: 'polling'
 
 };
-

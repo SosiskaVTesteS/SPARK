@@ -1940,8 +1940,68 @@ function attachHold(id, ms, cb) {
   el.addEventListener('touchcancel', reset);
 }
 
+var pollingTimer = null;
+
 function initRealtime() {
-  if (!supa) return;
+  if (!supa || REALTIME_MODE === 'none') return;
+
+  if (REALTIME_MODE === 'polling') {
+    if (pollingTimer) clearInterval(pollingTimer);
+    pollingTimer = setInterval(async function() {
+      try {
+        // Fetch new ideas check
+        if (LIVE.length > 0) {
+          var latestId = LIVE[0].id;
+          var latest = await supa.from('ideas').select('id, title, author_username').order('created_at', {ascending: false}).limit(1).single();
+          if (latest.data && latest.data.id && latest.data.id !== latestId) {
+            if (!LIVE.filter(function(x) { return x.id === latest.data.id; }).length) {
+              toast('✨ New: ' + (latest.data.title || '').slice(0, 26), 'var(--ac2)');
+            }
+          }
+        }
+        
+        // Fetch updates for visible ideas
+        var visibleIds = LIVE.slice((page - 1) * PER, page * PER).map(function(x) { return x.id; });
+        if (visibleIds.length > 0) {
+          var { data } = await supa.from('ideas').select('id, total_invested, investment_history').in('id', visibleIds);
+          if (data && data.length) {
+            var changed = false;
+            data.forEach(function(updated) {
+              var idx = LIVE.findIndex(function(x) { return x.id === updated.id; });
+              if (idx !== -1) {
+                var poolStr = String(Number(updated.total_invested) || 0);
+                var invCount = (updated.investment_history || []).length;
+                if (String(LIVE[idx].pool) !== poolStr || LIVE[idx].investors !== invCount) {
+                  changed = true;
+                  LIVE[idx].pool = poolStr;
+                  LIVE[idx].investment_history = updated.investment_history || [];
+                  LIVE[idx].investors = invCount;
+                  var newPool2 = Number(LIVE[idx].pool) || 0;
+                  var mb2 = LIVE[idx].minBet || 10;
+                  LIVE[idx].pct = newPool2 > 0 ? Math.min(Math.round((newPool2 / Math.max(mb2 * 5, 1)) * 100), 999) : 0;
+                }
+              }
+            });
+            if (changed) { renderFeed(); renderTrends(); }
+          }
+        }
+        
+        // Fetch balance
+        if (ME) {
+          var { data: pd } = await supa.from('profiles').select('spk_balance').eq('id', ME.id).single();
+          if (pd && pd.spk_balance !== PROFILE.spk_balance) {
+            PROFILE.spk_balance = pd.spk_balance;
+            updateHeader();
+          }
+        }
+      } catch (e) {
+        console.warn('Polling error', e);
+      }
+    }, 12000); // Poll every 12 seconds
+    return;
+  }
+
+  // WebSocket mode
   try {
     if (realtimeIdeasChannel) supa.removeChannel(realtimeIdeasChannel);
     if (realtimeBalanceChannel) supa.removeChannel(realtimeBalanceChannel);
