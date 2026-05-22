@@ -1952,7 +1952,7 @@ function initRealtime() {
         // Fetch new ideas check
         if (LIVE.length > 0) {
           var latestId = LIVE[0].id;
-          var latest = await supa.from('ideas').select('id, title, author_username').order('created_at', {ascending: false}).limit(1).single();
+          var latest = await supa.from('ideas').select('id, title').order('created_at', {ascending: false}).limit(1).single();
           if (latest.data && latest.data.id && latest.data.id !== latestId) {
             if (!LIVE.filter(function(x) { return x.id === latest.data.id; }).length) {
               toast('✨ New: ' + (latest.data.title || '').slice(0, 26), 'var(--ac2)');
