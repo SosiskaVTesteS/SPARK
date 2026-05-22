@@ -278,10 +278,10 @@ var ProfileEditEngine = (function () {
       }
     });
 
-    /* Apply custom */
-    var applyBtn = content.querySelector('#tsApply');
-    if (applyBtn) {
-      applyBtn.addEventListener('click', function () {
+    /* Apply and Reset via delegation */
+    content.addEventListener('click', function (e) {
+      var applyBtn = e.target.closest('#tsApply');
+      if (applyBtn) {
         var overrides = {};
         content.querySelectorAll('.ts-color-input').forEach(function (input) {
           overrides[input.dataset.tsVar] = input.value;
@@ -289,13 +289,11 @@ var ProfileEditEngine = (function () {
         if (window.ThemeEngine) ThemeEngine.applyCustom(overrides);
         modal.classList.remove('open');
         if (window.toast) window.toast(window.T ? T('themeApplied') : 'Theme applied ✓', 'var(--ac2)');
-      });
-    }
+        return;
+      }
 
-    /* Reset */
-    var resetBtn = content.querySelector('#tsReset');
-    if (resetBtn) {
-      resetBtn.addEventListener('click', function () {
+      var resetBtn = e.target.closest('#tsReset');
+      if (resetBtn) {
         if (window.ThemeEngine && ThemeEngine.PRESETS.cosmos) {
           var t = ThemeEngine.PRESETS.cosmos;
           content.querySelectorAll('.ts-preset-card').forEach(function (c) {
@@ -306,8 +304,9 @@ var ProfileEditEngine = (function () {
             if (t[k]) input.value = t[k];
           });
         }
-      });
-    }
+        return;
+      }
+    });
   }
 
   /* ────── Open Theme Studio ────── */

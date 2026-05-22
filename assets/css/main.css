@@ -1695,15 +1695,15 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
   transition: background 0.15s;
 }
 .ts-color-input {
-  width: 34px; height: 34px;
+  width: 28px; height: 28px;
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  padding: 2px;
+  padding: 0;
   background: transparent;
-  opacity: 0.01;
-  position: absolute;
 }
+.ts-color-input::-webkit-color-swatch-wrapper { padding: 0; }
+.ts-color-input::-webkit-color-swatch { border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; }
 .ts-picker-right { position: relative; }
 
 .ts-footer {
