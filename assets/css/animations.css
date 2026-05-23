@@ -407,6 +407,11 @@ body.intro-active #launchOverlay { display: none !important; }
   50%      { opacity: var(--star-max, 0.7);  transform: scale(1.4); }
 }
 
+@keyframes starTwinkleMobile {
+  0%,100% { opacity: var(--star-min, 0.15); }
+  50%      { opacity: var(--star-max, 0.7); }
+}
+
 #sparkBg {
   position: fixed;
   inset: 0;
@@ -640,5 +645,16 @@ header { transition: transform 0.3s var(--ease-smooth); }
 @media (pointer: coarse) {
   .card::after { display: none; }
   .binv-wrap::after { animation-duration: 4s; opacity: 0.5; }
-  #sparkBg .star-dot { animation-duration: calc(var(--star-dur, 3s) * 2); }
+  #sparkBg .star-dot {
+    animation-name: starTwinkleMobile !important;
+    animation-duration: calc(var(--star-dur, 3s) * 2) !important;
+    will-change: opacity;
+    transform: none !important;
+  }
+}
+
+/* Disable orbit animations when coming soon is active to save mobile CPU/GPU */
+.obs-shell:has(~ .obs-coming-soon) .obs-orbit,
+.obs-coming-soon ~ .obs-shell .obs-orbit {
+  animation: none !important;
 }

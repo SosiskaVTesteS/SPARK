@@ -122,6 +122,16 @@ document.addEventListener('DOMContentLoaded', function () {
     var container = document.getElementById(containerId);
     if (!container) return;
     container.addEventListener('click', function (event) {
+      var investBtn = event.target.closest('[data-invest-id]');
+      if (investBtn && !investBtn.disabled) {
+        openInvest(investBtn.dataset.investId);
+        return;
+      }
+      var reactBtn = event.target.closest('.rbbl[data-id][data-e]');
+      if (reactBtn) {
+        react(reactBtn.dataset.id, reactBtn.dataset.e, reactBtn);
+        return;
+      }
       var langOpt = event.target.closest('[data-set-lang]');
       if (langOpt) {
         setLang(langOpt.dataset.setLang, event);
@@ -794,7 +804,8 @@ function dbRowToLiveIdea(row, profilesMap) {
     pool: String(pool),
     cd: cdH,
     pct: pct,
-    investment_history: history
+    investment_history: history,
+    expires_at: row.expires_at
   };
 }
 
@@ -1346,6 +1357,9 @@ function profileHTML(sfx) {
     /* Profile Edit section */
     + (window.ProfileEditEngine ? ProfileEditEngine.renderEditSection(sfx) : '')
     + '<div class="divider"></div>'
+    + '<div class="stitle" style="margin-top:14px">' + T('myIdeas') + '</div>'
+    + '<div class="my-ideas-list" id="myIdeasList-' + sfx + '" style="display:flex;flex-direction:column;gap:12px;margin-top:8px"></div>'
+    + '<div class="divider"></div>'
     + '<div class="stitle" style="margin-top:14px">' + T('wallet') + '</div>'
     + '<div class="wcrd"><div><div class="wamt">' + (Number(PROFILE.spk_balance) || 0).toLocaleString() + ' <small>SPK</small></div><div class="wsub">' + T('availableBalance') + '</div></div>'
     + '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--ac);opacity:.55"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8L2 7h20l-6-4z"/></svg></div>'
@@ -1388,6 +1402,58 @@ function renderProfile() {
     mb.innerHTML = profileHTML('M');
     if (window.ProfileEditEngine) ProfileEditEngine.initSection('M');
   }
+  renderMyIdeas();
+}
+
+async function getUserIdeas() {
+  if (supa && ME) {
+    try {
+      var r = await supa.from('ideas')
+        .select('id, title, description, min_bet, total_invested, investment_history, expires_at, created_at, author_id, reactions')
+        .eq('author_id', ME.id)
+        .order('created_at', { ascending: false });
+      if (r.data) {
+        var profilesMap = {};
+        profilesMap[ME.id] = PROFILE.username;
+        return r.data.map(function(row) {
+          return dbRowToLiveIdea(row, profilesMap);
+        });
+      }
+    } catch (e) {
+      console.warn('getUserIdeas fetch error, falling back to local filter:', e);
+    }
+  }
+  var userUname = PROFILE.username;
+  return LIVE.filter(function (x) {
+    return x.u === userUname;
+  });
+}
+
+async function renderMyIdeas() {
+  var list = await getUserIdeas();
+  ['D', 'M'].forEach(function (sfx) {
+    var el = document.getElementById('myIdeasList-' + sfx);
+    if (!el) return;
+    if (list.length === 0) {
+      el.innerHTML = '<div style="text-align:center;padding:24px 0;color:var(--mu);font-size:13px">' + T('noMyIdeas') + '</div>';
+      return;
+    }
+    el.innerHTML = list.map(cardHTML).join('');
+  });
+  
+  // Animate SVG graphs for user ideas
+  ['D', 'M'].forEach(function (sfx) {
+    var el = document.getElementById('myIdeasList-' + sfx);
+    if (!el) return;
+    var svgs = el.querySelectorAll('svg.igsvg[data-history]');
+    svgs.forEach(function (svg) {
+      try {
+        drawInvestmentGraph(svg, JSON.parse(svg.dataset.history));
+      } catch (e) {
+        drawInvestmentGraph(svg, [0, 0]);
+      }
+    });
+  });
 }
 
 function toggleDeskProf() {
@@ -1437,13 +1503,17 @@ function buildGraphPath(history) {
 function investGraphHTML(x) {
   var history = x.investment_history || synthesiseHistory(x.investors, x.pct);
   var histJSON = JSON.stringify(history).replace(/"/g, '&quot;');
+  var expired = isExpired(x);
+  var cdText = expired 
+    ? ('&#8987; ' + (LANG === 'ru' ? 'Завершено' : 'Ended'))
+    : ('&#8987; ' + x.cd + 'h ' + T('cleft'));
   return '<div class="igraph-wrap">'
     + '<div class="igraph-header"><span>' + T('iot') + '</span><span class="igraph-label-right">&#8593; +' + x.pct + '%</span></div>'
     + '<svg class="igsvg" viewBox="0 0 ' + GW + ' ' + GH + '" preserveAspectRatio="none" data-history="' + histJSON + '"></svg>'
     + '<div class="igraph-footer"><div class="ig-investors">'
     + '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>'
     + '<span>' + x.investors + '</span>&nbsp;' + T('cinv') + ' &middot; <span class="ig-pool">' + x.pool + ' SPK</span>&nbsp;' + T('cpool')
-    + '</div><div class="ig-cd">&#8987; ' + x.cd + 'h ' + T('cleft') + '</div></div></div>';
+    + '</div><div class="ig-cd">' + cdText + '</div></div></div>';
 }
 
 function drawInvestmentGraph(svgEl, history, dur) {
@@ -1459,7 +1529,10 @@ function drawInvestmentGraph(svgEl, history, dur) {
   var graphColor = (window.ThemeEngine ? ThemeEngine.getGraphColor() : null)
     || getComputedStyle(document.documentElement).getPropertyValue('--graph-line').trim()
     || '#e8c55a';
-  defs.innerHTML = '<linearGradient id="igf-' + gid + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="' + graphColor + '" stop-opacity="0.22"/><stop offset="100%" stop-color="' + graphColor + '" stop-opacity="0"/></linearGradient>';
+  defs.innerHTML = '<linearGradient id="igf-' + gid + '" x1="0" y1="0" x2="0" y2="1">'
+    + '<stop offset="0%" stop-color="var(--graph-line, var(--ac))" stop-opacity="0.22"/>'
+    + '<stop offset="100%" stop-color="var(--graph-line, var(--ac))" stop-opacity="0"/>'
+    + '</linearGradient>';
   svgEl.appendChild(defs);
   var fill = document.createElementNS(NS, 'path');
   fill.setAttribute('d', gp.d + ' L' + (GW - GPX) + ',' + GH + ' L' + GPX + ',' + GH + ' Z');
@@ -1517,8 +1590,14 @@ function animateAllGraphs(container) {
 var page = 1, sort = 'new', ftag = 'all', q = '';
 var PER = 5;
 
+function isExpired(x) {
+  if (!x.expires_at) return false;
+  return new Date(x.expires_at).getTime() < Date.now();
+}
+
 function filtered() {
   var a = LIVE.slice();
+  a = a.filter(function (x) { return !isExpired(x); });
   if (ftag !== 'all') a = a.filter(function (x) { return x.tag === ftag; });
   if (q) a = a.filter(function (x) {
     return x.title.toLowerCase().includes(q) || x.body.toLowerCase().includes(q) || x.tag.toLowerCase().includes(q) || x.u.toLowerCase().includes(q);
@@ -1554,13 +1633,16 @@ function cardHTML(x) {
   var safeTime = escapeHTML(x.tm);
   var safeBg = sanitizeCssBackground(x.bg);
   var safeAv = safeAvatar(x.av);
+  var expired = isExpired(x);
+  var btnText = expired ? (LANG === 'ru' ? 'Завершено' : 'Ended') : T('binv');
+  var disabledAttr = expired ? ' disabled style="opacity:0.5;cursor:not-allowed;"' : '';
   return '<div class="card' + (fire ? ' fire' : '') + '" data-cid="' + x.id + '">'
     + '<div class="ch"><div class="cav" style="background:' + safeBg + '">' + safeAv + '</div>'
     + '<div class="cm"><div class="cu">' + safeUser + '</div><div class="ct">' + safeTime + ' · #' + safeTag + '</div></div>'
     + '<div class="cmen"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></div></div>'
     + '<div class="ctitle">' + safeTitle + '</div><div class="cbody">' + safeBody + '</div>'
     + investGraphHTML(x)
-    + '<div class="cact"><button class="binv" data-invest-id="' + x.id + '">' + T('binv') + '</button><button class="bcrit">' + T('bcrit') + '</button></div>'
+    + '<div class="cact"><button class="binv" data-invest-id="' + x.id + '"' + disabledAttr + '>' + btnText + '</button><button class="bcrit">' + T('bcrit') + '</button></div>'
     + '<div class="creact" id="rc-' + x.id + '">' + reactHTML(x.id) + '</div></div>';
 }
 
@@ -1906,7 +1988,8 @@ function insertLive(row, uname, letter) {
       pool: '0',
       cd: '24',
       pct: 0,
-      investment_history: []
+      investment_history: [],
+      expires_at: row.expires_at
     };
   }
   LIVE.unshift(ideaObj);

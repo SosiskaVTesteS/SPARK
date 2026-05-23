@@ -893,13 +893,13 @@ header {
 svg.igsvg { width:100%; height:68px; display:block; overflow:visible; }
 .ig-fill { opacity:1; }
 .ig-line {
-  fill:none; stroke:var(--ac); stroke-width:2.2;
+  fill:none; stroke:var(--graph-line, var(--ac)); stroke-width:2.2;
   stroke-linecap:round; stroke-linejoin:round;
-  filter:drop-shadow(0 3px 8px rgba(232,197,90,0.55)) drop-shadow(0 1px 3px rgba(232,197,90,0.35));
+  filter:drop-shadow(0 3px 8px rgba(var(--ac-rgb),0.55)) drop-shadow(0 1px 3px rgba(var(--ac-rgb),0.35));
 }
 .ig-line.animated { animation:ig-draw var(--ig-dur,1.6s) cubic-bezier(0.4,0,0.2,1) forwards; }
 @keyframes ig-draw { from{stroke-dashoffset:var(--ig-len,1000)} to{stroke-dashoffset:0} }
-.ig-dot { fill:var(--ac); filter:drop-shadow(0 0 5px rgba(232,197,90,0.8)); opacity:0; transition:opacity 0.3s 0.8s; }
+.ig-dot { fill:var(--ac); filter:drop-shadow(0 0 5px rgba(var(--ac-rgb),0.8)); opacity:0; transition:opacity 0.3s 0.8s; }
 .ig-dot.show { opacity:1; }
 .igraph-footer { display:flex; justify-content:space-between; align-items:center; margin-top:5px; font-size:11px; color:var(--mu2); line-height:1.4; }
 .ig-investors { display:flex; align-items:center; gap:4px; }
@@ -1395,21 +1395,20 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
    WEAK DEVICE DEGRADATION
    ════════════════════════════════════════════════ */
 @media (max-resolution:1.5dppx) and (pointer:coarse) {
-  .orb-b, .orb-g, .orb-v { animation-duration:120s; filter:blur(40px); opacity:0.5; }
   body::after { display:none; }
-  .mo             { backdrop-filter:none; background:rgba(0,0,0,0.85); }
-  .obs-coming-soon{ backdrop-filter:none; background:rgba(5,6,15,0.95); }
-  .obs-dimmer     { backdrop-filter:none; background:rgba(0,0,0,0.82); }
-  .dp-overlay     { backdrop-filter:none; }
   .obs-orbit      { animation-duration:44s; }
   .ig-line.animated { animation-duration:0.8s; }
 }
 
-@media (max-width:480px) and (pointer:coarse) {
-  .orb { display:none; }
-  .fbar     { backdrop-filter:none; background:rgba(5,6,15,0.98); }
-  .mob-bar  { backdrop-filter:none; background:rgba(5,6,15,0.98); }
-  .chat-tabs{ backdrop-filter:none; }
+@media (pointer: coarse) {
+  .orb, .orb-b, .orb-g, .orb-v { display:none !important; }
+  .fbar           { backdrop-filter:none !important; background:rgba(5,6,15,0.98) !important; }
+  .mob-bar        { backdrop-filter:none !important; background:rgba(5,6,15,0.98) !important; }
+  .chat-tabs      { backdrop-filter:none !important; background:rgba(5,6,15,0.95) !important; }
+  .mo             { backdrop-filter:none !important; background:rgba(0,0,0,0.95) !important; }
+  .obs-coming-soon{ backdrop-filter:none !important; background:rgba(5,6,15,0.98) !important; }
+  .obs-dimmer     { backdrop-filter:none !important; background:rgba(0,0,0,0.9) !important; }
+  .dp-overlay     { backdrop-filter:none !important; background:rgba(5,6,15,0.95) !important; }
 }
 
 /* ════════════════════════════════════════════════

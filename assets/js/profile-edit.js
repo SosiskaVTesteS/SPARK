@@ -237,98 +237,11 @@ var ProfileEditEngine = (function () {
 
   /* ────── Wire Theme Studio modal ────── */
   function initThemeStudio() {
-    var modal   = document.getElementById('themeStudioModal');
-    var content = document.getElementById('tsContent');
-    if (!modal || !content) return;
-
-    /* Re-render content each time it opens (so preset active state is fresh) */
-    content.innerHTML = renderThemeStudio();
-    
-    if (!content.dataset.wired) {
-      _wireThemeStudio(modal, content);
-      content.dataset.wired = "true";
-    } else {
-      /* Re-bind the palette reference since innerHTML was replaced */
-      content._tsPalette = document.getElementById('tsPalette');
-    }
+    openThemeStudio();
   }
 
   function _wireThemeStudio(modal, content) {
-    /* Close */
-    content.addEventListener('click', function (e) {
-      var closeBtn = e.target.closest('#tsClose');
-      if (closeBtn || e.target === modal) { modal.classList.remove('open'); return; }
-    });
-
-    /* Preset cards */
-    content.addEventListener('click', function (e) {
-      var card = e.target.closest('[data-ts-preset]');
-      if (!card) return;
-      var id = card.dataset.tsPreset;
-      if (window.ThemeEngine && ThemeEngine.PRESETS[id]) {
-        var t = ThemeEngine.PRESETS[id];
-        content.dataset.selectedPreset = id;
-        content.querySelectorAll('.ts-preset-card').forEach(function (c) {
-          c.classList.toggle('active', c.dataset.tsPreset === id);
-        });
-        /* Sync pickers */
-        content.querySelectorAll('.ts-color-input').forEach(function (input) {
-          var k = input.dataset.tsVar;
-          if (t[k]) input.value = t[k];
-        });
-      }
-    });
-
-    /* Clear preset selection if custom color is manually tweaked */
-    content.addEventListener('input', function (e) {
-      if (e.target.classList.contains('ts-color-input')) {
-        content.removeAttribute('data-selected-preset');
-        content.querySelectorAll('.ts-preset-card').forEach(function (c) {
-          c.classList.remove('active');
-        });
-      }
-    });
-
-    /* Apply and Reset via delegation */
-    content.addEventListener('click', function (e) {
-      var applyBtn = e.target.closest('#tsApply');
-      if (applyBtn) {
-        var presetId = content.dataset.selectedPreset;
-        var base = (presetId && window.ThemeEngine && ThemeEngine.PRESETS[presetId]) 
-                    ? ThemeEngine.PRESETS[presetId] 
-                    : (window.ThemeEngine ? ThemeEngine.getActive() : {});
-        var merged = Object.assign({}, base);
-        
-        content.querySelectorAll('.ts-color-input').forEach(function (input) {
-          merged[input.dataset.tsVar] = input.value;
-        });
-
-        if (window.ThemeEngine) {
-          if (!presetId) delete merged.id;
-          ThemeEngine.apply(merged);
-          ThemeEngine.save(merged);
-        }
-        modal.classList.remove('open');
-        if (window.toast) window.toast(window.T ? T('themeApplied') : 'Theme applied ✓', 'var(--ac2)');
-        return;
-      }
-
-      var resetBtn = e.target.closest('#tsReset');
-      if (resetBtn) {
-        if (window.ThemeEngine && ThemeEngine.PRESETS.cosmos) {
-          var t = ThemeEngine.PRESETS.cosmos;
-          content.dataset.selectedPreset = 'cosmos';
-          content.querySelectorAll('.ts-preset-card').forEach(function (c) {
-            c.classList.toggle('active', c.dataset.tsPreset === 'cosmos');
-          });
-          content.querySelectorAll('.ts-color-input').forEach(function (input) {
-            var k = input.dataset.tsVar;
-            if (t[k]) input.value = t[k];
-          });
-        }
-        return;
-      }
-    });
+    // Keep as a fallback no-op, since wiring is now done directly on open
   }
 
   /* ────── Open Theme Studio ────── */
@@ -338,9 +251,93 @@ var ProfileEditEngine = (function () {
     if (!modal) return;
     if (content) {
       content.innerHTML = renderThemeStudio();
-      if (!content.dataset.wired) {
-        _wireThemeStudio(modal, content);
-        content.dataset.wired = "true";
+      
+      // 1. Close button
+      var closeBtn = content.querySelector('#tsClose');
+      if (closeBtn) {
+        closeBtn.onclick = function() {
+          modal.classList.remove('open');
+        };
+      }
+      
+      // Backdrop click closes the modal
+      modal.onclick = function(e) {
+        if (e.target === modal) {
+          modal.classList.remove('open');
+        }
+      };
+      
+      // 2. Preset cards
+      var presetCards = content.querySelectorAll('[data-ts-preset]');
+      presetCards.forEach(function(card) {
+        card.onclick = function() {
+          var id = card.dataset.tsPreset;
+          if (window.ThemeEngine && ThemeEngine.PRESETS[id]) {
+            var t = ThemeEngine.PRESETS[id];
+            content.dataset.selectedPreset = id;
+            content.querySelectorAll('.ts-preset-card').forEach(function (c) {
+              c.classList.toggle('active', c.dataset.tsPreset === id);
+            });
+            /* Sync pickers */
+            content.querySelectorAll('.ts-color-input').forEach(function (input) {
+              var k = input.dataset.tsVar;
+              if (t[k]) input.value = t[k];
+            });
+          }
+        };
+      });
+      
+      // 3. Color pickers inputs
+      var pickers = content.querySelectorAll('.ts-color-input');
+      pickers.forEach(function(input) {
+        input.oninput = function() {
+          content.removeAttribute('data-selected-preset');
+          content.querySelectorAll('.ts-preset-card').forEach(function (c) {
+            c.classList.remove('active');
+          });
+        };
+      });
+      
+      // 4. Reset button
+      var resetBtn = content.querySelector('#tsReset');
+      if (resetBtn) {
+        resetBtn.onclick = function() {
+          if (window.ThemeEngine && ThemeEngine.PRESETS.cosmos) {
+            var t = ThemeEngine.PRESETS.cosmos;
+            content.dataset.selectedPreset = 'cosmos';
+            content.querySelectorAll('.ts-preset-card').forEach(function (c) {
+              c.classList.toggle('active', c.dataset.tsPreset === 'cosmos');
+            });
+            content.querySelectorAll('.ts-color-input').forEach(function (input) {
+              var k = input.dataset.tsVar;
+              if (t[k]) input.value = t[k];
+            });
+          }
+        };
+      }
+      
+      // 5. Apply button
+      var applyBtn = content.querySelector('#tsApply');
+      if (applyBtn) {
+        applyBtn.onclick = function() {
+          var presetId = content.dataset.selectedPreset;
+          var base = (presetId && window.ThemeEngine && ThemeEngine.PRESETS[presetId]) 
+                      ? ThemeEngine.PRESETS[presetId] 
+                      : (window.ThemeEngine ? ThemeEngine.getActive() : {});
+          var merged = Object.assign({}, base);
+          
+          content.querySelectorAll('.ts-color-input').forEach(function (input) {
+            merged[input.dataset.tsVar] = input.value;
+          });
+
+          if (window.ThemeEngine) {
+            if (!presetId) delete merged.id;
+            ThemeEngine.apply(merged);
+            ThemeEngine.save(merged);
+          }
+          modal.classList.remove('open');
+          if (window.toast) window.toast(window.T ? T('themeApplied') : 'Theme applied ✓', 'var(--ac2)');
+        };
       }
     }
     modal.classList.add('open');

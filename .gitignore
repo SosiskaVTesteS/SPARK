@@ -8,3 +8,4 @@ assets/js/config.js
 # Временные файлы Supabase CLI
 supabase/.temp/
 .vscode/
+docs/

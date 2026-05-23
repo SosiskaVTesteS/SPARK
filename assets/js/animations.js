@@ -261,7 +261,7 @@ var CardTiltEngine = {
    Generates 80 twinkling micro-dots in #sparkBg
    ════════════════════════════════════════════════ */
 var StarFieldEngine = {
-  COUNT: 80,
+  COUNT: (('ontouchstart' in window) || (navigator.maxTouchPoints > 0)) ? 25 : 80,
 
   init: function () {
     var container = document.getElementById('sparkBg');
