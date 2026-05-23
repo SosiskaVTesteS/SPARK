@@ -599,6 +599,8 @@ async function fetchProfile() {
     PROFILE.spk_balance = Number(row.spk_balance) || 0;
     PROFILE.investments_count = Number(row.investments_count) || 0;
     PROFILE.last_daily_bonus_claim = row.last_daily_bonus_claim || null;
+    PROFILE.bio = row.bio || '';
+    PROFILE.avatar_color = row.avatar_color || 0;
 
     // Check Daily Bonus Eligibility
     var eligible = false;
@@ -945,7 +947,7 @@ async function doLogout(skipSignOut) {
 
   // Explicitly reset session state to guarantee immediate redirection to sign-in page
   ME = null;
-  PROFILE = { username: '@user', spk_balance: 0, ideas_count: 0, rank: null, investments_count: 0 };
+  PROFILE = { username: '@user', spk_balance: 0, ideas_count: 0, rank: null, investments_count: 0, bio: '', avatar_color: 0 };
   appEntered = false;
   document.documentElement.classList.remove('spark-presession');
   document.documentElement.classList.add('auth-active');
@@ -983,7 +985,12 @@ function updateHeader() {
   var un = document.getElementById('hdrUn');
   var spk = document.getElementById('hdrSpk');
   var bal = document.getElementById('invBal');
-  if (av) av.textContent = letter;
+  if (av) {
+    av.textContent = letter;
+    var avIdx = Number(PROFILE.avatar_color) || 0;
+    var avGrad = window.ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avIdx) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
+    av.style.background = avGrad;
+  }
   if (un) un.textContent = PROFILE.username;
   if (spk) spk.textContent = PROFILE.spk_balance.toLocaleString() + ' SPK';
   if (bal) bal.textContent = PROFILE.spk_balance.toLocaleString() + ' SPK';
@@ -2252,7 +2259,7 @@ function bindAuthListener() {
   supa.auth.onAuthStateChange(function (event, session) {
     if (event === 'SIGNED_OUT') {
       ME = null;
-      PROFILE = { username: '@user', spk_balance: 0, ideas_count: 0, rank: null, investments_count: 0 };
+      PROFILE = { username: '@user', spk_balance: 0, ideas_count: 0, rank: null, investments_count: 0, bio: '', avatar_color: 0 };
       appEntered = false;
       document.documentElement.classList.remove('spark-presession');
       document.documentElement.classList.add('auth-active');
