@@ -11,6 +11,16 @@
    ════════════════════════════════════════════════ */
 var IntroEngine = {
   STORAGE_KEY: 'spark_intro_v1',
+  canvas: null,
+  ctx: null,
+  particles: [],
+  animationFrameId: null,
+  phase: 'vortex', // 'vortex' | 'shockwave' | 'float'
+  shockwaveTime: 820,
+  exitTime: 2700,
+  logoCenter: { x: 0, y: 0 },
+  flashAlpha: 0,
+  colors: ['rgba(155, 95, 255, ', 'rgba(232, 90, 160, ', 'rgba(232, 197, 90, ', 'rgba(90, 232, 197, ', 'rgba(123, 92, 250, '],
 
   alreadyShown: function () {
     try { return sessionStorage.getItem(this.STORAGE_KEY) === '1'; } catch (e) { return true; }
@@ -29,59 +39,262 @@ var IntroEngine = {
       return;
     }
 
-    /* Mark body so CSS can hide launchOverlay */
     document.body.classList.add('intro-active');
     this.markShown();
 
-    /* Spawn particles at ~0.8 s (after stroke finishes) */
-    setTimeout(function () { IntroEngine.spawnParticles(); }, 820);
+    this.initCanvas();
 
-    /* Begin exit at 2.7 s, fully remove at 3.6 s */
+    /* Trigger shockwave at 820ms */
+    setTimeout(function () {
+      IntroEngine.triggerShockwave();
+    }, this.shockwaveTime);
+
+    /* Begin exit at 2700ms */
     setTimeout(function () {
       intro.classList.add('si-exiting');
       setTimeout(function () {
         intro.classList.add('si-hidden');
         document.body.classList.remove('intro-active');
+        IntroEngine.stop();
       }, 900);
-    }, 2700);
+    }, this.exitTime);
   },
 
-  spawnParticles: function () {
-    var container = document.getElementById('siParticles');
-    if (!container) return;
-    var colors  = ['#9B5FFF', '#E85AA0', '#E8C55A', '#5AE8C5', '#7B5CFA', '#FF9EDB'];
-    var count   = 20;
+  initCanvas: function () {
+    this.canvas = document.getElementById('siCanvas');
+    if (!this.canvas) return;
+    this.ctx = this.canvas.getContext('2d');
+    this.resizeCanvas();
+    window.addEventListener('resize', this.handleResize);
 
+    this.particles = [];
+    this.phase = 'vortex';
+    this.flashAlpha = 0;
+    
+    // Spawn initial vortex particles
+    var count = 180;
     for (var i = 0; i < count; i++) {
-      (function (idx) {
-        var p = document.createElement('div');
-        p.className = 'si-particle';
+      this.particles.push(this.createVortexParticle(i, count));
+    }
 
-        var angle    = (idx / count) * 360;
-        var dist     = 65 + Math.random() * 90;
-        var tx       = Math.cos(angle * Math.PI / 180) * dist;
-        var ty       = Math.sin(angle * Math.PI / 180) * dist;
-        var size     = 2 + Math.random() * 3.5;
-        var color    = colors[idx % colors.length];
-        var dur      = (0.75 + Math.random() * 0.55).toFixed(2);
-        var del      = (Math.random() * 0.28).toFixed(2);
+    this.tick();
+  },
 
-        p.style.cssText =
-          'top:50%;left:50%;' +
-          'width:'  + size + 'px;height:' + size + 'px;' +
-          'background:' + color + ';' +
-          '--ptx:' + tx.toFixed(1) + 'px;' +
-          '--pty:' + ty.toFixed(1) + 'px;' +
-          '--p-dur:' + dur + 's;' +
-          '--p-del:' + del + 's;';
+  handleResize: function () {
+    if (IntroEngine.canvas) {
+      IntroEngine.resizeCanvas();
+    }
+  },
 
-        container.appendChild(p);
+  resizeCanvas: function () {
+    var rect = this.canvas.getBoundingClientRect();
+    var dpr = window.devicePixelRatio || 1;
+    this.canvas.width = rect.width * dpr;
+    this.canvas.height = rect.height * dpr;
+    this.ctx.scale(dpr, dpr);
+    this.logoCenter = { x: rect.width / 2, y: rect.height / 2 - 19 }; // Adjusted for logo offset (-19px)
+  },
 
-        /* Double-rAF to allow paint before class adds */
-        requestAnimationFrame(function () {
-          requestAnimationFrame(function () { p.classList.add('active'); });
-        });
-      })(i);
+  createVortexParticle: function (idx, total) {
+    var angle = (idx / total) * Math.PI * 2 * 6; // Spiral layout
+    var maxRadius = Math.max(window.innerWidth, window.innerHeight) * 0.35;
+    var radius = 25 + Math.random() * maxRadius;
+    var speed = 0.025 + (1.2 - radius / maxRadius) * 0.04;
+    var size = 0.8 + Math.random() * 2.2;
+    var color = this.colors[idx % this.colors.length];
+    
+    return {
+      type: 'vortex',
+      angle: angle,
+      radius: radius,
+      speed: speed,
+      size: size,
+      color: color,
+      alpha: 0,
+      targetAlpha: 0.35 + Math.random() * 0.55,
+      x: 0,
+      y: 0
+    };
+  },
+
+  triggerShockwave: function () {
+    this.phase = 'shockwave';
+    
+    // Convert existing particles to shockwave particles, plus spawn a massive burst!
+    var oldParticles = this.particles;
+    this.particles = [];
+
+    // Spark shockwave blast
+    var blastCount = 200;
+    for (var i = 0; i < blastCount; i++) {
+      var angle = Math.random() * Math.PI * 2;
+      var speed = 3.5 + Math.random() * 11; // Explosive speed
+      var size = 0.9 + Math.random() * 2.4;
+      var color = this.colors[Math.floor(Math.random() * this.colors.length)];
+      var life = 0.7 + Math.random() * 0.8;
+      
+      this.particles.push({
+        type: 'shockwave',
+        x: this.logoCenter.x,
+        y: this.logoCenter.y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        size: size,
+        color: color,
+        alpha: 1,
+        life: life,
+        maxLife: life,
+        friction: 0.965,
+        gravity: 0.05
+      });
+    }
+
+    // Add visual flash screen overlay or let canvas render a quick white lens flare!
+    this.flashAlpha = 0.85;
+  },
+
+  stop: function () {
+    if (this.animationFrameId) {
+      cancelAnimationFrame(this.animationFrameId);
+    }
+    window.removeEventListener('resize', this.handleResize);
+    this.particles = [];
+  },
+
+  tick: function () {
+    var self = IntroEngine;
+    if (!self.canvas || !self.ctx) return;
+    self.animationFrameId = requestAnimationFrame(self.tick);
+    self.update();
+    self.draw();
+  },
+
+  update: function () {
+    var self = this;
+    var center = self.logoCenter;
+    
+    if (self.flashAlpha > 0) {
+      self.flashAlpha -= 0.05;
+    }
+
+    for (var i = self.particles.length - 1; i >= 0; i--) {
+      var p = self.particles[i];
+
+      if (self.phase === 'vortex' && p.type === 'vortex') {
+        p.angle += p.speed;
+        p.radius -= 1.8; // spiral inward
+        if (p.radius < 5) p.radius = 5;
+        p.alpha += (p.targetAlpha - p.alpha) * 0.08;
+        
+        p.x = center.x + Math.cos(p.angle) * p.radius;
+        p.y = center.y + Math.sin(p.angle) * p.radius;
+      } 
+      else if (p.type === 'shockwave') {
+        p.vx *= p.friction;
+        p.vy *= p.friction;
+        p.vy += p.gravity; // fall down slightly
+        p.x += p.vx;
+        p.y += p.vy;
+        
+        p.life -= 0.016;
+        p.alpha = Math.max(0, p.life / p.maxLife);
+        
+        if (p.life <= 0) {
+          self.particles.splice(i, 1);
+        }
+      }
+    }
+
+    // Phase transitions or continuous floating sparks
+    if (self.phase === 'shockwave' && self.particles.length < 80) {
+      // Transition slowly to floating ambient sparks
+      self.phase = 'float';
+    }
+
+    if (self.phase === 'float' && self.particles.length < 120) {
+      // Spawn subtle floating upward sparks
+      var x = Math.random() * window.innerWidth;
+      var speedY = -(0.5 + Math.random() * 1.5);
+      var speedX = (Math.random() - 0.5) * 0.6;
+      var size = 0.8 + Math.random() * 1.8;
+      var color = self.colors[Math.floor(Math.random() * self.colors.length)];
+      var life = 1.0 + Math.random() * 1.5;
+      
+      self.particles.push({
+        type: 'float',
+        x: x,
+        y: window.innerHeight + 10,
+        vx: speedX,
+        vy: speedY,
+        size: size,
+        color: color,
+        alpha: 0,
+        life: life,
+        maxLife: life
+      });
+    }
+
+    if (self.phase === 'float') {
+      for (var i = self.particles.length - 1; i >= 0; i--) {
+        var p = self.particles[i];
+        if (p.type === 'float') {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.life -= 0.012;
+          
+          if (p.alpha < 0.6 && p.life > 0.4) {
+            p.alpha += 0.04;
+          } else {
+            p.alpha = Math.max(0, p.life / p.maxLife * 0.6);
+          }
+
+          if (p.life <= 0 || p.y < -10) {
+            self.particles.splice(i, 1);
+          }
+        }
+      }
+    }
+  },
+
+  draw: function () {
+    var self = this;
+    var ctx = self.ctx;
+    var canvas = self.canvas;
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw particles
+    for (var i = 0; i < self.particles.length; i++) {
+      var p = self.particles[i];
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = p.color + p.alpha.toFixed(3) + ')';
+      
+      // Add subtle glow shadow to highlight larger sparks
+      if (p.size > 1.8) {
+        ctx.shadowBlur = 4;
+        ctx.shadowColor = p.color + '0.5)';
+      } else {
+        ctx.shadowBlur = 0;
+      }
+      
+      ctx.fill();
+    }
+    ctx.shadowBlur = 0; // reset shadow
+
+    // Draw supernova flash flare
+    if (self.flashAlpha > 0) {
+      var grad = ctx.createRadialGradient(self.logoCenter.x, self.logoCenter.y, 0, self.logoCenter.x, self.logoCenter.y, 220);
+      grad.addColorStop(0, 'rgba(255,255,255,' + self.flashAlpha + ')');
+      grad.addColorStop(0.12, 'rgba(155,95,255,' + (self.flashAlpha * 0.5) + ')');
+      grad.addColorStop(0.35, 'rgba(232,90,160,' + (self.flashAlpha * 0.2) + ')');
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      
+      ctx.beginPath();
+      ctx.arc(self.logoCenter.x, self.logoCenter.y, 220, 0, Math.PI * 2);
+      ctx.fillStyle = grad;
+      ctx.fill();
     }
   }
 };

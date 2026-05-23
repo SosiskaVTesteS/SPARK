@@ -88,8 +88,8 @@
 
 /* Per-letter wordmark entry */
 @keyframes letterEntry {
-  from { opacity:0; transform:translateY(24px) rotateX(-40deg); }
-  to   { opacity:1; transform:translateY(0) rotateX(0deg); }
+  from { opacity:0; transform:translateY(36px) rotateX(-90deg) scale(0.85); filter: blur(5px); }
+  to   { opacity:1; transform:translateY(0) rotateX(0deg) scale(1); filter: blur(0); }
 }
 
 /* Decorative ring expand */
@@ -104,11 +104,9 @@
   100% { transform:translate(var(--ptx,0px), var(--pty,0px)) scale(0); opacity:0; }
 }
 
-/* Intro overlay exit */
 @keyframes introExit {
-  0%   { opacity:1; }
-  65%  { opacity:1; }
-  100% { opacity:0; }
+  0%   { transform: scale(1); filter: blur(0); opacity: 1; }
+  100% { transform: scale(1.08); filter: blur(12px); opacity: 0; }
 }
 
 /* Tab icon bounce on switch */
@@ -301,22 +299,11 @@ body.intro-active #launchOverlay { display: none !important; }
   animation: slideUpFade 0.5s var(--ease-enter) 1.35s forwards;
 }
 
-/* Particle container */
-.si-particles {
+#siCanvas {
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 1;
-}
-.si-particle {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  border-radius: 50%;
-  opacity: 0;
-}
-.si-particle.active {
-  animation: particleBurst var(--p-dur, 1.1s) var(--p-del, 0s) var(--ease-smooth) forwards;
 }
 
 
