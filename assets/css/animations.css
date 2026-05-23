@@ -549,8 +549,8 @@ header { transition: transform 0.3s var(--ease-smooth); }
   .card {
     transition: transform 0.35s var(--ease-smooth), box-shadow 0.35s ease, opacity 0.35s ease;
   }
-  /* Haptic-feel spring on tap */
-  .card:active {
+  /* Haptic-feel spring on tap, except when tapping buttons/links */
+  .card:active:not(:has(button:active)):not(:has(a:active)) {
     transform: scale(0.985) !important;
   }
   /* Full-bleed mobile cards */

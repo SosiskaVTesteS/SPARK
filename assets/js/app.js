@@ -770,12 +770,10 @@ function dbRowToLiveIdea(row, profilesMap) {
   }
   // Restore reactions from DB reactions jsonb
   var reactions = row.reactions || {};
-  var oldPick = RS[row.id] ? RS[row.id].pick : null;
-  var rsObj = { counts: Object.fromEntries(EMOJIS.map(function(e) { return [e, 0]; })), pick: oldPick };
+  var rsObj = getRS(row.id);
   EMOJIS.forEach(function(e) {
     if (reactions[e] !== undefined) rsObj.counts[e] = Number(reactions[e]) || 0;
   });
-  RS[row.id] = rsObj;
   // Pick tag from title keywords
   var tag = detectTag(row.title || '');
   // Random-ish gradient based on id
@@ -1476,18 +1474,10 @@ async function renderMyIdeas() {
     el.innerHTML = list.map(cardHTML).join('');
   });
   
-  // Animate SVG graphs for user ideas
+  // Animate SVG graphs for user ideas using IntersectionObserver
   ['D', 'M'].forEach(function (sfx) {
     var el = document.getElementById('myIdeasList-' + sfx);
-    if (!el) return;
-    var svgs = el.querySelectorAll('svg.igsvg[data-history]');
-    svgs.forEach(function (svg) {
-      try {
-        drawInvestmentGraph(svg, JSON.parse(svg.dataset.history));
-      } catch (e) {
-        drawInvestmentGraph(svg, [0, 0]);
-      }
-    });
+    if (el) animateAllGraphs(el);
   });
 }
 
@@ -1584,13 +1574,7 @@ function drawInvestmentGraph(svgEl, history, dur) {
   dot.setAttribute('r', '3.5');
   dot.classList.add('ig-dot');
   requestAnimationFrame(function () {
-    var len = line.getTotalLength();
-    if (!len) {
-      line.style.strokeDasharray = 'none';
-      svgEl.appendChild(dot);
-      dot.classList.add('show');
-      return;
-    }
+    var len = line.getTotalLength() || 300;
     line.style.setProperty('--ig-len', String(len));
     line.style.setProperty('--ig-dur', dur + 's');
     line.style.strokeDasharray = len;
@@ -1617,17 +1601,17 @@ function animateAllGraphs(container) {
     svgs.forEach(function (svg) { try { drawInvestmentGraph(svg, JSON.parse(svg.dataset.history)); } catch (e) {} });
     return;
   }
-  // Reuse existing observer — disconnect old targets by creating fresh one
-  if (_graphObserver) { _graphObserver.disconnect(); }
-  _graphObserver = new IntersectionObserver(function (entries, o) {
-    entries.forEach(function (entry) {
-      if (entry.isIntersecting) {
-        var svg = entry.target;
-        try { drawInvestmentGraph(svg, JSON.parse(svg.dataset.history)); } catch (e) { drawInvestmentGraph(svg, [0, 0]); }
-        o.unobserve(svg);
-      }
-    });
-  }, { threshold: 0.15 });
+  if (!_graphObserver) {
+    _graphObserver = new IntersectionObserver(function (entries, o) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          var svg = entry.target;
+          try { drawInvestmentGraph(svg, JSON.parse(svg.dataset.history)); } catch (e) { drawInvestmentGraph(svg, [0, 0]); }
+          o.unobserve(svg);
+        }
+      });
+    }, { threshold: 0.05 });
+  }
   svgs.forEach(function (svg) { _graphObserver.observe(svg); });
 }
 
