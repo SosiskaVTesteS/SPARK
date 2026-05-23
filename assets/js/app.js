@@ -949,6 +949,13 @@ async function doLogout(skipSignOut) {
   ME = null;
   PROFILE = { username: '@user', spk_balance: 0, ideas_count: 0, rank: null, investments_count: 0, bio: '', avatar_color: 0 };
   appEntered = false;
+  try {
+    Object.keys(localStorage).forEach(function (key) {
+      if (key.indexOf('spark_pick_') === 0) {
+        localStorage.removeItem(key);
+      }
+    });
+  } catch (e) {}
   document.documentElement.classList.remove('spark-presession');
   document.documentElement.classList.add('auth-active');
   var authScreen = document.getElementById('authScreen');
@@ -1576,17 +1583,26 @@ function drawInvestmentGraph(svgEl, history, dur) {
   dot.setAttribute('cy', gp.lastPt.y.toFixed(1));
   dot.setAttribute('r', '3.5');
   dot.classList.add('ig-dot');
-  svgEl.appendChild(dot);
   requestAnimationFrame(function () {
     var len = line.getTotalLength();
-    if (!len) { line.style.strokeDasharray = 'none'; return; }
+    if (!len) {
+      line.style.strokeDasharray = 'none';
+      svgEl.appendChild(dot);
+      dot.classList.add('show');
+      return;
+    }
     line.style.setProperty('--ig-len', String(len));
     line.style.setProperty('--ig-dur', dur + 's');
     line.style.strokeDasharray = len;
     line.style.strokeDashoffset = len;
     requestAnimationFrame(function () {
       line.classList.add('animated');
-      setTimeout(function () { dot.classList.add('show'); }, dur * 800);
+      setTimeout(function () {
+        svgEl.appendChild(dot);
+        requestAnimationFrame(function () {
+          dot.classList.add('show');
+        });
+      }, dur * 1000);
     });
   });
 }
@@ -1724,6 +1740,9 @@ function react(ideaId, emoji, btn) {
   if (prev === emoji) {
     rs.counts[emoji] = Math.max(0, (rs.counts[emoji] || 0) - 1);
     rs.pick = null;
+    try {
+      localStorage.removeItem('spark_pick_' + ideaId);
+    } catch (e) {}
     if (supa) {
       safeSupabaseCall('database', function() { return supa.from('ideas').update({ reactions: rs.counts }).eq('id', ideaId); }, { silent: true });
     }
@@ -1733,6 +1752,9 @@ function react(ideaId, emoji, btn) {
     }
     rs.counts[emoji] = (rs.counts[emoji] || 0) + 1;
     rs.pick = emoji;
+    try {
+      localStorage.setItem('spark_pick_' + ideaId, emoji);
+    } catch (e) {}
     if (supa) {
       safeSupabaseCall('database', function() { return supa.from('ideas').update({ reactions: rs.counts }).eq('id', ideaId); }, { silent: true });
     }

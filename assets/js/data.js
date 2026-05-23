@@ -131,7 +131,13 @@ var FIRE_T = 100;
 var RS = {};
 
 function getRS(id) {
-  if (!RS[id]) RS[id] = { counts: Object.fromEntries(EMOJIS.map(function (e) { return [e, 0]; })), pick: null };
+  if (!RS[id]) {
+    var storedPick = null;
+    try {
+      storedPick = localStorage.getItem('spark_pick_' + id);
+    } catch (e) {}
+    RS[id] = { counts: Object.fromEntries(EMOJIS.map(function (e) { return [e, 0]; })), pick: storedPick || null };
+  }
   return RS[id];
 }
 // No mock reaction seeds — real data loaded from DB
