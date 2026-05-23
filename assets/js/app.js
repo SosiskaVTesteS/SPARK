@@ -2633,4 +2633,29 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     }
   });
+
+  // ═══ CHATS SYSTEM INITIALIZATION ═══
+  var btnChatsDesk = document.getElementById('btnChatsDesk');
+  if (btnChatsDesk) {
+    btnChatsDesk.addEventListener('click', function () {
+      openPanel('chats');
+    });
+  }
+
+  var btnCloseChats = document.getElementById('btnCloseChats');
+  if (btnCloseChats) {
+    btnCloseChats.addEventListener('click', function () {
+      var p = document.getElementById('panel-chats');
+      if (p) p.classList.remove('open');
+      var feed = document.querySelector('.feed');
+      if (window.innerWidth <= 768 && feed) feed.style.display = '';
+      document.querySelectorAll('.mob-tab').forEach(function (t) {
+        t.classList.toggle('active', t.dataset.panel === 'feed');
+      });
+    });
+  }
+
+  if (window.ChatsEngine) {
+    ChatsEngine.init();
+  }
 });

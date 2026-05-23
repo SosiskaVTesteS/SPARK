@@ -30,6 +30,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" onerror="(function(){var s=document.createElement('script');s.src='https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js';document.head.appendChild(s);})()"></script>
 <link rel="stylesheet" href="assets/css/main.css">
 <link rel="stylesheet" href="assets/css/animations.css">
+<link rel="stylesheet" href="assets/css/chats.css">
 <!-- Theme engine: runs before first paint to avoid colour flash -->
 <script src="assets/js/theme.js"></script>
 <!-- Мгновенное скрытие экрана входа при наличии сессии (до рендера) -->
@@ -217,6 +218,10 @@
     <div class="uavatar" id="hdrAv">U</div>
     <div><div class="uname" id="hdrUn">@user123</div><span class="ubadge">✓ Verified</span></div>
   </div>
+  <button class="btn-prof" id="btnChatsDesk" style="margin-right: 8px;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span>Chats</span>
+  </button>
   <button class="btn-prof" id="btnProfDesk">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
     <span>Profile</span>
@@ -383,17 +388,38 @@
   <div id="leaderListMob"><div style="color:var(--mu);font-size:12px;padding:8px 0">Loading...</div></div>
 </div>
 <div class="mpanel up" id="panel-chats" style="padding:0">
-  <div class="chat-hub">
-    <div class="chat-tabs">
-      <button class="chat-tab-btn active" data-chat-tab="dms">💬 DMs</button>
-      <button class="chat-tab-btn" data-chat-tab="topics">🗂 Topics</button>
+  <div class="chat-container">
+    <button class="chat-close-btn" id="btnCloseChats" title="Close chats">✕</button>
+    
+    <!-- LEFT SIDEBAR (DMs and Teams list) -->
+    <div class="chat-sidebar">
+      <div class="chat-sidebar-header">
+        <div class="chat-sidebar-title-row">
+          <span class="chat-sidebar-title">SPARK Chats</span>
+          <button class="chat-sidebar-action" title="New message">+</button>
+        </div>
+        <div class="chat-search-wrap">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" class="chat-search-input" id="chatSearchInput" placeholder="Search contacts...">
+        </div>
+      </div>
+      
+      <div class="chat-sidebar-scroll">
+        <div class="chat-sidebar-section-title">💬 Direct Messages</div>
+        <div id="chatListDMs">
+          <!-- Populated by ChatsEngine.renderChatList() -->
+        </div>
+        
+        <div class="chat-sidebar-section-title">🗂 Teams & Channels</div>
+        <div id="chatListTeams">
+          <!-- Populated by ChatsEngine.renderChatList() -->
+        </div>
+      </div>
     </div>
-    <div class="chat-section active" id="chat-dms" style="padding:8px">
-      <div class="chat-row"><div class="chat-av" style="background:linear-gradient(135deg,#e8c55a,#e87a5a)">A</div><div class="chat-info"><div class="chat-name">@alex_ventures</div><div class="chat-preview">Hey, what do you think about the SPK pool?</div></div><div class="chat-meta"><div class="chat-time">2m</div><div class="chat-unread">3</div></div></div>
-      <div class="chat-row"><div class="chat-av offline" style="background:linear-gradient(135deg,#5ae8c5,#5a90e8)">M</div><div class="chat-info"><div class="chat-name">@maria_builds</div><div class="chat-preview">Let's discuss the solar leasing idea 🔥</div></div><div class="chat-meta"><div class="chat-time">14m</div></div></div>
-    </div>
-    <div class="chat-section" id="chat-topics" style="padding:8px">
-      <div class="chat-row"><div class="chat-av" style="background:linear-gradient(135deg,#e8c55a,#e87a5a);font-size:11px">AI</div><div class="chat-info"><div class="chat-name">AI Code Review</div><div class="chat-topic-tag">#AI Tools</div><div class="chat-preview">@kirill_vc: Latency solved</div></div><div class="chat-meta"><div class="chat-time">5m</div><div class="chat-unread">7</div></div></div>
+
+    <!-- RIGHT VIEWPORT (Conversation) -->
+    <div class="chat-main-view" id="chatActivePane">
+      <!-- Populated by ChatsEngine.renderActiveConversation() or fallbacks -->
     </div>
   </div>
 </div>
@@ -555,6 +581,7 @@
 <script src="assets/js/animations.js"></script>
 <script src="assets/js/integrations.js"></script>
 <script src="assets/js/data.js"></script>
+<script src="assets/js/chats-engine.js"></script>
 <script src="assets/js/app.js"></script>
 </body>
 </html>
