@@ -1423,6 +1423,48 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
   max-width: 220px;
 }
 
+.myideas-section {
+  border-top: 1px solid rgba(255,255,255,0.05);
+  margin-top: 12px;
+  padding-top: 10px;
+}
+.myideas-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 7px;
+  border: none;
+  background: transparent;
+  color: var(--mu2);
+  font-family: var(--fb);
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 9px;
+  transition: background 0.15s, color 0.15s;
+  text-align: left;
+}
+.myideas-toggle:hover, .myideas-toggle.open {
+  background: rgba(123,92,250,0.07);
+  color: var(--vl2);
+}
+.myideas-chevron {
+  margin-left: auto;
+  transition: transform 0.22s var(--ease-smooth);
+}
+.myideas-toggle.open .myideas-chevron { transform: rotate(180deg); }
+
+.myideas-body {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.4s var(--ease-enter), opacity 0.28s ease;
+  opacity: 0;
+}
+.myideas-body.open {
+  max-height: 4000px;
+  opacity: 1;
+}
+
 /* ════════════════════════════════════════════════
    V3 — PROFILE EDIT SECTION
    ════════════════════════════════════════════════ */

@@ -1356,9 +1356,16 @@ function profileHTML(sfx) {
     + '<div class="sbox"><span class="sval">' + (PROFILE.rank ? '#' + PROFILE.rank : '—') + '</span><span class="skey">' + T('rank') + '</span></div></div>'
     /* Profile Edit section */
     + (window.ProfileEditEngine ? ProfileEditEngine.renderEditSection(sfx) : '')
-    + '<div class="divider"></div>'
-    + '<div class="stitle" style="margin-top:14px">' + T('myIdeas') + '</div>'
-    + '<div class="my-ideas-list" id="myIdeasList-' + sfx + '" style="display:flex;flex-direction:column;gap:12px;margin-top:8px"></div>'
+    + '<div class="myideas-section" id="myideasSec-' + sfx + '">'
+    + '<button type="button" class="myideas-toggle" id="myideasToggle-' + sfx + '">'
+    + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--ac2)"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .6 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5M9 18h6M10 22h4"/></svg>'
+    + '<span>' + T('myIdeas') + '</span>'
+    + '<svg class="myideas-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>'
+    + '</button>'
+    + '<div class="myideas-body" id="myideasBody-' + sfx + '">'
+    + '<div class="my-ideas-list" id="myIdeasList-' + sfx + '" style="display:flex;flex-direction:column;gap:12px;margin-top:12px;padding:4px 0;"></div>'
+    + '</div>'
+    + '</div>'
     + '<div class="divider"></div>'
     + '<div class="stitle" style="margin-top:14px">' + T('wallet') + '</div>'
     + '<div class="wcrd"><div><div class="wamt">' + (Number(PROFILE.spk_balance) || 0).toLocaleString() + ' <small>SPK</small></div><div class="wsub">' + T('availableBalance') + '</div></div>'
@@ -1396,13 +1403,27 @@ function renderProfile() {
   if (dp) {
     dp.innerHTML = profileHTML('D');
     if (window.ProfileEditEngine) ProfileEditEngine.initSection('D');
+    initMyIdeasToggle('D');
   }
   var mb = document.getElementById('mobProfInner');
   if (mb) {
     mb.innerHTML = profileHTML('M');
     if (window.ProfileEditEngine) ProfileEditEngine.initSection('M');
+    initMyIdeasToggle('M');
   }
   renderMyIdeas();
+}
+
+function initMyIdeasToggle(sfx) {
+  var toggle = document.getElementById('myideasToggle-' + sfx);
+  var body   = document.getElementById('myideasBody-' + sfx);
+  if (toggle && body) {
+    toggle.onclick = function () {
+      var open = body.classList.contains('open');
+      body.classList.toggle('open', !open);
+      toggle.classList.toggle('open', !open);
+    };
+  }
 }
 
 async function getUserIdeas() {
