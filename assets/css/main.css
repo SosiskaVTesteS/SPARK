@@ -1842,6 +1842,14 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
     visibility: hidden !important;
     pointer-events: none !important;
   }
+
+  /* Stretch active chat to cover whole screen */
+  .mpanel.fullscreen-chat {
+    inset: 0 0 0 0 !important;
+    padding: 0 !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+  }
 }
 
 @media (max-width: 400px) {

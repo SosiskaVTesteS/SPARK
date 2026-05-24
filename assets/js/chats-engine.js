@@ -783,6 +783,8 @@ var ChatsEngine = (function () {
         if (pane) pane.classList.remove('open-active');
         var mobBar = document.querySelector('.mob-bar');
         if (mobBar) mobBar.classList.remove('hide-bar');
+        var chatsPanel = document.getElementById('panel-chats');
+        if (chatsPanel) chatsPanel.classList.remove('fullscreen-chat');
       });
     }
 
@@ -925,6 +927,8 @@ var ChatsEngine = (function () {
       if (pane) pane.classList.add('open-active');
       var mobBar = document.querySelector('.mob-bar');
       if (mobBar) mobBar.classList.add('hide-bar');
+      var chatsPanel = document.getElementById('panel-chats');
+      if (chatsPanel) chatsPanel.classList.add('fullscreen-chat');
     }
 
     // Load Supabase Database messages asynchronously for this channel if configured

@@ -2230,6 +2230,10 @@ function openPanel(name) {
   var mobBar = document.querySelector('.mob-bar');
   if (mobBar) mobBar.classList.remove('hide-bar');
 
+  // Restore panel boundaries when switching tabs
+  var chatsPanel = document.getElementById('panel-chats');
+  if (chatsPanel) chatsPanel.classList.remove('fullscreen-chat');
+
   if (name === 'feed') { if (feed) feed.style.display = ''; }
   else { if (feed) feed.style.display = 'none'; var t2 = document.getElementById('panel-' + name); if (t2) t2.classList.add('open'); }
 }
