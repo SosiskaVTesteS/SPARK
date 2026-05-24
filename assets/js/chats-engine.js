@@ -507,10 +507,19 @@ var ChatsEngine = (function () {
   async function loadSupabaseHistory(id) {
     if (!window.supa || !window.ME) return;
     try {
-      var res = await supa.from('messages')
-        .select('*')
-        .eq('channel_id', id)
-        .order('created_at', { ascending: true });
+      var isDM = !id.startsWith('#') && !['defi-prophets', 'ai-signals', 'spark-devs'].includes(id);
+      var res;
+      if (isDM) {
+        res = await supa.from('messages')
+          .select('*')
+          .or('and(channel_id.eq.' + ME.id + ',sender_id.eq.' + id + '),and(channel_id.eq.' + id + ',sender_id.eq.' + ME.id + ')')
+          .order('created_at', { ascending: true });
+      } else {
+        res = await supa.from('messages')
+          .select('*')
+          .eq('channel_id', id)
+          .order('created_at', { ascending: true });
+      }
       
       if (res.data) {
         var msgs = getCachedMessages();
@@ -711,7 +720,7 @@ var ChatsEngine = (function () {
     }
 
     if (confirmBtn) {
-      confirmBtn.addEventListener('click', function () {
+      confirmBtn.addEventListener('click', async function () {
         if (!input) return;
         var rawVal = input.value.trim();
         if (!rawVal) {
@@ -721,6 +730,7 @@ var ChatsEngine = (function () {
 
         var newId = '';
         var displayName = '';
+        var avColor = 0;
 
         if (state.modalTab === 'DM') {
           // Direct Message
@@ -734,10 +744,31 @@ var ChatsEngine = (function () {
             return;
           }
 
-          newId = rawVal;
-          displayName = rawVal.replace('@', '').split('_').map(function(s) {
-            return s.charAt(0).toUpperCase() + s.slice(1);
-          }).join(' ');
+          if (window.supa) {
+            _setHint('Verifying user identity... 🛰️', 'info');
+            try {
+              var res = await supa.from('profiles').select('*').eq('username', rawVal).single();
+              if (res.error || !res.data) {
+                _setHint('User ' + rawVal + ' not found in the grid.', 'err');
+                return;
+              }
+              var prof = res.data;
+              newId = prof.id; // Profile UUID
+              displayName = prof.username;
+              avColor = prof.avatar_color || 0;
+            } catch (e) {
+              console.warn('Failed to verify user:', e);
+              _setHint('Database error verifying user identity.', 'err');
+              return;
+            }
+          } else {
+            // Local offline fallback
+            newId = rawVal;
+            displayName = rawVal.replace('@', '').split('_').map(function(s) {
+              return s.charAt(0).toUpperCase() + s.slice(1);
+            }).join(' ');
+            avColor = Math.floor(Math.random() * 12);
+          }
 
           // Check if contact already exists
           var contacts = getContactsList();
@@ -751,9 +782,9 @@ var ChatsEngine = (function () {
           contacts.push({
             id: newId,
             name: displayName,
-            username: newId,
+            username: displayName,
             online: true,
-            avColor: Math.floor(Math.random() * 12),
+            avColor: avColor,
             preview: 'Signal room opened.'
           });
           saveContactsList(contacts);
@@ -838,14 +869,34 @@ var ChatsEngine = (function () {
           // Avoid duplicating messages sent by oneself
           if (newRow.sender_id === ME.id) return;
 
+          var threadId = newRow.channel_id;
+          if (newRow.channel_id === ME.id) {
+            threadId = newRow.sender_id;
+
+            // Auto-append incoming contacts to local sidebar list if missing
+            var contacts = getContactsList();
+            var contactExists = contacts.some(function (c) { return c.id === threadId; });
+            if (!contactExists) {
+              contacts.push({
+                id: threadId,
+                name: newRow.sender_name,
+                username: newRow.sender_name,
+                online: true,
+                avColor: newRow.sender_avatar_color || 0,
+                preview: newRow.content
+              });
+              saveContactsList(contacts);
+            }
+          }
+
           var msgs = getCachedMessages();
-          if (!msgs[newRow.channel_id]) msgs[newRow.channel_id] = [];
+          if (!msgs[threadId]) msgs[threadId] = [];
           
           // Check duplicates
-          var dup = msgs[newRow.channel_id].some(function (m) { return m.id === newRow.id; });
+          var dup = msgs[threadId].some(function (m) { return m.id === newRow.id; });
           if (dup) return;
 
-          msgs[newRow.channel_id].push({
+          msgs[threadId].push({
             id:                  newRow.id,
             sender_id:           newRow.sender_id,
             sender_name:         newRow.sender_name,
@@ -862,7 +913,7 @@ var ChatsEngine = (function () {
           var chatDot = document.getElementById('mChatDot');
           if (chatDot) chatDot.style.display = 'block';
 
-          if (state.activeChannelId === newRow.channel_id) {
+          if (state.activeChannelId === threadId) {
             renderActiveConversation();
           } else {
             renderChatList();
@@ -872,13 +923,18 @@ var ChatsEngine = (function () {
           var updatedRow = payload.new;
           if (!updatedRow) return;
 
+          var threadId = updatedRow.channel_id;
+          if (updatedRow.channel_id === ME.id) {
+            threadId = updatedRow.sender_id;
+          }
+
           var msgs = getCachedMessages();
-          var thread = msgs[updatedRow.channel_id] || [];
+          var thread = msgs[threadId] || [];
           var msg = thread.find(function (m) { return m.id === updatedRow.id; });
           if (msg) {
             msg.reactions = updatedRow.reactions || {};
             cacheMessages(msgs);
-            if (state.activeChannelId === updatedRow.channel_id) {
+            if (state.activeChannelId === threadId) {
               renderActiveConversation();
             }
           }
