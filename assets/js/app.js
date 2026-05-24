@@ -109,6 +109,7 @@ document.addEventListener('DOMContentLoaded', function () {
         GlobalEmojiPicker.show(reactAddBtn, function (emoji) {
           react(ideaId, emoji, reactAddBtn);
         });
+        event.stopPropagation();
         return;
       }
       var reactBtn = event.target.closest('.rbbl[data-id][data-e]');
@@ -141,6 +142,7 @@ document.addEventListener('DOMContentLoaded', function () {
         GlobalEmojiPicker.show(reactAddBtn, function (emoji) {
           react(ideaId, emoji, reactAddBtn);
         });
+        event.stopPropagation();
         return;
       }
       var reactBtn = event.target.closest('.rbbl[data-id][data-e]');
@@ -2213,6 +2215,21 @@ function openPanel(name) {
     var p = document.getElementById('panel-' + id);
     if (p) p.classList.remove('open');
   });
+
+  // Toggle header visibility on mobile based on whether the feed panel is open
+  var header = document.querySelector('header');
+  if (header) {
+    if (name === 'feed') {
+      header.classList.remove('hide-on-mobile');
+    } else {
+      header.classList.add('hide-on-mobile');
+    }
+  }
+
+  // Restore taskbar when switching panels
+  var mobBar = document.querySelector('.mob-bar');
+  if (mobBar) mobBar.classList.remove('hide-bar');
+
   if (name === 'feed') { if (feed) feed.style.display = ''; }
   else { if (feed) feed.style.display = 'none'; var t2 = document.getElementById('panel-' + name); if (t2) t2.classList.add('open'); }
 }

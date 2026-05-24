@@ -403,6 +403,7 @@ var ChatsEngine = (function () {
   var GlobalEmojiPicker = (function () {
     var pickerEl = null;
     var currentCallback = null;
+    var currentTargetBtn = null;
     var EMOJIS_LIST = ['💀', '🗿', '🔥', '💎', '🚀', '❤️', '👍', '👎', '👏', '🎉', '😢', '😮', '🤔', '👀', '💯'];
 
     function initPicker() {
@@ -485,6 +486,10 @@ var ChatsEngine = (function () {
 
       window.addEventListener('click', function (e) {
         if (pickerEl.style.display !== 'none' && !pickerEl.contains(e.target)) {
+          // Do not hide if clicking the trigger button itself or elements inside it
+          if (currentTargetBtn && (e.target === currentTargetBtn || currentTargetBtn.contains(e.target))) {
+            return;
+          }
           hide();
         }
       });
@@ -492,6 +497,7 @@ var ChatsEngine = (function () {
 
     function show(targetBtn, callback) {
       initPicker();
+      currentTargetBtn = targetBtn;
       currentCallback = callback;
       pickerEl.style.display = 'block';
 
@@ -717,9 +723,23 @@ var ChatsEngine = (function () {
       if (m.reactions && Object.keys(m.reactions).length > 0) {
         reactionsHtml = '<div class="chat-msg-reactions">'
           + Object.keys(m.reactions).map(function (emoji) {
-            var activeClass = m.reactions[emoji].userReacted ? ' active' : '';
+            var reactionObj = m.reactions[emoji];
+            var myId = window.ME ? window.ME.id : 'me';
+            var userReacted = false;
+            var count = 0;
+            if (reactionObj) {
+              if (Array.isArray(reactionObj.users)) {
+                userReacted = reactionObj.users.includes(myId);
+                count = reactionObj.users.length;
+              } else {
+                userReacted = !!reactionObj.userReacted;
+                count = Number(reactionObj.count) || 0;
+              }
+            }
+            if (count === 0) return '';
+            var activeClass = userReacted ? ' active' : '';
             return '<span class="chat-msg-react-pill' + activeClass + '" data-msg-id="' + m.id + '" data-emoji="' + emoji + '">'
-              + emoji + ' ' + m.reactions[emoji].count
+              + emoji + ' ' + count
               + '</span>';
           }).join('')
           + '</div>';
@@ -761,6 +781,8 @@ var ChatsEngine = (function () {
       backBtn.addEventListener('click', function () {
         var pane = document.getElementById('chatActivePane');
         if (pane) pane.classList.remove('open-active');
+        var mobBar = document.querySelector('.mob-bar');
+        if (mobBar) mobBar.classList.remove('hide-bar');
       });
     }
 
@@ -897,10 +919,12 @@ var ChatsEngine = (function () {
     renderChatList();
     renderActiveConversation();
 
-    // On mobile, slide in the conversation overlay
+    // On mobile, slide in the conversation overlay and hide the taskbar
     if (window.innerWidth <= 768) {
       var pane = document.getElementById('chatActivePane');
       if (pane) pane.classList.add('open-active');
+      var mobBar = document.querySelector('.mob-bar');
+      if (mobBar) mobBar.classList.add('hide-bar');
     }
 
     // Load Supabase Database messages asynchronously for this channel if configured
@@ -1137,20 +1161,39 @@ var ChatsEngine = (function () {
 
     if (!msg.reactions) msg.reactions = {};
 
-    if (msg.reactions[emoji]) {
-      if (msg.reactions[emoji].userReacted) {
-        // Remove reaction
-        msg.reactions[emoji].count = Math.max(0, msg.reactions[emoji].count - 1);
-        msg.reactions[emoji].userReacted = false;
-        if (msg.reactions[emoji].count === 0) delete msg.reactions[emoji];
-      } else {
-        // Increment
-        msg.reactions[emoji].count += 1;
-        msg.reactions[emoji].userReacted = true;
+    var myId = window.ME ? window.ME.id : 'me';
+    var reactionObj = msg.reactions[emoji];
+    
+    // Normalise existing reaction to array format if it's in the old structure
+    if (reactionObj) {
+      if (!Array.isArray(reactionObj.users)) {
+        var existingUsers = [];
+        if (reactionObj.userReacted) {
+          // If it was marked as reacted, assume it was by the sender or the current user
+          existingUsers.push(msg.sender_id === 'me' ? myId : msg.sender_id);
+        }
+        reactionObj.users = existingUsers;
       }
     } else {
-      // First reaction of this type
-      msg.reactions[emoji] = { count: 1, userReacted: true };
+      reactionObj = { users: [] };
+    }
+
+    var userIndex = reactionObj.users.indexOf(myId);
+    if (userIndex !== -1) {
+      // Current user already reacted, so they toggle it off (remove themselves)
+      reactionObj.users.splice(userIndex, 1);
+    } else {
+      // Current user hasn't reacted yet, add them
+      reactionObj.users.push(myId);
+    }
+
+    reactionObj.count = reactionObj.users.length;
+    reactionObj.userReacted = reactionObj.users.includes(myId);
+
+    if (reactionObj.count === 0) {
+      delete msg.reactions[emoji];
+    } else {
+      msg.reactions[emoji] = reactionObj;
     }
 
     // Write back and refresh

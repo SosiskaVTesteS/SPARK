@@ -1826,6 +1826,22 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
 
   /* Fbar search bigger on mobile */
   .srch-in { font-size: 14px; padding-top: 11px; padding-bottom: 11px; }
+
+  /* Hide header on sub-panels on mobile screen sizes */
+  header.hide-on-mobile {
+    display: none !important;
+  }
+
+  /* Smooth taskbar transitions and slide out */
+  .mob-bar {
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease, visibility 0.3s ease !important;
+  }
+  .mob-bar.hide-bar {
+    transform: translateY(140%) !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
 }
 
 @media (max-width: 400px) {
