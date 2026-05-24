@@ -2641,7 +2641,18 @@ document.addEventListener('DOMContentLoaded', function() {
   var btnChatsDesk = document.getElementById('btnChatsDesk');
   if (btnChatsDesk) {
     btnChatsDesk.addEventListener('click', function () {
-      openPanel('chats');
+      var p = document.getElementById('panel-chats');
+      var feed = document.querySelector('.feed');
+      if (p && p.classList.contains('open')) {
+        // Toggle off
+        p.classList.remove('open');
+        if (feed) feed.style.display = '';
+        btnChatsDesk.classList.remove('active');
+      } else {
+        // Toggle on
+        openPanel('chats');
+        btnChatsDesk.classList.add('active');
+      }
     });
   }
 
@@ -2651,10 +2662,28 @@ document.addEventListener('DOMContentLoaded', function() {
       var p = document.getElementById('panel-chats');
       if (p) p.classList.remove('open');
       var feed = document.querySelector('.feed');
-      if (window.innerWidth <= 768 && feed) feed.style.display = '';
+      if (feed) feed.style.display = ''; // Restore feed regardless of screen width
       document.querySelectorAll('.mob-tab').forEach(function (t) {
         t.classList.toggle('active', t.dataset.panel === 'feed');
       });
+      var btnChatsDesk = document.getElementById('btnChatsDesk');
+      if (btnChatsDesk) btnChatsDesk.classList.remove('active');
+    });
+  }
+
+  // Logo home button to return to feed on desktop
+  var logoBlock = document.querySelector('.logo-block');
+  if (logoBlock) {
+    logoBlock.style.cursor = 'pointer';
+    logoBlock.addEventListener('click', function () {
+      var p = document.getElementById('panel-chats');
+      if (p && p.classList.contains('open')) {
+        p.classList.remove('open');
+        var feed = document.querySelector('.feed');
+        if (feed) feed.style.display = '';
+        var btnChatsDesk = document.getElementById('btnChatsDesk');
+        if (btnChatsDesk) btnChatsDesk.classList.remove('active');
+      }
     });
   }
 

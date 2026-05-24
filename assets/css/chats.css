@@ -712,3 +712,28 @@
     max-width: 82%;
   }
 }
+
+/* --- Desktop/PC Specific Panel Support --- */
+@media (min-width: 769px) {
+  .mpanel {
+    display: none;
+    position: fixed;
+    inset: 62px 0 0 0;
+    z-index: 400;
+    background: var(--bg);
+    overflow: hidden;
+    padding: 0 !important; /* Clear padding for full-bleed premium dual-pane chat */
+    transform: translateY(100%);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: transform 0.3s var(--ease-enter), opacity 0.3s ease, visibility 0.3s ease;
+  }
+  .mpanel.open {
+    display: block !important;
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+}
