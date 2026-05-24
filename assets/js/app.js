@@ -982,6 +982,9 @@ function enterApp() {
   applyLang();
   // Load real ideas from DB, then render trends and leaders
   loadIdeasFromDB();
+  if (window.ChatsEngine) {
+    ChatsEngine.init();
+  }
 }
 
 function updateHeader() {

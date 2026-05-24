@@ -1,4 +1,4 @@
--- Migration: Create messages table for DMs and Topics
+-- Migration: Create messages table for DMs and Topics with reactions support
 CREATE TABLE IF NOT EXISTS public.messages (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   channel_id TEXT NOT NULL,
@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS public.messages (
   sender_avatar_color SMALLINT DEFAULT 0 CHECK (sender_avatar_color >= 0 AND sender_avatar_color <= 11),
   content TEXT NOT NULL,
   media_url TEXT,
+  reactions JSONB DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -22,6 +23,8 @@ DROP POLICY IF EXISTS "Users can insert their own messages" ON public.messages;
 CREATE POLICY "Users can insert their own messages" ON public.messages
   FOR INSERT TO authenticated WITH CHECK (auth.uid() = sender_id);
 
--- Safely add to realtime publication if possible (standard Supabase CLI behavior)
--- Note: Supabase CLI handles adding tables to the publication automatically or via this command.
+DROP POLICY IF EXISTS "Users can update their own reactions on messages" ON public.messages;
+CREATE POLICY "Users can update their own reactions on messages" ON public.messages
+  FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+
 COMMIT;

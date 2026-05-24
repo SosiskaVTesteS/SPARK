@@ -389,7 +389,6 @@
 </div>
 <div class="mpanel up" id="panel-chats" style="padding:0">
   <div class="chat-container">
-    <button class="chat-close-btn" id="btnCloseChats" title="Close chats">✕</button>
     
     <!-- LEFT SIDEBAR (DMs and Teams list) -->
     <div class="chat-sidebar">
@@ -450,6 +449,24 @@
     </div>
     <button class="hbtn hbtn-gold" id="btnPub" style="--hms:2s">Hold to Publish</button>
     <div class="hbtn-hint">Hold 2 seconds to confirm</div>
+  </div>
+</div>
+
+<!-- МОДАЛКА СОЗДАНИЯ ЧАТА -->
+<div class="mo" id="moCreateChat">
+  <div class="mo-box">
+    <div class="mo-handle"></div>
+    <div class="mo-title" id="ccTitle">Start Message Room 🛰️</div>
+    <div class="chat-tabs" style="background:transparent;margin-bottom:12px;padding:0;border-bottom:1px solid rgba(255,255,255,0.06)">
+      <button class="chat-tab-btn active" id="ccTabDM" style="padding:10px 4px;font-size:10px">💬 Direct Message</button>
+      <button class="chat-tab-btn" id="ccTabTeam" style="padding:10px 4px;font-size:10px">🗂 Team Channel</button>
+    </div>
+    <div class="mf" id="ccField">
+      <label id="lblCcTarget">Recipient Nickname</label>
+      <input type="text" id="ccTarget" placeholder="e.g. @sergey_defi" maxlength="30" autocomplete="off" spellcheck="false" style="width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:10px;color:#fff;outline:none">
+      <div class="pedit-hint" id="ccHint" style="font-size:10px;margin-top:4px"></div>
+    </div>
+    <button class="hbtn hbtn-gold" id="btnConfirmCreateChat" style="margin-top:14px;width:100%">Open Signal Channel →</button>
   </div>
 </div>
 

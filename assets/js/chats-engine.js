@@ -12,19 +12,21 @@ var ChatsEngine = (function () {
     activeChannelId: null,      // e.g. '@maria_builds' or 'defi-prophets'
     searchQuery: '',
     composedAttachment: null,   // Holds { title, sub, url }
-    realtimeChannel: null
+    realtimeChannel: null,
+    modalTab: 'DM',              // 'DM' or 'TEAM'
+    initialized: false
   };
 
-  // Preloaded Contacts (DMs)
-  var CONTACTS = [
+  // Preloaded Contacts (DMs) - Defaults
+  var DEFAULT_CONTACTS = [
     { id: '@maria_builds', name: 'Maria Kovaleva', username: '@maria_builds', online: true, avColor: 4, preview: 'Let\'s discuss the solar leasing idea 🔥' },
     { id: '@alex_ventures', name: 'Alex Harrison', username: '@alex_ventures', online: true, avColor: 0, preview: 'Hey, what do you think about the SPK pool?' },
     { id: '@cody_prophet', name: 'Cody Fisher', username: '@cody_prophet', online: false, avColor: 6, preview: 'Send the market signals document when ready.' },
     { id: '@elizabeth_trade', name: 'Elizabeth Webb', username: '@elizabeth_trade', online: true, avColor: 9, preview: 'I see, okay noted. Talk to you tomorrow!' }
   ];
 
-  // Preloaded Teams/Groups
-  var TEAMS = [
+  // Preloaded Teams/Groups - Defaults
+  var DEFAULT_TEAMS = [
     { id: 'defi-prophets', name: 'DeFi Prophets', activeCount: 8, avColor: 1, preview: 'Kirill: Volatility threshold exceeded 🚨' },
     { id: 'ai-signals', name: 'AI Signal Room', activeCount: 14, avColor: 8, preview: 'Elena: Model predictive weight is 98.4%' },
     { id: 'spark-devs', name: 'Spark Core Devs', activeCount: 5, avColor: 2, preview: 'System: Cinematic loading intro merged' }
@@ -58,7 +60,7 @@ var ChatsEngine = (function () {
     }
   ];
 
-  // Initial Seed Message Thread database (for both DMs and Topics)
+  // Initial Seed Message Thread database
   var INITIAL_MESSAGES = {
     '@alex_ventures': [
       { id: 'm1', sender_id: 'alex', sender_name: '@alex_ventures', sender_avatar_color: 0, content: 'Hey there! How has the SPARK alpha testing been going on your end?', created_at: Date.now() - 3600000 * 3 },
@@ -77,8 +79,42 @@ var ChatsEngine = (function () {
     ]
   };
 
-  // Local Storage Cache Key
+  // Local Storage Cache Keys
   var CACHE_KEY = 'spark_chats_v1';
+  var CACHE_CONTACTS_KEY = 'spark_chat_contacts';
+  var CACHE_TEAMS_KEY = 'spark_chat_teams';
+
+  // Load/Save DMs Contacts list from LocalStorage
+  function getContactsList() {
+    try {
+      var cached = localStorage.getItem(CACHE_CONTACTS_KEY);
+      if (cached) return JSON.parse(cached);
+    } catch (e) {}
+    localStorage.setItem(CACHE_CONTACTS_KEY, JSON.stringify(DEFAULT_CONTACTS));
+    return JSON.parse(JSON.stringify(DEFAULT_CONTACTS));
+  }
+
+  function saveContactsList(contacts) {
+    try {
+      localStorage.setItem(CACHE_CONTACTS_KEY, JSON.stringify(contacts));
+    } catch (e) {}
+  }
+
+  // Load/Save Teams list from LocalStorage
+  function getTeamsList() {
+    try {
+      var cached = localStorage.getItem(CACHE_TEAMS_KEY);
+      if (cached) return JSON.parse(cached);
+    } catch (e) {}
+    localStorage.setItem(CACHE_TEAMS_KEY, JSON.stringify(DEFAULT_TEAMS));
+    return JSON.parse(JSON.stringify(DEFAULT_TEAMS));
+  }
+
+  function saveTeamsList(teams) {
+    try {
+      localStorage.setItem(CACHE_TEAMS_KEY, JSON.stringify(teams));
+    } catch (e) {}
+  }
 
   // Load chats from LocalStorage or Fallback Seeds
   function getCachedMessages() {
@@ -90,7 +126,6 @@ var ChatsEngine = (function () {
     } catch (e) {
       console.warn('Failed to parse cached chats, using defaults', e);
     }
-    // Set fallback if empty
     localStorage.setItem(CACHE_KEY, JSON.stringify(INITIAL_MESSAGES));
     return JSON.parse(JSON.stringify(INITIAL_MESSAGES));
   }
@@ -108,13 +143,16 @@ var ChatsEngine = (function () {
   function renderChatList() {
     var query = state.searchQuery.toLowerCase().trim();
     
+    var contacts = getContactsList();
+    var teams = getTeamsList();
+
     // 1. Filter Contacts (DMs)
-    var filteredContacts = CONTACTS.filter(function (c) {
+    var filteredContacts = contacts.filter(function (c) {
       return c.name.toLowerCase().includes(query) || c.username.toLowerCase().includes(query);
     });
 
     // 2. Filter Teams
-    var filteredTeams = TEAMS.filter(function (t) {
+    var filteredTeams = teams.filter(function (t) {
       return t.name.toLowerCase().includes(query);
     });
 
@@ -199,9 +237,12 @@ var ChatsEngine = (function () {
       return;
     }
 
+    var contacts = getContactsList();
+    var teams = getTeamsList();
+
     // Identify current target details
-    var contact = CONTACTS.find(function (c) { return c.id === id; });
-    var team    = TEAMS.find(function (t) { return t.id === id; });
+    var contact = contacts.find(function (c) { return c.id === id; });
+    var team    = teams.find(function (t) { return t.id === id; });
     var titleName = contact ? contact.name : (team ? team.name : id);
     var statusText = contact ? (contact.online ? 'Active now' : 'Offline') : (team ? (team.activeCount + ' members online') : 'Connected');
     var isOffline = contact && !contact.online;
@@ -285,7 +326,7 @@ var ChatsEngine = (function () {
         return '<div class="chat-system-message">' + _esc(m.content) + '</div>';
       }
 
-      var isSent = m.sender_id === 'me';
+      var isSent = m.sender_id === 'me' || (window.ME && m.sender_id === ME.id);
       var rowClass = isSent ? ' sent' : '';
       var avText = isSent ? (window.PROFILE && PROFILE.username || '@user').replace('@', '').charAt(0).toUpperCase() : m.sender_name.replace('@', '').charAt(0).toUpperCase();
       var avColor = isSent ? (window.PROFILE && PROFILE.avatar_color || 0) : m.sender_avatar_color;
@@ -457,6 +498,47 @@ var ChatsEngine = (function () {
       var pane = document.getElementById('chatActivePane');
       if (pane) pane.classList.add('open-active');
     }
+
+    // Load Supabase Database messages asynchronously for this channel if configured
+    loadSupabaseHistory(id);
+  }
+
+  // Load historical messages from Supabase database
+  async function loadSupabaseHistory(id) {
+    if (!window.supa || !window.ME) return;
+    try {
+      var res = await supa.from('messages')
+        .select('*')
+        .eq('channel_id', id)
+        .order('created_at', { ascending: true });
+      
+      if (res.data) {
+        var msgs = getCachedMessages();
+        
+        // Map database records to our in-memory format
+        msgs[id] = res.data.map(function(row) {
+          return {
+            id:                  row.id,
+            sender_id:           row.sender_id === ME.id ? 'me' : row.sender_id,
+            sender_name:         row.sender_name,
+            sender_avatar_color: row.sender_avatar_color,
+            content:             row.content,
+            media_url:           row.media_url,
+            created_at:          new Date(row.created_at).getTime(),
+            reactions:           row.reactions || {}
+          };
+        });
+
+        cacheMessages(msgs);
+        
+        // Only refresh conversation viewport if this channel is still active
+        if (state.activeChannelId === id) {
+          renderActiveConversation();
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to load Supabase chat history:', e);
+    }
   }
 
   // Send a message (saves locally + Supabase fallback)
@@ -500,9 +582,19 @@ var ChatsEngine = (function () {
           content:             newMsg.content,
           media_url:           newMsg.media_url
         };
-        var res = await window.supa.from('messages').insert(dbMsg);
+        var res = await window.supa.from('messages').insert(dbMsg).select();
         if (res.error) {
           console.warn('Supabase message insert error:', res.error);
+        } else if (res.data && res.data[0]) {
+          // Replace local message ID with database UUID
+          var saved = res.data[0];
+          var cachedMsgs = getCachedMessages();
+          var thread = cachedMsgs[channel] || [];
+          var mLocalIndex = thread.findIndex(function (m) { return m.id === newMsg.id; });
+          if (mLocalIndex !== -1) {
+            thread[mLocalIndex].id = saved.id;
+            cacheMessages(cachedMsgs);
+          }
         }
       } catch (e) {
         console.warn('Supabase insert failed, running local-first mode:', e);
@@ -541,10 +633,273 @@ var ChatsEngine = (function () {
     // Write back and refresh
     cacheMessages(msgs);
     renderActiveConversation();
+
+    // Sync reaction change to Supabase if it\'s a saved database message
+    if (window.supa && window.ME && !msgId.startsWith('m_local_')) {
+      window.supa.from('messages')
+        .update({ reactions: msg.reactions })
+        .eq('id', msgId)
+        .catch(function(e) { console.warn('Failed to sync reaction update:', e); });
+    }
+  }
+
+  // Show "Create Chat/Channel" Modal
+  function showCreateChatModal() {
+    if (window.openMo) {
+      state.modalTab = 'DM';
+      
+      // Update UI components
+      var title = document.getElementById('ccTitle');
+      var label = document.getElementById('lblCcTarget');
+      var input = document.getElementById('ccTarget');
+      var hint = document.getElementById('ccHint');
+      var tabDM = document.getElementById('ccTabDM');
+      var tabTeam = document.getElementById('ccTabTeam');
+
+      if (title) title.textContent = 'Start Message Room 🛰️';
+      if (label) label.textContent = 'Recipient Nickname';
+      if (input) {
+        input.value = '';
+        input.placeholder = 'e.g. @sergey_defi';
+      }
+      if (hint) {
+        hint.textContent = '';
+        hint.style.color = 'var(--mu2)';
+      }
+      if (tabDM) tabDM.classList.add('active');
+      if (tabTeam) tabTeam.classList.remove('active');
+
+      openMo('moCreateChat');
+    }
+  }
+
+  // Wire up the new chat modal elements
+  function _wireCreateChatModal() {
+    var tabDM = document.getElementById('ccTabDM');
+    var tabTeam = document.getElementById('ccTabTeam');
+    var label = document.getElementById('lblCcTarget');
+    var input = document.getElementById('ccTarget');
+    var hint = document.getElementById('ccHint');
+    var confirmBtn = document.getElementById('btnConfirmCreateChat');
+
+    if (tabDM) {
+      tabDM.addEventListener('click', function () {
+        state.modalTab = 'DM';
+        tabDM.classList.add('active');
+        if (tabTeam) tabTeam.classList.remove('active');
+        if (label) label.textContent = 'Recipient Nickname';
+        if (input) {
+          input.value = '';
+          input.placeholder = 'e.g. @sergey_defi';
+        }
+        if (hint) hint.textContent = '';
+      });
+    }
+
+    if (tabTeam) {
+      tabTeam.addEventListener('click', function () {
+        state.modalTab = 'TEAM';
+        tabTeam.classList.add('active');
+        if (tabDM) tabDM.classList.remove('active');
+        if (label) label.textContent = 'Channel Name';
+        if (input) {
+          input.value = '';
+          input.placeholder = 'e.g. #defi-alpha';
+        }
+        if (hint) hint.textContent = '';
+      });
+    }
+
+    if (confirmBtn) {
+      confirmBtn.addEventListener('click', function () {
+        if (!input) return;
+        var rawVal = input.value.trim();
+        if (!rawVal) {
+          _setHint('Please enter a name', 'err');
+          return;
+        }
+
+        var newId = '';
+        var displayName = '';
+
+        if (state.modalTab === 'DM') {
+          // Direct Message
+          if (rawVal.charAt(0) !== '@') rawVal = '@' + rawVal;
+          if (rawVal.length < 4) {
+            _setHint('Username must be 3+ characters', 'err');
+            return;
+          }
+          if (!/^@[a-zA-Z0-9_]+$/.test(rawVal)) {
+            _setHint('Letters, numbers, and underscores only', 'err');
+            return;
+          }
+
+          newId = rawVal;
+          displayName = rawVal.replace('@', '').split('_').map(function(s) {
+            return s.charAt(0).toUpperCase() + s.slice(1);
+          }).join(' ');
+
+          // Check if contact already exists
+          var contacts = getContactsList();
+          var exists = contacts.some(function (c) { return c.id === newId; });
+          if (exists) {
+            _setHint('Contact already in your direct messages', 'err');
+            return;
+          }
+
+          // Push new contact
+          contacts.push({
+            id: newId,
+            name: displayName,
+            username: newId,
+            online: true,
+            avColor: Math.floor(Math.random() * 12),
+            preview: 'Signal room opened.'
+          });
+          saveContactsList(contacts);
+
+        } else {
+          // Team Channel
+          if (rawVal.charAt(0) !== '#') rawVal = '#' + rawVal;
+          if (rawVal.length < 4) {
+            _setHint('Channel name must be 3+ characters', 'err');
+            return;
+          }
+          if (!/^#[a-zA-Z0-9_-]+$/.test(rawVal)) {
+            _setHint('Letters, numbers, dashes and underscores only', 'err');
+            return;
+          }
+
+          newId = rawVal.replace('#', '').toLowerCase();
+          displayName = rawVal.replace('#', '').split('-').map(function(s) {
+            return s.charAt(0).toUpperCase() + s.slice(1);
+          }).join(' ');
+
+          // Check if team already exists
+          var teams = getTeamsList();
+          var exists = teams.some(function (t) { return t.id === newId; });
+          if (exists) {
+            _setHint('Channel already exists in your registry', 'err');
+            return;
+          }
+
+          // Push new team
+          teams.push({
+            id: newId,
+            name: displayName,
+            activeCount: 1,
+            avColor: Math.floor(Math.random() * 12),
+            preview: 'Channel established.'
+          });
+          saveTeamsList(teams);
+        }
+
+        // Initialize empty message log thread for the new channel
+        var msgs = getCachedMessages();
+        msgs[newId] = [
+          { id: 'm_sys_init', sender_id: 'system', sender_name: 'SYSTEM', sender_avatar_color: 11, content: 'Signal channel opened. Security synchronized.', created_at: Date.now() }
+        ];
+        cacheMessages(msgs);
+
+        // Close modal
+        if (window.closeMo) closeMo('moCreateChat');
+
+        // Select and open the new channel
+        selectChannel(newId);
+      });
+    }
+
+    // Wire up backdrop overlay click to close
+    var moCreateChat = document.getElementById('moCreateChat');
+    if (moCreateChat) {
+      moCreateChat.addEventListener('click', function (event) {
+        if (event.target === moCreateChat) {
+          if (window.closeMo) closeMo('moCreateChat');
+        }
+      });
+    }
+
+    function _setHint(msg, type) {
+      if (!hint) return;
+      hint.textContent = msg;
+      hint.style.color = type === 'err' ? 'var(--red)' : 'var(--mu2)';
+    }
+  }
+
+  // Subscribe to real-time public message stream
+  function _initRealtimeSubscription() {
+    if (!window.supa || !window.ME || state.realtimeChannel) return;
+    try {
+      state.realtimeChannel = supa.channel('realtime:public:messages')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, function (payload) {
+          var newRow = payload.new;
+          if (!newRow) return;
+
+          // Avoid duplicating messages sent by oneself
+          if (newRow.sender_id === ME.id) return;
+
+          var msgs = getCachedMessages();
+          if (!msgs[newRow.channel_id]) msgs[newRow.channel_id] = [];
+          
+          // Check duplicates
+          var dup = msgs[newRow.channel_id].some(function (m) { return m.id === newRow.id; });
+          if (dup) return;
+
+          msgs[newRow.channel_id].push({
+            id:                  newRow.id,
+            sender_id:           newRow.sender_id,
+            sender_name:         newRow.sender_name,
+            sender_avatar_color: newRow.sender_avatar_color,
+            content:             newRow.content,
+            media_url:           newRow.media_url,
+            created_at:          new Date(newRow.created_at).getTime(),
+            reactions:           newRow.reactions || {}
+          });
+
+          cacheMessages(msgs);
+          
+          // Trigger haptic dot or list indicator
+          var chatDot = document.getElementById('mChatDot');
+          if (chatDot) chatDot.style.display = 'block';
+
+          if (state.activeChannelId === newRow.channel_id) {
+            renderActiveConversation();
+          } else {
+            renderChatList();
+          }
+        })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, function (payload) {
+          var updatedRow = payload.new;
+          if (!updatedRow) return;
+
+          var msgs = getCachedMessages();
+          var thread = msgs[updatedRow.channel_id] || [];
+          var msg = thread.find(function (m) { return m.id === updatedRow.id; });
+          if (msg) {
+            msg.reactions = updatedRow.reactions || {};
+            cacheMessages(msgs);
+            if (state.activeChannelId === updatedRow.channel_id) {
+              renderActiveConversation();
+            }
+          }
+        })
+        .subscribe();
+    } catch (e) {
+      console.warn('Realtime chat subscription failed:', e);
+    }
   }
 
   // Initialize Chats Engine
   function init() {
+    if (state.initialized) {
+      // Re-setup realtime subscription if session loaded
+      if (window.supa && window.ME && !state.realtimeChannel) {
+        _initRealtimeSubscription();
+      }
+      return;
+    }
+    state.initialized = true;
+
     // Read query from search input if any
     var searchEl = document.getElementById('chatSearchInput');
     if (searchEl) {
@@ -554,55 +909,24 @@ var ChatsEngine = (function () {
       });
     }
 
+    // Wire up Sidebar "+" start chat button click
+    var addBtn = document.querySelector('.chat-sidebar-action');
+    if (addBtn) {
+      addBtn.addEventListener('click', function () {
+        showCreateChatModal();
+      });
+    }
+
+    // Wire up `#moCreateChat` modal events
+    _wireCreateChatModal();
+
     // Initial render
     renderChatList();
     renderActiveConversation();
 
     // Realtime Database replication hooks
     if (window.supa && window.ME) {
-      try {
-        state.realtimeChannel = supa.channel('realtime:public:messages')
-          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, function (payload) {
-            var newRow = payload.new;
-            if (!newRow) return;
-
-            // Avoid duplicating messages sent by oneself
-            if (newRow.sender_id === ME.id) return;
-
-            var msgs = getCachedMessages();
-            if (!msgs[newRow.channel_id]) msgs[newRow.channel_id] = [];
-            
-            // Check duplicates
-            var dup = msgs[newRow.channel_id].some(function (m) { return m.content === newRow.content && Math.abs(new Date(m.created_at).getTime() - new Date(newRow.created_at).getTime()) < 5000; });
-            if (dup) return;
-
-            msgs[newRow.channel_id].push({
-              id:                  newRow.id,
-              sender_id:           newRow.sender_id,
-              sender_name:         newRow.sender_name,
-              sender_avatar_color: newRow.sender_avatar_color,
-              content:             newRow.content,
-              media_url:           newRow.media_url,
-              created_at:          new Date(newRow.created_at).getTime(),
-              reactions:           {}
-            });
-
-            cacheMessages(msgs);
-            
-            // Trigger haptic dot or list indicator
-            var chatDot = document.getElementById('mChatDot');
-            if (chatDot) chatDot.style.display = 'block';
-
-            if (state.activeChannelId === newRow.channel_id) {
-              renderActiveConversation();
-            } else {
-              renderChatList();
-            }
-          })
-          .subscribe();
-      } catch (e) {
-        console.warn('Realtime chat subscription failed:', e);
-      }
+      _initRealtimeSubscription();
     }
   }
 
@@ -628,6 +952,7 @@ var ChatsEngine = (function () {
     selectChannel:            selectChannel,
     sendMessage:              sendMessage,
     addReaction:              addReaction,
+    showCreateChatModal:      showCreateChatModal,
     renderChatList:           renderChatList,
     renderActiveConversation: renderActiveConversation
   };
