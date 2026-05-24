@@ -71,7 +71,17 @@ var ChatsEngine = (function () {
   function getContactsList() {
     try {
       var cached = localStorage.getItem(CACHE_CONTACTS_KEY);
-      if (cached) return JSON.parse(cached);
+      if (cached) {
+        var parsed = JSON.parse(cached);
+        // Filter out artificial/mock contacts (which do not have a valid UUID)
+        var filtered = parsed.filter(function (c) {
+          return isValidUUID(c.id);
+        });
+        if (filtered.length !== parsed.length) {
+          saveContactsList(filtered);
+        }
+        return filtered;
+      }
     } catch (e) {}
     localStorage.setItem(CACHE_CONTACTS_KEY, JSON.stringify(DEFAULT_CONTACTS));
     return JSON.parse(JSON.stringify(DEFAULT_CONTACTS));
@@ -87,7 +97,18 @@ var ChatsEngine = (function () {
   function getTeamsList() {
     try {
       var cached = localStorage.getItem(CACHE_TEAMS_KEY);
-      if (cached) return JSON.parse(cached);
+      if (cached) {
+        var parsed = JSON.parse(cached);
+        // Only keep allowed public channels
+        var allowedTeams = ['defi-prophets', 'ai-signals', 'spark-devs'];
+        var filtered = parsed.filter(function (t) {
+          return allowedTeams.includes(t.id);
+        });
+        if (filtered.length !== parsed.length) {
+          saveTeamsList(filtered);
+        }
+        return filtered;
+      }
     } catch (e) {}
     localStorage.setItem(CACHE_TEAMS_KEY, JSON.stringify(DEFAULT_TEAMS));
     return JSON.parse(JSON.stringify(DEFAULT_TEAMS));
@@ -835,6 +856,16 @@ var ChatsEngine = (function () {
         }
       });
     });
+
+    // 8. Stop click and touchstart propagation on context menus so tapping on them doesn't close them
+    document.querySelectorAll('.chat-bubble-context').forEach(function (ctx) {
+      ctx.addEventListener('click', function (e) {
+        e.stopPropagation();
+      });
+      ctx.addEventListener('touchstart', function (e) {
+        e.stopPropagation();
+      }, { passive: true });
+    });
   }
 
   // Update attachment composed indicators under text box
@@ -1125,12 +1156,16 @@ var ChatsEngine = (function () {
     cacheMessages(msgs);
     renderActiveConversation();
 
-    // Sync reaction change to Supabase if it\'s a saved database message
+    // Sync reaction change to Supabase if it's a saved database message
     if (window.supa && window.ME && !msgId.startsWith('m_local_')) {
       window.supa.from('messages')
         .update({ reactions: msg.reactions })
         .eq('id', msgId)
-        .catch(function(e) { console.warn('Failed to sync reaction update:', e); });
+        .then(function(res) {
+          if (res && res.error) {
+            console.warn('Failed to sync reaction update:', res.error);
+          }
+        });
     }
   }
 
@@ -1229,7 +1264,7 @@ var ChatsEngine = (function () {
           if (window.supa) {
             _setHint('Verifying user identity... 🛰️', 'info');
             try {
-              var res = await supa.from('profiles').select('*').eq('username', rawVal).single();
+              var res = await supa.from('profiles').select('*').ilike('username', rawVal).single();
               if (res.error || !res.data) {
                 _setHint('User ' + rawVal + ' not found in the grid.', 'err');
                 return;

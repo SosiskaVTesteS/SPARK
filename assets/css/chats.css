@@ -508,8 +508,10 @@
   from { transform: scale(0.9) translateY(4px); opacity: 0; }
   to { transform: scale(1) translateY(0); opacity: 1; }
 }
-.chat-msg-bubble:hover .chat-bubble-context {
-  display: flex;
+@media (hover: hover) {
+  .chat-msg-bubble:hover .chat-bubble-context {
+    display: flex;
+  }
 }
 .chat-context-react-btn {
   background: transparent;
@@ -787,12 +789,12 @@
 
 /* Hover context menu placement to prevent clipping with avatar or message text */
 .chat-message-row.sent .chat-bubble-context {
-  left: 14px;
-  right: auto;
+  right: 10px;
+  left: auto;
 }
 .chat-message-row:not(.sent) .chat-bubble-context {
-  right: 14px;
-  left: auto;
+  left: 10px;
+  right: auto;
 }
 
 /* Extra context actions styling */
