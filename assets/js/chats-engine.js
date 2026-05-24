@@ -13,6 +13,7 @@ var ChatsEngine = (function () {
     searchQuery: '',
     composedAttachment: null,   // Holds { title, sub, url }
     realtimeChannel: null,
+    presenceChannel: null,      // Track presence
     modalTab: 'DM',              // 'DM' or 'TEAM'
     initialized: false
   };
@@ -136,6 +137,27 @@ var ChatsEngine = (function () {
       localStorage.setItem(CACHE_KEY, JSON.stringify(msgs));
     } catch (e) {
       console.warn('Failed to write chats cache', e);
+    }
+  }
+
+  // Update online indicators of cached DM contacts using real-time presence data
+  function updateOnlineStatusFromPresence(presenceState) {
+    var contacts = getContactsList();
+    var updated = false;
+
+    contacts.forEach(function (c) {
+      // In Supabase, the presence key matches the user's UUID (which is c.id for validated real users)
+      var isOnline = !!presenceState[c.id];
+      if (c.online !== isOnline) {
+        c.online = isOnline;
+        updated = true;
+      }
+    });
+
+    if (updated) {
+      saveContactsList(contacts);
+      renderChatList();
+      renderActiveConversation();
     }
   }
 
@@ -280,8 +302,6 @@ var ChatsEngine = (function () {
       + '    </div>'
       + '  </div>'
       + '  <div class="chat-header-actions">'
-      + '    <button class="chat-header-icon-btn" title="Call signal (voice)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button>'
-      + '    <button class="chat-header-icon-btn" title="Pin signal"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></button>'
       + '  </div>'
       + '</div>'
       /* Messages list scroll */
@@ -332,6 +352,17 @@ var ChatsEngine = (function () {
       var avColor = isSent ? (window.PROFILE && PROFILE.avatar_color || 0) : m.sender_avatar_color;
       var avGrad = ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avColor) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
       
+      var statusTicks = '';
+      if (isSent) {
+        if (m.id.startsWith('m_local_')) {
+          statusTicks = '<span class="chat-msg-status-tick" style="margin-left:4px;font-size:9px;opacity:0.6">🕒</span>';
+        } else if (m.read) {
+          statusTicks = '<span class="chat-msg-status-tick read" style="color:var(--ac);margin-left:5px;font-weight:bold;font-size:11px">✓✓</span>';
+        } else {
+          statusTicks = '<span class="chat-msg-status-tick delivered" style="color:var(--mu2);margin-left:5px;font-size:11px">✓</span>';
+        }
+      }
+
       // Render media attachment inside bubble if exists
       var mediaCard = '';
       if (m.media_url) {
@@ -379,7 +410,7 @@ var ChatsEngine = (function () {
         +        mediaCard
         + '    </div>'
         +      reactionsHtml
-        + '    <div class="chat-msg-time">' + _formatTime(m.created_at) + '</div>'
+        + '    <div class="chat-msg-time">' + _formatTime(m.created_at) + statusTicks + '</div>'
         + '  </div>'
         + '</div>';
     }).join('');
@@ -501,6 +532,44 @@ var ChatsEngine = (function () {
 
     // Load Supabase Database messages asynchronously for this channel if configured
     loadSupabaseHistory(id);
+
+    // Mark all unread messages from this contact as read
+    markMessagesAsRead(id);
+  }
+
+  // Mark all unread messages from this contact as read in DB and local cache
+  async function markMessagesAsRead(contactId) {
+    if (!window.supa || !window.ME || !contactId) return;
+
+    var isDM = !contactId.startsWith('#') && !['defi-prophets', 'ai-signals', 'spark-devs'].includes(contactId);
+    if (!isDM) return;
+
+    try {
+      // 1. Update in Supabase
+      var res = await supa.from('messages')
+        .update({ read: true })
+        .eq('channel_id', ME.id) // Sent to me
+        .eq('sender_id', contactId) // From this contact
+        .eq('read', false);
+
+      // 2. Update locally
+      var msgs = getCachedMessages();
+      var thread = msgs[contactId] || [];
+      var updated = false;
+      thread.forEach(function (m) {
+        if (m.sender_id !== 'me' && m.sender_id !== ME.id && !m.read) {
+          m.read = true;
+          updated = true;
+        }
+      });
+
+      if (updated) {
+        cacheMessages(msgs);
+        renderActiveConversation();
+      }
+    } catch (e) {
+      console.warn('Failed to mark messages as read:', e);
+    }
   }
 
   // Load historical messages from Supabase database
@@ -534,7 +603,8 @@ var ChatsEngine = (function () {
             content:             row.content,
             media_url:           row.media_url,
             created_at:          new Date(row.created_at).getTime(),
-            reactions:           row.reactions || {}
+            reactions:           row.reactions || {},
+            read:                row.read || false // We added this!
           };
         });
 
@@ -543,6 +613,8 @@ var ChatsEngine = (function () {
         // Only refresh conversation viewport if this channel is still active
         if (state.activeChannelId === id) {
           renderActiveConversation();
+          // Mark messages as read since they are loaded into our active view
+          markMessagesAsRead(id);
         }
       }
     } catch (e) {
@@ -904,7 +976,8 @@ var ChatsEngine = (function () {
             content:             newRow.content,
             media_url:           newRow.media_url,
             created_at:          new Date(newRow.created_at).getTime(),
-            reactions:           newRow.reactions || {}
+            reactions:           newRow.reactions || {},
+            read:                newRow.read || false
           });
 
           cacheMessages(msgs);
@@ -915,6 +988,8 @@ var ChatsEngine = (function () {
 
           if (state.activeChannelId === threadId) {
             renderActiveConversation();
+            // Automatically mark as read if this thread is open
+            markMessagesAsRead(threadId);
           } else {
             renderChatList();
           }
@@ -933,6 +1008,7 @@ var ChatsEngine = (function () {
           var msg = thread.find(function (m) { return m.id === updatedRow.id; });
           if (msg) {
             msg.reactions = updatedRow.reactions || {};
+            msg.read = updatedRow.read; // Keep read tick in sync!
             cacheMessages(msgs);
             if (state.activeChannelId === threadId) {
               renderActiveConversation();
@@ -940,6 +1016,27 @@ var ChatsEngine = (function () {
           }
         })
         .subscribe();
+
+      // Initialize Supabase Presence channel for tracking activity status
+      if (!state.presenceChannel) {
+        state.presenceChannel = supa.channel('online-presence', {
+          config: { presence: { key: ME.id } }
+        });
+
+        state.presenceChannel
+          .on('presence', { event: 'sync' }, function () {
+            var presState = state.presenceChannel.presenceState();
+            updateOnlineStatusFromPresence(presState);
+          })
+          .subscribe(async function (status) {
+            if (status === 'SUBSCRIBED') {
+              await state.presenceChannel.track({
+                username: window.PROFILE ? PROFILE.username : '@user',
+                online_at: new Date().toISOString()
+              });
+            }
+          });
+      }
     } catch (e) {
       console.warn('Realtime chat subscription failed:', e);
     }
