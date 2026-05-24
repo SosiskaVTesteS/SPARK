@@ -87,6 +87,11 @@ var ChatsEngine = (function () {
   var CACHE_CONTACTS_KEY = 'spark_chat_contacts';
   var CACHE_TEAMS_KEY = 'spark_chat_teams';
 
+  function isValidUUID(str) {
+    if (!str || typeof str !== 'string') return false;
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+  }
+
   // Load/Save DMs Contacts list from LocalStorage
   function getContactsList() {
     try {
@@ -261,6 +266,23 @@ var ChatsEngine = (function () {
       return;
     }
 
+    // 1. Preserve input value and focus state before rendering to prevent typed content loss
+    var oldInput = document.getElementById('chatTextInput');
+    var preservedValue = '';
+    var isInputFocused = false;
+    if (oldInput) {
+      preservedValue = oldInput.value;
+      isInputFocused = (document.activeElement === oldInput);
+    }
+
+    // 2. Preserve scroll position to prevent twitching/jumping when background polling completes
+    var oldArea = document.getElementById('chatMsgArea');
+    var wasAtBottom = true; // Default to true if opening for the first time
+    if (oldArea) {
+      // If the scroll distance to the bottom is less than 50px, consider the user "at the bottom"
+      wasAtBottom = (oldArea.scrollHeight - oldArea.clientHeight - oldArea.scrollTop) < 50;
+    }
+
     var contacts = getContactsList();
     var teams = getTeamsList();
 
@@ -329,9 +351,20 @@ var ChatsEngine = (function () {
       + '  </div>'
       + '</div>';
 
-    // Scroll to bottom immediately
+    // 3. Restore preserved value and focus to input box
+    var newInput = document.getElementById('chatTextInput');
+    if (newInput) {
+      newInput.value = preservedValue;
+      if (isInputFocused) {
+        newInput.focus();
+      }
+    }
+
+    // 4. Scroll to bottom if user was already at the bottom (or first render)
     var area = document.getElementById('chatMsgArea');
-    if (area) { area.scrollTop = area.scrollHeight; }
+    if (area && wasAtBottom) {
+      area.scrollTop = area.scrollHeight;
+    }
 
     // Wire up events
     _wireActiveView();
@@ -545,6 +578,7 @@ var ChatsEngine = (function () {
 
     var isDM = !contactId.startsWith('#') && !['defi-prophets', 'ai-signals', 'spark-devs'].includes(contactId);
     if (!isDM) return;
+    if (isDM && !isValidUUID(contactId)) return;
 
     try {
       // 1. Update in Supabase
@@ -579,6 +613,7 @@ var ChatsEngine = (function () {
     if (!window.supa || !window.ME) return;
     try {
       var isDM = !id.startsWith('#') && !['defi-prophets', 'ai-signals', 'spark-devs'].includes(id);
+      if (isDM && !isValidUUID(id)) return; // Skip mock DMs
       var res;
       if (isDM) {
         res = await supa.from('messages')
@@ -656,6 +691,8 @@ var ChatsEngine = (function () {
 
     // 3. Supabase Database integration (if configured)
     if (window.supa && window.ME) {
+      var isDM = !channel.startsWith('#') && !['defi-prophets', 'ai-signals', 'spark-devs'].includes(channel);
+      if (isDM && !isValidUUID(channel)) return; // Skip mock DMs
       try {
         var dbMsg = {
           channel_id:          channel,
