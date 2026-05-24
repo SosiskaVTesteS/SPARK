@@ -1374,6 +1374,7 @@ var ChatsEngine = (function () {
             var chatDot = document.getElementById('mChatDot');
             if (chatDot) chatDot.style.display = 'block';
           }
+        }
         // 3. Keep badges in sync
         await updateUnreadBadge();
       } catch (e) {
