@@ -1612,42 +1612,48 @@ var ChatsEngine = (function () {
         })
         .subscribe();
 
-      // Initialize Supabase Presence channel for tracking activity status
-      if (!state.presenceChannel) {
-        state.presenceChannel = supa.channel('online-presence', {
-          config: { presence: { key: ME.id } }
-        });
-
-        state.presenceChannel
-          .on('presence', { event: 'sync' }, function () {
-            var presState = state.presenceChannel.presenceState();
-            updateOnlineStatusFromPresence(presState);
-          })
-          .subscribe(async function (status) {
-            if (status === 'SUBSCRIBED') {
-              await state.presenceChannel.track({
-                username: window.PROFILE ? PROFILE.username : '@user',
-                online_at: new Date().toISOString()
-              });
-            }
-          });
-
-        // Explicitly untrack presence instantly when page unloads (closes tab, browser, or suspends)
-        window.addEventListener('beforeunload', function () {
-          if (state.presenceChannel) {
-            state.presenceChannel.untrack();
-            state.presenceChannel.unsubscribe();
-          }
-        });
-        window.addEventListener('pagehide', function () {
-          if (state.presenceChannel) {
-            state.presenceChannel.untrack();
-            state.presenceChannel.unsubscribe();
-          }
-        });
-      }
     } catch (e) {
       console.warn('Realtime chat subscription failed:', e);
+    }
+  }
+
+  // Initialize Supabase Presence channel independently for tracking activity status
+  function _initPresenceSubscription() {
+    if (!window.supa || !window.ME || state.presenceChannel) return;
+    try {
+      state.presenceChannel = supa.channel('online-presence', {
+        config: { presence: { key: ME.id } }
+      });
+
+      state.presenceChannel
+        .on('presence', { event: 'sync' }, function () {
+          var presState = state.presenceChannel.presenceState();
+          updateOnlineStatusFromPresence(presState);
+        })
+        .subscribe(async function (status) {
+          if (status === 'SUBSCRIBED') {
+            await state.presenceChannel.track({
+              username: window.PROFILE ? PROFILE.username : '@user',
+              online_at: new Date().toISOString()
+            });
+          }
+        });
+
+      // Explicitly untrack presence instantly when page unloads (closes tab, browser, or suspends)
+      window.addEventListener('beforeunload', function () {
+        if (state.presenceChannel) {
+          state.presenceChannel.untrack();
+          state.presenceChannel.unsubscribe();
+        }
+      });
+      window.addEventListener('pagehide', function () {
+        if (state.presenceChannel) {
+          state.presenceChannel.untrack();
+          state.presenceChannel.unsubscribe();
+        }
+      });
+    } catch (e) {
+      console.warn('Realtime presence subscription failed:', e);
     }
   }
 
@@ -1671,8 +1677,9 @@ var ChatsEngine = (function () {
 
     if (state.initialized) {
       // Re-setup realtime subscription if session loaded
-      if (window.supa && window.ME && !state.realtimeChannel) {
+      if (window.supa && window.ME) {
         _initRealtimeSubscription();
+        _initPresenceSubscription();
       }
       return;
     }
@@ -1711,6 +1718,7 @@ var ChatsEngine = (function () {
     // Realtime Database replication hooks
     if (window.supa && window.ME) {
       _initRealtimeSubscription();
+      _initPresenceSubscription();
       updateUnreadBadge();
     }
   }
