@@ -1081,6 +1081,10 @@ var ChatsEngine = (function () {
           if (mLocalIndex !== -1) {
             thread[mLocalIndex].id = saved.id;
             cacheMessages(cachedMsgs);
+            if (state.activeChannelId === channel) {
+              renderActiveConversation();
+            }
+            renderChatList();
           }
         }
       } catch (e) {
