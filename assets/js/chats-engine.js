@@ -1457,7 +1457,7 @@ var ChatsEngine = (function () {
                   id: threadId,
                   name: row.sender_name,
                   username: row.sender_name,
-                  online: true,
+                  online: false,
                   avColor: row.sender_avatar_color || 0,
                   preview: row.content
                 });
@@ -1523,7 +1523,7 @@ var ChatsEngine = (function () {
                 id: threadId,
                 name: newRow.sender_name,
                 username: newRow.sender_name,
-                online: true,
+                online: false,
                 avColor: newRow.sender_avatar_color || 0,
                 preview: newRow.content
               });
@@ -1631,6 +1631,20 @@ var ChatsEngine = (function () {
               });
             }
           });
+
+        // Explicitly untrack presence instantly when page unloads (closes tab, browser, or suspends)
+        window.addEventListener('beforeunload', function () {
+          if (state.presenceChannel) {
+            state.presenceChannel.untrack();
+            state.presenceChannel.unsubscribe();
+          }
+        });
+        window.addEventListener('pagehide', function () {
+          if (state.presenceChannel) {
+            state.presenceChannel.untrack();
+            state.presenceChannel.unsubscribe();
+          }
+        });
       }
     } catch (e) {
       console.warn('Realtime chat subscription failed:', e);
@@ -1639,6 +1653,22 @@ var ChatsEngine = (function () {
 
   // Initialize Chats Engine
   function init() {
+    // Start all cached contacts as offline by default on startup
+    // We will only mark them as online once the Realtime presence syncs
+    try {
+      var contacts = getContactsList();
+      var changed = false;
+      contacts.forEach(function (c) {
+        if (c.online) {
+          c.online = false;
+          changed = true;
+        }
+      });
+      if (changed) {
+        saveContactsList(contacts);
+      }
+    } catch (e) {}
+
     if (state.initialized) {
       // Re-setup realtime subscription if session loaded
       if (window.supa && window.ME && !state.realtimeChannel) {
