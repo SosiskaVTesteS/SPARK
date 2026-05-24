@@ -248,7 +248,21 @@ var ChatsEngine = (function () {
         localStorage.setItem('spark_deleted_msg_ids', JSON.stringify(list));
       } catch (e) {}
     }
+
+    var channel = state.activeChannelId;
+    if (channel) {
+      var msgs = getCachedMessages();
+      if (msgs[channel]) {
+        var idx = msgs[channel].findIndex(function (m) { return m.id === msgId; });
+        if (idx !== -1) {
+          msgs[channel].splice(idx, 1);
+          cacheMessages(msgs);
+        }
+      }
+    }
+
     renderActiveConversation();
+    renderChatList();
   }
 
   // Delete message for everyone (removes from local cache + DB delete call)
@@ -261,10 +275,20 @@ var ChatsEngine = (function () {
         if (idx !== -1) {
           msgs[channel].splice(idx, 1);
           cacheMessages(msgs);
-          renderActiveConversation();
         }
       }
     }
+
+    var list = getDeletedMessageIds();
+    if (!list.includes(msgId)) {
+      list.push(msgId);
+      try {
+        localStorage.setItem('spark_deleted_msg_ids', JSON.stringify(list));
+      } catch (e) {}
+    }
+
+    renderActiveConversation();
+    renderChatList();
 
     if (window.supa && window.ME && !msgId.startsWith('m_local_')) {
       try {
@@ -566,14 +590,6 @@ var ChatsEngine = (function () {
     var avGrad = ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avIndex) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
     var avBorderRadius = team ? '10px' : '50%';
 
-    // Map attachments icons/grid in composer bar
-    var attachOptions = ATTACHMENTS.map(function (att) {
-      var isSelected = state.composedAttachment && state.composedAttachment.id === att.id ? ' selected' : '';
-      return '<button class="chat-attach-btn' + isSelected + '" data-att-id="' + att.id + '">'
-        + '📷 ' + att.title.split(' ')[0]
-        + '</button>';
-    }).join('');
-
     // Active conversation pane frame markup
     rightPane.innerHTML = ''
       /* Header */
@@ -603,10 +619,6 @@ var ChatsEngine = (function () {
       + '  <div class="chat-composed-attachment-preview" id="chatComposePreview">'
       + '    <span>📎 Attached: <b id="chatComposePreviewName"></b></span>'
       + '    <button class="chat-cancel-attach-btn" id="chatCancelComposeBtn">✕</button>'
-      + '  </div>'
-      /* Attachment presets row */
-      + '  <div class="chat-attachment-options-row">'
-      +      attachOptions
       + '  </div>'
       /* Input prompt */
       + '  <div class="chat-input-row">'
@@ -730,23 +742,6 @@ var ChatsEngine = (function () {
       });
     }
 
-    // 2. Attachment presets option clicks
-    document.querySelectorAll('.chat-attach-btn[data-att-id]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var attId = btn.dataset.attId;
-        var att = ATTACHMENTS.find(function (a) { return a.id === attId; });
-        if (!att) return;
-        
-        if (state.composedAttachment && state.composedAttachment.id === att.id) {
-          // Toggle off
-          state.composedAttachment = null;
-        } else {
-          // Select
-          state.composedAttachment = att;
-        }
-        _updateComposeAttachmentUI();
-      });
-    });
 
     // 3. Cancel compose attachment button
     var cancelComposeBtn = document.getElementById('chatCancelComposeBtn');
@@ -971,21 +966,26 @@ var ChatsEngine = (function () {
       
       if (res.data) {
         var msgs = getCachedMessages();
+        var deletedIds = getDeletedMessageIds();
         
         // Map database records to our in-memory format
-        msgs[id] = res.data.map(function(row) {
-          return {
-            id:                  row.id,
-            sender_id:           row.sender_id === ME.id ? 'me' : row.sender_id,
-            sender_name:         row.sender_name,
-            sender_avatar_color: row.sender_avatar_color,
-            content:             row.content,
-            media_url:           row.media_url,
-            created_at:          new Date(row.created_at).getTime(),
-            reactions:           row.reactions || {},
-            read:                row.read || false // We added this!
-          };
-        });
+        msgs[id] = res.data
+          .filter(function(row) {
+            return !deletedIds.includes(row.id);
+          })
+          .map(function(row) {
+            return {
+              id:                  row.id,
+              sender_id:           row.sender_id === ME.id ? 'me' : row.sender_id,
+              sender_name:         row.sender_name,
+              sender_avatar_color: row.sender_avatar_color,
+              content:             row.content,
+              media_url:           row.media_url,
+              created_at:          new Date(row.created_at).getTime(),
+              reactions:           row.reactions || {},
+              read:                row.read || false // We added this!
+            };
+          });
 
         cacheMessages(msgs);
         
@@ -1054,6 +1054,27 @@ var ChatsEngine = (function () {
         } else if (res.data && res.data[0]) {
           // Replace local message ID with database UUID
           var saved = res.data[0];
+
+          var list = getDeletedMessageIds();
+          var wasDeleted = list.includes(newMsg.id);
+          if (wasDeleted) {
+            list = list.filter(function(id) { return id !== newMsg.id; });
+            if (!list.includes(saved.id)) {
+              list.push(saved.id);
+            }
+            try {
+              localStorage.setItem('spark_deleted_msg_ids', JSON.stringify(list));
+            } catch (e) {}
+
+            if (window.supa && window.ME) {
+              try {
+                await window.supa.from('messages').delete().eq('id', saved.id);
+              } catch (e) {
+                console.warn('Supabase delete error for post-insert:', e);
+              }
+            }
+          }
+
           var cachedMsgs = getCachedMessages();
           var thread = cachedMsgs[channel] || [];
           var mLocalIndex = thread.findIndex(function (m) { return m.id === newMsg.id; });
@@ -1333,12 +1354,14 @@ var ChatsEngine = (function () {
           .limit(10);
         if (res.data && res.data.length > 0) {
           var msgs = getCachedMessages();
+          var deletedIds = getDeletedMessageIds();
           var changed = false;
           res.data.forEach(function (row) {
             var threadId = row.sender_id;
             if (!msgs[threadId]) msgs[threadId] = [];
             var dup = msgs[threadId].some(function (m) { return m.id === row.id; });
-            if (!dup) {
+            var isDeleted = deletedIds.includes(row.id);
+            if (!dup && !isDeleted) {
               // Auto-append incoming contact to local sidebar list if missing
               var contacts = getContactsList();
               var contactExists = contacts.some(function (c) { return c.id === threadId; });
@@ -1424,9 +1447,11 @@ var ChatsEngine = (function () {
           var msgs = getCachedMessages();
           if (!msgs[threadId]) msgs[threadId] = [];
           
-          // Check duplicates
+          // Check duplicates and deleted status
+          var deletedIds = getDeletedMessageIds();
           var dup = msgs[threadId].some(function (m) { return m.id === newRow.id; });
-          if (dup) return;
+          var isDeleted = deletedIds.includes(newRow.id);
+          if (dup || isDeleted) return;
 
           msgs[threadId].push({
             id:                  newRow.id,
