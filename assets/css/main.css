@@ -1843,12 +1843,17 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
     pointer-events: none !important;
   }
 
+  /* Move all panels up to 0px from top on mobile to fill the empty header space */
+  .mpanel {
+    inset: 0 0 85px 0 !important;
+  }
+
   /* Stretch active chat to cover whole screen */
   .mpanel.fullscreen-chat {
     inset: 0 0 0 0 !important;
     padding: 0 !important;
-    height: 100vh !important;
-    max-height: 100vh !important;
+    height: 100% !important;
+    max-height: 100% !important;
   }
 }
 
