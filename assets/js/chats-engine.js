@@ -1619,6 +1619,12 @@ var ChatsEngine = (function () {
 
   // Initialize Supabase Presence channel independently for tracking activity status
   function _initPresenceSubscription() {
+    var mode = window.REALTIME_MODE || (window.SPARK_RUNTIME ? window.SPARK_RUNTIME.get('REALTIME_MODE') : 'polling');
+    if (mode === 'polling') {
+      // Do NOT initialize WebSocket presence channel in polling mode to avoid console WebSocket connection error spam!
+      return;
+    }
+
     if (!window.supa || !window.ME || state.presenceChannel) return;
     try {
       state.presenceChannel = supa.channel('online-presence', {
