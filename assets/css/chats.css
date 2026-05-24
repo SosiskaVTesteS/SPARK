@@ -813,3 +813,20 @@
   transform: scale(1.22);
 }
 
+/* Delete confirmation modal buttons styling */
+.chat-delete-modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+@media (max-width: 480px) {
+  .chat-delete-modal-buttons {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+  .chat-delete-modal-buttons button {
+    width: 100% !important;
+    margin: 0 !important;
+    box-sizing: border-box;
+  }
+}

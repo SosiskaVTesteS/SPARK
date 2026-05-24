@@ -364,7 +364,7 @@ var ChatsEngine = (function () {
       + '<div class="mo-box" style="max-width:400px;padding:24px;box-sizing:border-box">'
       + '  <div class="mo-title" style="margin-bottom:12px;color:var(--red)">' + title + '</div>'
       + '  <div style="font-size:13px;color:var(--mu2);line-height:1.5;margin-bottom:24px">' + bodyText + '</div>'
-      + '  <div style="display:flex;justify-content:flex-end;gap:10px">'
+      + '  <div class="chat-delete-modal-buttons">'
       + '    <button class="prs-btn" id="btnCancelDelete" style="border:1px solid rgba(255,255,255,0.1)">' + cancelText + '</button>'
       +      buttonsHtml
       + '  </div>'
