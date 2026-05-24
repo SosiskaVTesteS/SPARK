@@ -41,25 +41,25 @@ var ChatsEngine = (function () {
       id: 'defianalytics',
       title: 'DeFi Analytics Dashboard',
       sub: 'Interactive analytics graph, SPK/USD momentum',
-      url: 'https://images.unsplash.com/photo-1642790106117-e829e14a795f?w=600&auto=format&fit=crop&q=80'
+      url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="250" height="140" viewBox="0 0 250 140"><rect width="250" height="140" fill="%230b0d19"/><path d="M20,110 L80,70 L140,90 L200,40 L230,20" fill="none" stroke="%237b5cfa" stroke-width="3"/><circle cx="80" cy="70" r="4" fill="%23e85aa0"/><circle cx="140" cy="90" r="4" fill="%23e85aa0"/><circle cx="200" cy="40" r="4" fill="%23e85aa0"/><text x="15" y="25" fill="%23ffffff" font-family="sans-serif" font-size="10" font-weight="bold">DeFi Momentum</text></svg>'
     },
     {
       id: 'aipredictive',
       title: 'AI Predictive Weights',
       sub: 'TensorFlow modeling signals overlay network',
-      url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80'
+      url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="250" height="140" viewBox="0 0 250 140"><rect width="250" height="140" fill="%230b0d19"/><circle cx="60" cy="70" r="10" fill="%23e85aa0" opacity="0.8"/><circle cx="130" cy="40" r="10" fill="%237b5cfa" opacity="0.8"/><circle cx="130" cy="100" r="10" fill="%237b5cfa" opacity="0.8"/><circle cx="200" cy="70" r="10" fill="%23e8c55a" opacity="0.8"/><line x1="70" y1="70" x2="120" y2="40" stroke="%23ffffff" stroke-width="1.5" stroke-dasharray="3"/><line x1="70" y1="70" x2="120" y2="100" stroke="%23ffffff" stroke-width="1.5" stroke-dasharray="3"/><line x1="140" y1="40" x2="190" y2="70" stroke="%23ffffff" stroke-width="1.5"/><line x1="140" y1="100" x2="190" y2="70" stroke="%23ffffff" stroke-width="1.5"/><text x="15" y="25" fill="%23ffffff" font-family="sans-serif" font-size="10" font-weight="bold">Neural Node Network</text></svg>'
     },
     {
       id: 'solarperformance',
       title: 'Solar Grid Statistics',
       sub: 'Decentralized energy tokens throughput metric',
-      url: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?w=600&auto=format&fit=crop&q=80'
+      url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="250" height="140" viewBox="0 0 250 140"><rect width="250" height="140" fill="%230b0d19"/><rect x="40" y="80" width="25" height="40" fill="%237b5cfa"/><rect x="85" y="50" width="25" height="70" fill="%237b5cfa"/><rect x="130" y="30" width="25" height="90" fill="%23e85aa0"/><rect x="175" y="60" width="25" height="60" fill="%23e8c55a"/><text x="15" y="25" fill="%23ffffff" font-family="sans-serif" font-size="10" font-weight="bold">Energy Throughput (MWh)</text></svg>'
     },
     {
       id: 'sparkcore',
       title: 'SPARK Glassmorphic Core',
       sub: 'Premium interface aesthetics node design',
-      url: 'https://images.unsplash.com/photo-1614064641938-3bbee52942c7?w=600&auto=format&fit=crop&q=80'
+      url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="250" height="140" viewBox="0 0 250 140"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%237b5cfa"/><stop offset="100%" stop-color="%23e85aa0"/></linearGradient></defs><rect width="250" height="140" fill="%230b0d19"/><rect x="40" y="30" width="170" height="80" rx="15" fill="url(%23g)" opacity="0.6"/><rect x="60" y="45" width="130" height="50" rx="10" fill="%23ffffff" fill-opacity="0.1" stroke="%23ffffff" stroke-opacity="0.25" style="backdrop-filter:blur(8px)"/><text x="75" y="75" fill="%23ffffff" font-family="sans-serif" font-size="12" font-weight="bold" letter-spacing="2">SPARK CORE</text></svg>'
     }
   ];
 
