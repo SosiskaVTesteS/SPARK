@@ -4,7 +4,7 @@
  */
 (function (global) {
   var DEFAULTS = {
-    SUPABASE_URL: 'https://urban-newt-63.7-melty-7.deno.net',
+    SUPABASE_URL: 'https://ppehttbtrlavnrytoweu.supabase.co',
     SUPABASE_ANON_KEY: 'sb_publishable_9uAFLjS4AaElHus4hiUuQQ_PMSFNkb8',
     ALLOW_LEGACY_INVEST_FALLBACK: true,
     ENABLE_CLIENT_TELEMETRY: false
@@ -93,6 +93,11 @@ var SUPABASE_CONFIGURED = false;
 var runtime = window.SPARK_RUNTIME;
 if (runtime) {
   SUPABASE_URL = runtime.get('SUPABASE_URL') || '';
+  // Если URL указывает на сам сайт (Vercel или window.location.origin), перенаправляем на прямой адрес Supabase
+  // для предотвращения ошибок с вебсокетами и снижения задержки.
+  if (SUPABASE_URL && (SUPABASE_URL === window.location.origin || SUPABASE_URL.indexOf('vercel.app') !== -1)) {
+    SUPABASE_URL = 'https://ppehttbtrlavnrytoweu.supabase.co';
+  }
   SUPABASE_ANON_KEY = runtime.get('SUPABASE_ANON_KEY') || '';
   ALLOW_LEGACY_INVEST_FALLBACK = runtime.get('ALLOW_LEGACY_INVEST_FALLBACK') !== false;
   ENABLE_CLIENT_TELEMETRY = !!runtime.get('ENABLE_CLIENT_TELEMETRY');
