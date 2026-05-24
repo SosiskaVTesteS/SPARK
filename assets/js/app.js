@@ -2228,6 +2228,9 @@ function switchChatTab(tab) {
 
 function openMo(id) { var el = document.getElementById(id); if (el) { el.classList.add('open'); triggerVibration(15); } }
 function closeMo(id) { var el = document.getElementById(id); if (el) { el.classList.remove('open'); triggerVibration(10); } }
+window.openMo = openMo;
+window.closeMo = closeMo;
+window.toast = toast;
 
 function toast(msg, color, type) {
   var t = document.getElementById('toast');
