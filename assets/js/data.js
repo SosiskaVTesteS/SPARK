@@ -126,7 +126,7 @@ var appEntered = false;
 var authListenerBound = false;
 
 var CC = '#e8c55a';
-var EMOJIS = ['💀', '🗿', '🔥', '💎', '🚀'];
+var EMOJIS = ['💀', '🗿', '🔥', '💎', '🚀', '❤️', '👍', '👎', '👏', '🎉', '😢', '😮', '🤔', '👀', '💯'];
 var FIRE_T = 100;
 var RS = {};
 

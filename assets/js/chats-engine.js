@@ -21,19 +21,10 @@ var ChatsEngine = (function () {
   var pollingInterval = null;
 
   // Preloaded Contacts (DMs) - Defaults
-  var DEFAULT_CONTACTS = [
-    { id: '@maria_builds', name: 'Maria Kovaleva', username: '@maria_builds', online: true, avColor: 4, preview: 'Let\'s discuss the solar leasing idea 🔥' },
-    { id: '@alex_ventures', name: 'Alex Harrison', username: '@alex_ventures', online: true, avColor: 0, preview: 'Hey, what do you think about the SPK pool?' },
-    { id: '@cody_prophet', name: 'Cody Fisher', username: '@cody_prophet', online: false, avColor: 6, preview: 'Send the market signals document when ready.' },
-    { id: '@elizabeth_trade', name: 'Elizabeth Webb', username: '@elizabeth_trade', online: true, avColor: 9, preview: 'I see, okay noted. Talk to you tomorrow!' }
-  ];
+  var DEFAULT_CONTACTS = [];
 
   // Preloaded Teams/Groups - Defaults
-  var DEFAULT_TEAMS = [
-    { id: 'defi-prophets', name: 'DeFi Prophets', activeCount: 8, avColor: 1, preview: 'Kirill: Volatility threshold exceeded 🚨' },
-    { id: 'ai-signals', name: 'AI Signal Room', activeCount: 14, avColor: 8, preview: 'Elena: Model predictive weight is 98.4%' },
-    { id: 'spark-devs', name: 'Spark Core Devs', activeCount: 5, avColor: 2, preview: 'System: Cinematic loading intro merged' }
-  ];
+  var DEFAULT_TEAMS = [];
 
   // Preset Rich Media Attachments (Photo 1 UI inspiration)
   var ATTACHMENTS = [
@@ -64,23 +55,7 @@ var ChatsEngine = (function () {
   ];
 
   // Initial Seed Message Thread database
-  var INITIAL_MESSAGES = {
-    '@alex_ventures': [
-      { id: 'm1', sender_id: 'alex', sender_name: '@alex_ventures', sender_avatar_color: 0, content: 'Hey there! How has the SPARK alpha testing been going on your end?', created_at: Date.now() - 3600000 * 3 },
-      { id: 'm2', sender_id: 'me', sender_name: 'You', sender_avatar_color: 3, content: 'It is amazing! The Canvas loading screens are 60 FPS and the Theme Studio transitions are butter smooth.', created_at: Date.now() - 3600000 * 2.8 },
-      { id: 'm3', sender_id: 'alex', sender_name: '@alex_ventures', sender_avatar_color: 0, content: 'Hey, what do you think about the SPK pool? Do you think the volatility is high enough for margin critique?', created_at: Date.now() - 3600000 * 0.1 }
-    ],
-    '@maria_builds': [
-      { id: 'm4', sender_id: 'maria', sender_name: '@maria_builds', sender_avatar_color: 4, content: 'Hi spark developer! I have been reviewing our CleanEnergy microgrid investment thesis.', created_at: Date.now() - 3600000 * 5 },
-      { id: 'm5', sender_id: 'maria', sender_name: '@maria_builds', sender_avatar_color: 4, content: 'Let\'s discuss the solar leasing idea 🔥. I think we can tokenise the solar output seamlessly using smart contracts.', created_at: Date.now() - 3600000 * 4.9 }
-    ],
-    'defi-prophets': [
-      { id: 'm6', sender_id: 'system', sender_name: 'SYSTEM', sender_avatar_color: 11, content: 'DeFi Prophets group established.', created_at: Date.now() - 3600000 * 48 },
-      { id: 'm7', sender_id: 'cody', sender_name: '@cody_prophet', sender_avatar_color: 6, content: 'Yield farming rates are stabilizing on the arbitrum nodes.', created_at: Date.now() - 3600000 * 12 },
-      { id: 'm8', sender_id: 'alex', sender_name: '@alex_ventures', sender_avatar_color: 0, content: 'Agreed, pool depth is growing rapidly.', created_at: Date.now() - 3600000 * 4 },
-      { id: 'm9', sender_id: 'kirill', sender_name: '@kirill_vc', sender_avatar_color: 8, content: 'Kirill: Volatility threshold exceeded 🚨. Prepare critique hedges.', created_at: Date.now() - 3600000 * 0.5 }
-    ]
-  };
+  var INITIAL_MESSAGES = {};
 
   // Local Storage Cache Keys
   var CACHE_KEY = 'spark_chats_v1';
@@ -189,7 +164,10 @@ var ChatsEngine = (function () {
     var dmsListEl = document.getElementById('chatListDMs');
     if (dmsListEl) {
       if (filteredContacts.length === 0) {
-        dmsListEl.innerHTML = '<div style="text-align:center;padding:16px 0;color:var(--mu);font-size:11px">No direct messages</div>';
+        var emptyText = window.LANG === 'ru' 
+          ? 'Здесь пока пусто. Никто еще не подключился. Нажмите «+» вверху, чтобы начать общение с другими пользователями.' 
+          : 'It is quiet here. No direct messages yet. Click the "+" button above to search and start a conversation.';
+        dmsListEl.innerHTML = '<div class="chat-sidebar-empty">' + emptyText + '</div>';
       } else {
         dmsListEl.innerHTML = filteredContacts.map(function (c) {
           var msgs = getCachedMessages()[c.id] || [];
@@ -218,7 +196,10 @@ var ChatsEngine = (function () {
     var teamsListEl = document.getElementById('chatListTeams');
     if (teamsListEl) {
       if (filteredTeams.length === 0) {
-        teamsListEl.innerHTML = '<div style="text-align:center;padding:16px 0;color:var(--mu);font-size:11px">No channels found</div>';
+        var emptyTextTeams = window.LANG === 'ru'
+          ? 'Групповые каналы не найдены. Нажмите «+» для создания новой темы.'
+          : 'No channels found. Click "+" to establish a new topic room.';
+        teamsListEl.innerHTML = '<div class="chat-sidebar-empty">' + emptyTextTeams + '</div>';
       } else {
         teamsListEl.innerHTML = filteredTeams.map(function (t) {
           var msgs = getCachedMessages()[t.id] || [];
@@ -249,6 +230,277 @@ var ChatsEngine = (function () {
     });
   }
 
+  // Helper to fetch deleted message ids
+  function getDeletedMessageIds() {
+    try {
+      var cached = localStorage.getItem('spark_deleted_msg_ids');
+      if (cached) return JSON.parse(cached);
+    } catch (e) {}
+    return [];
+  }
+
+  // Delete message locally (for me)
+  function deleteMessageForMe(msgId) {
+    var list = getDeletedMessageIds();
+    if (!list.includes(msgId)) {
+      list.push(msgId);
+      try {
+        localStorage.setItem('spark_deleted_msg_ids', JSON.stringify(list));
+      } catch (e) {}
+    }
+    renderActiveConversation();
+  }
+
+  // Delete message for everyone (removes from local cache + DB delete call)
+  async function deleteMessageForEveryone(msgId) {
+    var channel = state.activeChannelId;
+    if (channel) {
+      var msgs = getCachedMessages();
+      if (msgs[channel]) {
+        var idx = msgs[channel].findIndex(function (m) { return m.id === msgId; });
+        if (idx !== -1) {
+          msgs[channel].splice(idx, 1);
+          cacheMessages(msgs);
+          renderActiveConversation();
+        }
+      }
+    }
+
+    if (window.supa && window.ME && !msgId.startsWith('m_local_')) {
+      try {
+        await window.supa.from('messages')
+          .delete()
+          .eq('id', msgId);
+      } catch (e) {
+        console.warn('Supabase delete error:', e);
+      }
+    }
+  }
+
+  // Show dynamic Delete Confirmation Modal
+  function showDeleteConfirmModal(msgId, deleteType, onConfirm) {
+    var existing = document.getElementById('moDeleteConfirm');
+    if (existing) existing.remove();
+
+    var modal = document.createElement('div');
+    modal.id = 'moDeleteConfirm';
+    modal.className = 'mo open';
+    
+    var title = window.LANG === 'ru' ? 'Удалить сообщение?' : 'Delete message?';
+    var bodyText = '';
+    var buttonsHtml = '';
+    
+    if (deleteType === 'both') {
+      bodyText = window.LANG === 'ru' 
+        ? 'Вы хотите удалить это сообщение только для себя или для всех участников?' 
+        : 'Do you want to delete this message only for yourself or for everyone?';
+        
+      buttonsHtml = ''
+        + '<button class="spark-btn-submit" id="btnDeleteForMe" style="background:var(--vl);margin-right:10px">'
+        + (window.LANG === 'ru' ? 'Для меня' : 'Delete for Me')
+        + '</button>'
+        + '<button class="spark-btn-danger" id="btnDeleteForEveryone">'
+        + (window.LANG === 'ru' ? 'Для всех' : 'Delete for Everyone')
+        + '</button>';
+    } else {
+      bodyText = window.LANG === 'ru'
+        ? 'Вы уверены, что хотите удалить это сообщение для себя? Это действие нельзя отменить.'
+        : 'Are you sure you want to delete this message for yourself? This action cannot be undone.';
+        
+      buttonsHtml = ''
+        + '<button class="spark-btn-danger" id="btnDeleteForMe">'
+        + (window.LANG === 'ru' ? 'Удалить' : 'Delete for Me')
+        + '</button>';
+    }
+    
+    var cancelText = window.LANG === 'ru' ? 'Отмена' : 'Cancel';
+
+    modal.innerHTML = ''
+      + '<div class="mo-box" style="max-width:400px;padding:24px;box-sizing:border-box">'
+      + '  <div class="mo-title" style="margin-bottom:12px;color:var(--red)">' + title + '</div>'
+      + '  <div style="font-size:13px;color:var(--mu2);line-height:1.5;margin-bottom:24px">' + bodyText + '</div>'
+      + '  <div style="display:flex;justify-content:flex-end;gap:10px">'
+      + '    <button class="prs-btn" id="btnCancelDelete" style="border:1px solid rgba(255,255,255,0.1)">' + cancelText + '</button>'
+      +      buttonsHtml
+      + '  </div>'
+      + '</div>';
+
+    document.body.appendChild(modal);
+    
+    document.getElementById('btnCancelDelete').addEventListener('click', function() {
+      modal.remove();
+    });
+    
+    var btnMe = document.getElementById('btnDeleteForMe');
+    if (btnMe) {
+      btnMe.addEventListener('click', function() {
+        onConfirm('me');
+        modal.remove();
+      });
+    }
+    
+    var btnEveryone = document.getElementById('btnDeleteForEveryone');
+    if (btnEveryone) {
+      btnEveryone.addEventListener('click', function() {
+        onConfirm('everyone');
+        modal.remove();
+      });
+    }
+
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) {
+        modal.remove();
+      }
+    });
+  }
+
+  // Global Emoji Picker Helper
+  var GlobalEmojiPicker = (function () {
+    var pickerEl = null;
+    var currentCallback = null;
+    var EMOJIS_LIST = ['💀', '🗿', '🔥', '💎', '🚀', '❤️', '👍', '👎', '👏', '🎉', '😢', '😮', '🤔', '👀', '💯'];
+
+    function initPicker() {
+      if (pickerEl) return;
+      pickerEl = document.createElement('div');
+      pickerEl.id = 'global-emoji-picker';
+      pickerEl.className = 'global-emoji-picker';
+      pickerEl.style.display = 'none';
+      pickerEl.style.position = 'absolute';
+      pickerEl.style.zIndex = '9999';
+      
+      var gridHtml = EMOJIS_LIST.map(function (e) {
+        return '<button class="picker-emoji-btn" data-emoji="' + e + '">' + e + '</button>';
+      }).join('');
+      
+      pickerEl.innerHTML = '<div class="picker-arrow"></div><div class="picker-grid">' + gridHtml + '</div>';
+      document.body.appendChild(pickerEl);
+
+      var style = document.createElement('style');
+      style.textContent = '\n' +
+        '.global-emoji-picker {\n' +
+        '  background: rgba(15, 18, 36, 0.95);\n' +
+        '  border: 1px solid rgba(255, 255, 255, 0.1);\n' +
+        '  border-radius: 12px;\n' +
+        '  padding: 8px;\n' +
+        '  box-shadow: 0 10px 30px rgba(0,0,0,0.6), 0 0 1px 1px rgba(255,255,255,0.1) inset;\n' +
+        '  backdrop-filter: blur(20px);\n' +
+        '  -webkit-backdrop-filter: blur(20px);\n' +
+        '  animation: pickerPop 0.18s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;\n' +
+        '  transform-origin: top center;\n' +
+        '}\n' +
+        '@keyframes pickerPop {\n' +
+        '  from { transform: scale(0.9) translateY(4px); opacity: 0; }\n' +
+        '  to { transform: scale(1) translateY(0); opacity: 1; }\n' +
+        '}\n' +
+        '.picker-grid {\n' +
+        '  display: grid;\n' +
+        '  grid-template-columns: repeat(5, 1fr);\n' +
+        '  gap: 6px;\n' +
+        '}\n' +
+        '.picker-emoji-btn {\n' +
+        '  background: transparent;\n' +
+        '  border: none;\n' +
+        '  cursor: pointer;\n' +
+        '  font-size: 18px;\n' +
+        '  padding: 6px;\n' +
+        '  border-radius: 8px;\n' +
+        '  transition: all 0.2s;\n' +
+        '  display: flex;\n' +
+        '  align-items: center;\n' +
+        '  justify-content: center;\n' +
+        '}\n' +
+        '.picker-emoji-btn:hover {\n' +
+        '  background: rgba(255, 255, 255, 0.08);\n' +
+        '  transform: scale(1.2);\n' +
+        '}\n' +
+        '.picker-arrow {\n' +
+        '  position: absolute;\n' +
+        '  width: 8px;\n' +
+        '  height: 8px;\n' +
+        '  background: rgba(15, 18, 36, 0.95);\n' +
+        '  border-left: 1px solid rgba(255, 255, 255, 0.1);\n' +
+        '  border-top: 1px solid rgba(255, 255, 255, 0.1);\n' +
+        '  transform: rotate(45deg) translateX(-50%);\n' +
+        '  left: 50%;\n' +
+        '  top: -5px;\n' +
+        '}\n';
+      document.head.appendChild(style);
+
+      pickerEl.querySelectorAll('.picker-emoji-btn').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+          var emoji = btn.dataset.emoji;
+          if (currentCallback) {
+            currentCallback(emoji);
+          }
+          hide();
+          e.stopPropagation();
+        });
+      });
+
+      window.addEventListener('click', function (e) {
+        if (pickerEl.style.display !== 'none' && !pickerEl.contains(e.target)) {
+          hide();
+        }
+      });
+    }
+
+    function show(targetBtn, callback) {
+      initPicker();
+      currentCallback = callback;
+      pickerEl.style.display = 'block';
+
+      var rect = targetBtn.getBoundingClientRect();
+      var scrollX = window.scrollX || document.documentElement.scrollLeft;
+      var scrollY = window.scrollY || document.documentElement.scrollTop;
+
+      var left = rect.left + rect.width / 2 - pickerEl.offsetWidth / 2 + scrollX;
+      var top = rect.bottom + 5 + scrollY;
+
+      if (left < 10) left = 10;
+      if (left + pickerEl.offsetWidth > window.innerWidth - 10) {
+        left = window.innerWidth - pickerEl.offsetWidth - 10;
+      }
+
+      var arrow = pickerEl.querySelector('.picker-arrow');
+      var targetCenterX = rect.left + rect.width / 2 + scrollX;
+      var relativeArrowX = targetCenterX - left;
+      arrow.style.left = relativeArrowX + 'px';
+
+      if (rect.bottom + 5 + pickerEl.offsetHeight > window.innerHeight && rect.top - 5 - pickerEl.offsetHeight > 0) {
+        top = rect.top - 5 - pickerEl.offsetHeight + scrollY;
+        arrow.style.top = 'auto';
+        arrow.style.bottom = '-5px';
+        arrow.style.borderLeft = 'none';
+        arrow.style.borderTop = 'none';
+        arrow.style.borderRight = '1px solid rgba(255, 255, 255, 0.1)';
+        arrow.style.borderBottom = '1px solid rgba(255, 255, 255, 0.1)';
+      } else {
+        arrow.style.bottom = 'auto';
+        arrow.style.top = '-5px';
+        arrow.style.borderRight = 'none';
+        arrow.style.borderBottom = 'none';
+        arrow.style.borderLeft = '1px solid rgba(255, 255, 255, 0.1)';
+        arrow.style.borderTop = '1px solid rgba(255, 255, 255, 0.1)';
+      }
+
+      pickerEl.style.left = left + 'px';
+      pickerEl.style.top = top + 'px';
+    }
+
+    function hide() {
+      if (pickerEl) {
+        pickerEl.style.display = 'none';
+      }
+    }
+
+    return {
+      show: show,
+      hide: hide
+    };
+  })();
+  window.GlobalEmojiPicker = GlobalEmojiPicker;
+
   // Render Active Conversation Viewport
   function renderActiveConversation() {
     var rightPane = document.getElementById('chatActivePane');
@@ -257,32 +509,45 @@ var ChatsEngine = (function () {
     var id = state.activeChannelId;
     if (!id) {
       // Empty placeholder
+      var emptyTitle = window.LANG === 'ru' ? 'Секретная связь SPARK' : 'SPARK Secure Signal Network';
+      var emptyText = window.LANG === 'ru' 
+        ? 'Выберите защищенный канал или прямой контакт для синхронизации сигналов и обмена разведданными.'
+        : 'Select a secure channel or direct contact to synchronize market signals and share intelligence notes.';
       rightPane.innerHTML = ''
         + '<div class="chat-empty-state">'
         + '<div class="chat-empty-icon">🛰️</div>'
-        + '<div class="chat-empty-title">' + (window.T ? T('marketObservatory') : 'Market Intelligence Chats') + '</div>'
-        + '<div class="chat-empty-text">Select a secure channel or direct contact to synchronize market signals and share intelligence notes.</div>'
+        + '<div class="chat-empty-title">' + emptyTitle + '</div>'
+        + '<div class="chat-empty-text">' + emptyText + '</div>'
         + '</div>';
       return;
     }
 
     var msgs = getCachedMessages()[id] || [];
 
+    // Helper to generate signature of messages to prevent unnecessary re-rendering
+    var msgsSignature = JSON.stringify(msgs.map(function (m) {
+      return { id: m.id, content: m.content, read: m.read, reactions: m.reactions, media_url: m.media_url };
+    }));
+
     // 1. Partial Render Optimization: If the correct channel is already active, only update the messages list.
     // This completely eliminates any borders/backgrounds twitching and keeps the input focused/un-wiped without complex hacks.
     var existingArea = document.getElementById('chatMsgArea');
     if (existingArea && existingArea.getAttribute('data-channel-id') === id) {
+      var prevSignature = existingArea.getAttribute('data-msgs-signature');
+      if (prevSignature === msgsSignature) {
+        return; // No changes, do not update DOM
+      }
+      
       // Determine if user is scrolled near the bottom
       var wasAtBottom = (existingArea.scrollHeight - existingArea.clientHeight - existingArea.scrollTop) < 50;
       
       var newMessagesHtml = _renderMessagesList(msgs);
-      if (existingArea.innerHTML !== newMessagesHtml) {
-        existingArea.innerHTML = newMessagesHtml;
-        if (wasAtBottom) {
-          existingArea.scrollTop = existingArea.scrollHeight;
-        }
+      existingArea.innerHTML = newMessagesHtml;
+      existingArea.setAttribute('data-msgs-signature', msgsSignature);
+      if (wasAtBottom) {
+        existingArea.scrollTop = existingArea.scrollHeight;
       }
-      return; // Return early, keeping the parent DOM (headers, input containers, borders) fully static!
+      return; // Return early, keeping the parent DOM fully static!
     }
 
     // 2. Full Render (only executed when opening a channel for the first time or switching channels)
@@ -330,7 +595,7 @@ var ChatsEngine = (function () {
       + '  </div>'
       + '</div>'
       /* Messages list scroll (with data-channel-id for partial renders) */
-      + '<div class="chat-messages-area" id="chatMsgArea" data-channel-id="' + id + '">'
+      + '<div class="chat-messages-area" id="chatMsgArea" data-channel-id="' + id + '" data-msgs-signature="' + _esc(msgsSignature) + '">'
       +   _renderMessagesList(msgs)
       + '</div>'
       /* Bottom composed attachment preview */
@@ -362,13 +627,24 @@ var ChatsEngine = (function () {
 
   // Formulate html list of message speech bubbles
   function _renderMessagesList(msgs) {
-    if (msgs.length === 0) {
-      return '<div style="text-align:center;padding:48px 0;color:var(--mu);font-size:12px">No messages in this signal room yet.</div>';
+    var deletedIds = getDeletedMessageIds();
+    var visibleMsgs = msgs.filter(function (m) {
+      return !deletedIds.includes(m.id);
+    });
+
+    if (visibleMsgs.length === 0) {
+      return '<div style="text-align:center;padding:48px 0;color:var(--mu);font-size:12px">' 
+        + (window.LANG === 'ru' ? 'В этом секретном канале пока нет сообщений.' : 'No messages in this signal room yet.') 
+        + '</div>';
     }
 
-    return msgs.map(function (m) {
+    return visibleMsgs.map(function (m) {
       if (m.sender_id === 'system') {
-        return '<div class="chat-system-message">' + _esc(m.content) + '</div>';
+        var content = m.content;
+        if (content === 'Signal channel opened. Security synchronized.') {
+          content = window.LANG === 'ru' ? 'Сигнальный канал открыт. Безопасность синхронизирована.' : 'Signal channel opened. Security synchronized.';
+        }
+        return '<div class="chat-system-message">' + _esc(content) + '</div>';
       }
 
       var isSent = m.sender_id === 'me' || (window.ME && m.sender_id === ME.id);
@@ -397,7 +673,7 @@ var ChatsEngine = (function () {
           + '  <img src="' + m.media_url + '" class="chat-media-img" alt="Attachment" loading="lazy">'
           + '  <div class="chat-media-meta">'
           + '    <div class="chat-media-title">' + _esc(cardTitle) + '</div>'
-          + '    <div class="chat-media-sub">Spark Intelligence Attachment</div>'
+          + '    <div class="chat-media-sub">' + (window.LANG === 'ru' ? 'Вложение SPARK' : 'Spark Intelligence Attachment') + '</div>'
           + '  </div>'
           + '</div>';
       }
@@ -421,7 +697,9 @@ var ChatsEngine = (function () {
         + '  <button class="chat-context-react-btn" data-msg-id="' + m.id + '" data-emoji="🔥">🔥</button>'
         + '  <button class="chat-context-react-btn" data-msg-id="' + m.id + '" data-emoji="💎">💎</button>'
         + '  <button class="chat-context-react-btn" data-msg-id="' + m.id + '" data-emoji="🚀">🚀</button>'
-        + '  <button class="chat-context-react-btn" data-msg-id="' + m.id + '" data-emoji="🗿">🗿</button>'
+        + '  <button class="chat-context-react-btn" data-msg-id="' + m.id + '" data-emoji="💀">💀</button>'
+        + '  <button class="chat-context-picker-btn" data-msg-id="' + m.id + '" title="More emojis">➕</button>'
+        + '  <button class="chat-context-delete-btn" data-msg-id="' + m.id + '" data-delete-type="' + (isSent ? 'both' : 'me') + '" title="' + (window.LANG === 'ru' ? 'Удалить сообщение' : 'Delete message') + '">🗑️</button>'
         + '</div>';
 
       return ''
@@ -511,12 +789,55 @@ var ChatsEngine = (function () {
       });
     });
 
+    // 5b. Context menu custom emoji picker click
+    document.querySelectorAll('.chat-context-picker-btn[data-msg-id]').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        var msgId = btn.dataset.msgId;
+        GlobalEmojiPicker.show(btn, function (emoji) {
+          addReaction(msgId, emoji);
+        });
+        e.stopPropagation();
+      });
+    });
+
+    // 5c. Context menu delete button click
+    document.querySelectorAll('.chat-context-delete-btn[data-msg-id]').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        var msgId = btn.dataset.msgId;
+        var deleteType = btn.dataset.deleteType;
+        showDeleteConfirmModal(msgId, deleteType, function (selectedType) {
+          if (selectedType === 'everyone') {
+            deleteMessageForEveryone(msgId);
+          } else {
+            deleteMessageForMe(msgId);
+          }
+        });
+        e.stopPropagation();
+      });
+    });
+
     // 6. Pill reactions click
     document.querySelectorAll('.chat-msg-react-pill[data-msg-id]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var msgId = btn.dataset.msgId;
         var emoji = btn.dataset.emoji;
         addReaction(msgId, emoji);
+      });
+    });
+
+    // 7. Mobile tap to toggle context menu on message bubbles
+    document.querySelectorAll('.chat-msg-bubble').forEach(function (bubble) {
+      bubble.addEventListener('click', function (e) {
+        if (e.target.closest('.chat-bubble-context')) return;
+        var ctx = bubble.querySelector('.chat-bubble-context');
+        if (ctx) {
+          var isOpened = ctx.style.display === 'flex';
+          document.querySelectorAll('.chat-bubble-context').forEach(function(c) {
+            c.style.display = '';
+          });
+          ctx.style.display = isOpened ? 'none' : 'flex';
+          e.stopPropagation();
+        }
       });
     });
   }
@@ -562,6 +883,35 @@ var ChatsEngine = (function () {
     markMessagesAsRead(id);
   }
 
+  // Query Supabase for any unread direct messages sent to ME and update badges
+  async function updateUnreadBadge() {
+    if (!window.supa || !window.ME) return;
+    try {
+      var res = await supa.from('messages')
+        .select('id', { count: 'exact', head: true })
+        .eq('channel_id', ME.id)
+        .eq('read', false);
+      
+      var hasUnread = res.count > 0;
+      
+      // Update Mobile bar dot
+      var mChatDot = document.getElementById('mChatDot');
+      if (mChatDot) {
+        mChatDot.style.display = hasUnread ? 'flex' : 'none';
+        mChatDot.textContent = hasUnread ? res.count : '';
+      }
+
+      // Update Desktop chats badge
+      var dChatBadge = document.getElementById('dChatBadge');
+      if (dChatBadge) {
+        dChatBadge.style.display = hasUnread ? 'flex' : 'none';
+        dChatBadge.textContent = hasUnread ? res.count : '';
+      }
+    } catch (e) {
+      console.warn('Failed to update unread badge status:', e);
+    }
+  }
+
   // Mark all unread messages from this contact as read in DB and local cache
   async function markMessagesAsRead(contactId) {
     if (!window.supa || !window.ME || !contactId) return;
@@ -593,6 +943,8 @@ var ChatsEngine = (function () {
         cacheMessages(msgs);
         renderActiveConversation();
       }
+      // Also update badges
+      updateUnreadBadge();
     } catch (e) {
       console.warn('Failed to mark messages as read:', e);
     }
@@ -1022,7 +1374,8 @@ var ChatsEngine = (function () {
             var chatDot = document.getElementById('mChatDot');
             if (chatDot) chatDot.style.display = 'block';
           }
-        }
+        // 3. Keep badges in sync
+        await updateUnreadBadge();
       } catch (e) {
         console.warn('Chats polling failed:', e);
       }
@@ -1091,6 +1444,7 @@ var ChatsEngine = (function () {
           // Trigger haptic dot or list indicator
           var chatDot = document.getElementById('mChatDot');
           if (chatDot) chatDot.style.display = 'block';
+          updateUnreadBadge();
 
           if (state.activeChannelId === threadId) {
             renderActiveConversation();
@@ -1117,6 +1471,28 @@ var ChatsEngine = (function () {
             msg.read = updatedRow.read; // Keep read tick in sync!
             cacheMessages(msgs);
             if (state.activeChannelId === threadId) {
+              renderActiveConversation();
+            }
+          }
+        })
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'messages' }, function (payload) {
+          var oldRow = payload.old;
+          if (!oldRow) return;
+
+          var msgs = getCachedMessages();
+          var changed = false;
+          Object.keys(msgs).forEach(function (threadId) {
+            var idx = msgs[threadId].findIndex(function (m) { return m.id === oldRow.id; });
+            if (idx !== -1) {
+              msgs[threadId].splice(idx, 1);
+              changed = true;
+            }
+          });
+
+          if (changed) {
+            cacheMessages(msgs);
+            renderChatList();
+            if (state.activeChannelId) {
               renderActiveConversation();
             }
           }
@@ -1179,6 +1555,12 @@ var ChatsEngine = (function () {
     // Wire up `#moCreateChat` modal events
     _wireCreateChatModal();
 
+    window.addEventListener('click', function () {
+      document.querySelectorAll('.chat-bubble-context').forEach(function (c) {
+        c.style.display = '';
+      });
+    });
+
     // Initial render
     renderChatList();
     renderActiveConversation();
@@ -1186,6 +1568,7 @@ var ChatsEngine = (function () {
     // Realtime Database replication hooks
     if (window.supa && window.ME) {
       _initRealtimeSubscription();
+      updateUnreadBadge();
     }
   }
 
@@ -1213,7 +1596,8 @@ var ChatsEngine = (function () {
     addReaction:              addReaction,
     showCreateChatModal:      showCreateChatModal,
     renderChatList:           renderChatList,
-    renderActiveConversation: renderActiveConversation
+    renderActiveConversation: renderActiveConversation,
+    updateUnreadBadge:        updateUnreadBadge
   };
 })();
 

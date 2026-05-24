@@ -218,9 +218,10 @@
     <div class="uavatar" id="hdrAv">U</div>
     <div><div class="uname" id="hdrUn">@user123</div><span class="ubadge">✓ Verified</span></div>
   </div>
-  <button class="btn-prof" id="btnChatsDesk" style="margin-right: 8px;">
+  <button class="btn-prof" id="btnChatsDesk" style="margin-right: 8px; position: relative;">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
     <span>Chats</span>
+    <div id="dChatBadge" class="chat-badge-count" style="display: none;"></div>
   </button>
   <button class="btn-prof" id="btnProfDesk">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -329,7 +330,7 @@
   <button class="mob-tab tab-chats" data-panel="chats">
     <div class="m-ic" style="position:relative;">
       <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <div id="mChatDot" class="ping-dot" style="display:none; top:-2px; right:-2px;"></div>
+      <div id="mChatDot" class="chat-badge-count" style="display:none;"></div>
     </div>
     <span class="mob-tab-label">Chats</span>
   </button>

@@ -103,6 +103,14 @@ document.addEventListener('DOMContentLoaded', function () {
         openInvest(investBtn.dataset.investId);
         return;
       }
+      var reactAddBtn = event.target.closest('.react-add-btn[data-id]');
+      if (reactAddBtn) {
+        var ideaId = reactAddBtn.dataset.id;
+        GlobalEmojiPicker.show(reactAddBtn, function (emoji) {
+          react(ideaId, emoji, reactAddBtn);
+        });
+        return;
+      }
       var reactBtn = event.target.closest('.rbbl[data-id][data-e]');
       if (reactBtn) {
         // Reactions use idea id directly (string UUID)
@@ -125,6 +133,14 @@ document.addEventListener('DOMContentLoaded', function () {
       var investBtn = event.target.closest('[data-invest-id]');
       if (investBtn && !investBtn.disabled) {
         openInvest(investBtn.dataset.investId);
+        return;
+      }
+      var reactAddBtn = event.target.closest('.react-add-btn[data-id]');
+      if (reactAddBtn) {
+        var ideaId = reactAddBtn.dataset.id;
+        GlobalEmojiPicker.show(reactAddBtn, function (emoji) {
+          react(ideaId, emoji, reactAddBtn);
+        });
         return;
       }
       var reactBtn = event.target.closest('.rbbl[data-id][data-e]');
@@ -1090,6 +1106,10 @@ function applyLang() {
   applyStaticI18n();
   renderProfile();
   renderFeed();
+  if (window.ChatsEngine) {
+    ChatsEngine.renderChatList();
+    ChatsEngine.renderActiveConversation();
+  }
 }
 
 function setText(selector, value) {
@@ -1140,6 +1160,7 @@ function applyStaticI18n() {
       + escapeHTML(T('verifyText3'));
   }
 
+  setText('#btnChatsDesk span', T('chats'));
   setText('#btnProfDesk span', T('profile'));
   setText('#btnPostIdea', T('postIdea'));
   setText('.wallet-badge .wlabel', T('wallet'));
@@ -1647,12 +1668,16 @@ function filtered() {
 
 function reactHTML(id) {
   var rs = getRS(id);
-  var sorted = EMOJIS.slice().sort(function (a, b) { return (rs.counts[b] || 0) - (rs.counts[a] || 0); });
-  return sorted.map(function (e) {
+  var html = '';
+  EMOJIS.forEach(function (e) {
     var cnt = rs.counts[e] || 0;
-    var on = rs.pick === e ? 'on' : '';
-    return '<button class="rbbl ' + on + '" data-id="' + id + '" data-e="' + e + '"><span class="rem">' + e + '</span><span class="rct">' + cnt + '</span></button>';
-  }).join('');
+    if (cnt > 0) {
+      var on = rs.pick === e ? 'on' : '';
+      html += '<button class="rbbl ' + on + '" data-id="' + id + '" data-e="' + e + '"><span class="rem">' + e + '</span><span class="rct">' + cnt + '</span></button>';
+    }
+  });
+  html += '<button class="rbbl react-add-btn" data-id="' + id + '" title="Add reaction"><span class="rem">➕</span></button>';
+  return html;
 }
 
 function cardHTML(x) {
