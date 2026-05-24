@@ -341,7 +341,7 @@ var ChatsEngine = (function () {
         : 'Do you want to delete this message only for yourself or for everyone?';
         
       buttonsHtml = ''
-        + '<button class="spark-btn-submit" id="btnDeleteForMe" style="background:var(--vl);margin-right:10px">'
+        + '<button class="spark-btn-submit" id="btnDeleteForMe" style="background:var(--vl)">'
         + (window.LANG === 'ru' ? 'Для меня' : 'Delete for Me')
         + '</button>'
         + '<button class="spark-btn-danger" id="btnDeleteForEveryone">'
