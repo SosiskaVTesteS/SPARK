@@ -266,23 +266,26 @@ var ChatsEngine = (function () {
       return;
     }
 
-    // 1. Preserve input value and focus state before rendering to prevent typed content loss
-    var oldInput = document.getElementById('chatTextInput');
-    var preservedValue = '';
-    var isInputFocused = false;
-    if (oldInput) {
-      preservedValue = oldInput.value;
-      isInputFocused = (document.activeElement === oldInput);
+    var msgs = getCachedMessages()[id] || [];
+
+    // 1. Partial Render Optimization: If the correct channel is already active, only update the messages list.
+    // This completely eliminates any borders/backgrounds twitching and keeps the input focused/un-wiped without complex hacks.
+    var existingArea = document.getElementById('chatMsgArea');
+    if (existingArea && existingArea.getAttribute('data-channel-id') === id) {
+      // Determine if user is scrolled near the bottom
+      var wasAtBottom = (existingArea.scrollHeight - existingArea.clientHeight - existingArea.scrollTop) < 50;
+      
+      var newMessagesHtml = _renderMessagesList(msgs);
+      if (existingArea.innerHTML !== newMessagesHtml) {
+        existingArea.innerHTML = newMessagesHtml;
+        if (wasAtBottom) {
+          existingArea.scrollTop = existingArea.scrollHeight;
+        }
+      }
+      return; // Return early, keeping the parent DOM (headers, input containers, borders) fully static!
     }
 
-    // 2. Preserve scroll position to prevent twitching/jumping when background polling completes
-    var oldArea = document.getElementById('chatMsgArea');
-    var wasAtBottom = true; // Default to true if opening for the first time
-    if (oldArea) {
-      // If the scroll distance to the bottom is less than 50px, consider the user "at the bottom"
-      wasAtBottom = (oldArea.scrollHeight - oldArea.clientHeight - oldArea.scrollTop) < 50;
-    }
-
+    // 2. Full Render (only executed when opening a channel for the first time or switching channels)
     var contacts = getContactsList();
     var teams = getTeamsList();
 
@@ -297,8 +300,6 @@ var ChatsEngine = (function () {
     var avText = contact ? contact.username.replace('@', '').charAt(0).toUpperCase() : (team ? team.name.charAt(0) + team.name.charAt(1) : '?');
     var avGrad = ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avIndex) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
     var avBorderRadius = team ? '10px' : '50%';
-
-    var msgs = getCachedMessages()[id] || [];
 
     // Map attachments icons/grid in composer bar
     var attachOptions = ATTACHMENTS.map(function (att) {
@@ -328,8 +329,8 @@ var ChatsEngine = (function () {
       + '  <div class="chat-header-actions">'
       + '  </div>'
       + '</div>'
-      /* Messages list scroll */
-      + '<div class="chat-messages-area" id="chatMsgArea">'
+      /* Messages list scroll (with data-channel-id for partial renders) */
+      + '<div class="chat-messages-area" id="chatMsgArea" data-channel-id="' + id + '">'
       +   _renderMessagesList(msgs)
       + '</div>'
       /* Bottom composed attachment preview */
@@ -351,20 +352,9 @@ var ChatsEngine = (function () {
       + '  </div>'
       + '</div>';
 
-    // 3. Restore preserved value and focus to input box
-    var newInput = document.getElementById('chatTextInput');
-    if (newInput) {
-      newInput.value = preservedValue;
-      if (isInputFocused) {
-        newInput.focus();
-      }
-    }
-
-    // 4. Scroll to bottom if user was already at the bottom (or first render)
+    // Scroll to bottom immediately on initial load
     var area = document.getElementById('chatMsgArea');
-    if (area && wasAtBottom) {
-      area.scrollTop = area.scrollHeight;
-    }
+    if (area) { area.scrollTop = area.scrollHeight; }
 
     // Wire up events
     _wireActiveView();
@@ -663,6 +653,10 @@ var ChatsEngine = (function () {
   async function sendMessage(content, mediaUrl, mediaTitle) {
     var channel = state.activeChannelId;
     if (!channel) return;
+
+    // Clear input field immediately before rendering to prevent race conditions in preservation
+    var inputEl = document.getElementById('chatTextInput');
+    if (inputEl) inputEl.value = '';
 
     var senderName = window.PROFILE ? PROFILE.username : '@user';
     var senderColor = window.PROFILE ? PROFILE.avatar_color : 0;
