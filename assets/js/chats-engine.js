@@ -18,6 +18,8 @@ var ChatsEngine = (function () {
     initialized: false
   };
 
+  var pollingInterval = null;
+
   // Preloaded Contacts (DMs) - Defaults
   var DEFAULT_CONTACTS = [
     { id: '@maria_builds', name: 'Maria Kovaleva', username: '@maria_builds', online: true, avColor: 4, preview: 'Let\'s discuss the solar leasing idea 🔥' },
@@ -929,8 +931,81 @@ var ChatsEngine = (function () {
     }
   }
 
+  // Poll database for new messages if WebSockets are unavailable or in polling mode
+  function _initPollingSubscription() {
+    if (pollingInterval) clearInterval(pollingInterval);
+    pollingInterval = setInterval(async function () {
+      if (!window.supa || !window.ME) return;
+      try {
+        // 1. If a chat is open, refresh its history to load new messages and read status
+        if (state.activeChannelId) {
+          await loadSupabaseHistory(state.activeChannelId);
+        }
+        
+        // 2. Poll for other DMs sent to us to update sidebar badges / previews
+        var res = await supa.from('messages')
+          .select('*')
+          .eq('channel_id', ME.id)
+          .order('created_at', { ascending: false })
+          .limit(10);
+        if (res.data && res.data.length > 0) {
+          var msgs = getCachedMessages();
+          var changed = false;
+          res.data.forEach(function (row) {
+            var threadId = row.sender_id;
+            if (!msgs[threadId]) msgs[threadId] = [];
+            var dup = msgs[threadId].some(function (m) { return m.id === row.id; });
+            if (!dup) {
+              // Auto-append incoming contact to local sidebar list if missing
+              var contacts = getContactsList();
+              var contactExists = contacts.some(function (c) { return c.id === threadId; });
+              if (!contactExists) {
+                contacts.push({
+                  id: threadId,
+                  name: row.sender_name,
+                  username: row.sender_name,
+                  online: true,
+                  avColor: row.sender_avatar_color || 0,
+                  preview: row.content
+                });
+                saveContactsList(contacts);
+              }
+
+              msgs[threadId].push({
+                id:                  row.id,
+                sender_id:           row.sender_id === ME.id ? 'me' : row.sender_id,
+                sender_name:         row.sender_name,
+                sender_avatar_color: row.sender_avatar_color,
+                content:             row.content,
+                media_url:           row.media_url,
+                created_at:          new Date(row.created_at).getTime(),
+                reactions:           row.reactions || {},
+                read:                row.read || false
+              });
+              changed = true;
+            }
+          });
+          if (changed) {
+            cacheMessages(msgs);
+            renderChatList();
+            var chatDot = document.getElementById('mChatDot');
+            if (chatDot) chatDot.style.display = 'block';
+          }
+        }
+      } catch (e) {
+        console.warn('Chats polling failed:', e);
+      }
+    }, 4000); // Check every 4 seconds for responsive real-time feedback
+  }
+
   // Subscribe to real-time public message stream
   function _initRealtimeSubscription() {
+    var mode = window.REALTIME_MODE || (window.SPARK_RUNTIME ? window.SPARK_RUNTIME.get('REALTIME_MODE') : 'polling');
+    if (mode === 'polling') {
+      _initPollingSubscription();
+      return;
+    }
+
     if (!window.supa || !window.ME || state.realtimeChannel) return;
     try {
       state.realtimeChannel = supa.channel('realtime:public:messages')

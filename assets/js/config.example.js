@@ -21,7 +21,7 @@
 window.SPARK_CONFIG = {
 
   // Базовый URL Supabase (REST / Auth / Edge Functions)
-  SUPABASE_URL: 'https://ppehttbtrlavnrytoweu.supabase.co',
+  SUPABASE_URL: window.location.origin,
 
   // Anon (публичный) ключ — безопасен для браузера; не service_role
   SUPABASE_ANON_KEY: 'sb_publishable_9uAFLjS4AaElHus4hiUuQQ_PMSFNkb8',
