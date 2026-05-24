@@ -592,6 +592,7 @@ var ChatsEngine = (function () {
       if (wasAtBottom) {
         existingArea.scrollTop = existingArea.scrollHeight;
       }
+      _wireActiveView();
       return; // Return early, keeping the parent DOM fully static!
     }
 
@@ -799,8 +800,8 @@ var ChatsEngine = (function () {
     // 5. Context menu emojis click
     document.querySelectorAll('.chat-context-react-btn[data-msg-id]').forEach(function (btn) {
       btn.addEventListener('click', function () {
-        var msgId = btn.dataset.msgId;
-        var emoji = btn.dataset.emoji;
+        var msgId = btn.getAttribute('data-msg-id');
+        var emoji = btn.getAttribute('data-emoji');
         addReaction(msgId, emoji);
       });
     });
@@ -808,7 +809,7 @@ var ChatsEngine = (function () {
     // 5b. Context menu custom emoji picker click
     document.querySelectorAll('.chat-context-picker-btn[data-msg-id]').forEach(function (btn) {
       btn.addEventListener('click', function (e) {
-        var msgId = btn.dataset.msgId;
+        var msgId = btn.getAttribute('data-msg-id');
         GlobalEmojiPicker.show(btn, function (emoji) {
           addReaction(msgId, emoji);
         });
@@ -819,8 +820,8 @@ var ChatsEngine = (function () {
     // 5c. Context menu delete button click
     document.querySelectorAll('.chat-context-delete-btn[data-msg-id]').forEach(function (btn) {
       btn.addEventListener('click', function (e) {
-        var msgId = btn.dataset.msgId;
-        var deleteType = btn.dataset.deleteType;
+        var msgId = btn.getAttribute('data-msg-id');
+        var deleteType = btn.getAttribute('data-delete-type');
         showDeleteConfirmModal(msgId, deleteType, function (selectedType) {
           if (selectedType === 'everyone') {
             deleteMessageForEveryone(msgId);
@@ -835,8 +836,8 @@ var ChatsEngine = (function () {
     // 6. Pill reactions click
     document.querySelectorAll('.chat-msg-react-pill[data-msg-id]').forEach(function (btn) {
       btn.addEventListener('click', function () {
-        var msgId = btn.dataset.msgId;
-        var emoji = btn.dataset.emoji;
+        var msgId = btn.getAttribute('data-msg-id');
+        var emoji = btn.getAttribute('data-emoji');
         addReaction(msgId, emoji);
       });
     });
