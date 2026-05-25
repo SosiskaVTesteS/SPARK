@@ -881,7 +881,7 @@ var ChatsEngine = (function () {
       // Delete message overlay below bubble
       var deleteMenu = ''
         + '<div class="chat-bubble-delete-context">'
-        + '  <button class="chat-context-delete-btn" style="background:transparent;border:none;color:var(--red);cursor:pointer;font-size:11px;font-weight:600;display:flex;align-items:center;gap:3px" data-msg-id="' + m.id + '" data-delete-type="' + (isSent ? 'both' : 'me') + '">'
+        + '  <button class="chat-context-delete-btn" style="background:transparent;border:none;color:var(--red);cursor:pointer;font-size:11px;font-weight:600;display:flex;align-items:center;gap:3px;white-space:nowrap;" data-msg-id="' + m.id + '" data-delete-type="' + (isSent ? 'both' : 'me') + '">'
         + '    🗑️ ' + (window.LANG === 'ru' ? 'Удалить' : 'Delete')
         + '  </button>'
         + '</div>';
@@ -2333,12 +2333,6 @@ var ChatsEngine = (function () {
 
     var selectBar = document.createElement('div');
     selectBar.id = 'chatMultiSelectBar';
-    selectBar.style.display = 'flex';
-    selectBar.style.alignItems = 'center';
-    selectBar.style.justifyContent = 'space-between';
-    selectBar.style.width = '100%';
-    selectBar.style.boxSizing = 'border-box';
-    selectBar.style.padding = '10px 0';
 
     var countText = window.LANG === 'ru'
       ? state.selectedContacts.length + ' выбрано'
