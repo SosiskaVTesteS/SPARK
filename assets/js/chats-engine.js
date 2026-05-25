@@ -1000,6 +1000,7 @@ var ChatsEngine = (function () {
     // 7. Mobile tap to toggle context menu on message bubbles
     document.querySelectorAll('.chat-msg-bubble').forEach(function (bubble) {
       bubble.addEventListener('click', function (e) {
+        if (state.pinSelectMode) return; // Allow event to bubble to row click listener for pin selection toggling
         if (e.target.closest('.chat-bubble-context') || e.target.closest('.chat-bubble-delete-context')) return;
         var ctx = bubble.querySelector('.chat-bubble-context');
         var delCtx = bubble.querySelector('.chat-bubble-delete-context');
@@ -2477,6 +2478,11 @@ var ChatsEngine = (function () {
   function togglePinSelectMode() {
     state.pinSelectMode = !state.pinSelectMode;
     state.selectedPinMessages = [];
+    
+    var chatCont = document.querySelector('.chat-container');
+    if (chatCont) {
+      chatCont.classList.toggle('pin-select-active', state.pinSelectMode);
+    }
     
     // Reset any preselected classes from rows
     document.querySelectorAll('.chat-message-row.pin-selected').forEach(function (row) {

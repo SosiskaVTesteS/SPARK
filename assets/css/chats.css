@@ -536,8 +536,8 @@
   to { transform: scale(1) translateY(0); opacity: 1; }
 }
 @media (hover: hover) {
-  .chat-msg-bubble:hover .chat-bubble-context,
-  .chat-msg-bubble:hover .chat-bubble-delete-context {
+  .chat-container:not(.pin-select-active) .chat-msg-bubble:hover .chat-bubble-context,
+  .chat-container:not(.pin-select-active) .chat-msg-bubble:hover .chat-bubble-delete-context {
     display: flex;
   }
 }
