@@ -34,7 +34,19 @@
   ════════════════════════════════════════════════════ -->
   <header class="site-header" role="banner">
     <a class="logo" href="/" aria-label="SPARK — на главную">
-      <span class="logo-mark">✦</span>
+      <svg class="logo-icon" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="hdrGrad" x1="35" y1="22" x2="65" y2="78" gradientUnits="userSpaceOnUse">
+            <stop offset="0%"   stop-color="#9B5FFF"/>
+            <stop offset="55%"  stop-color="#E85AA0"/>
+            <stop offset="100%" stop-color="#E8C55A"/>
+          </linearGradient>
+        </defs>
+        <path d="M 35 22 C 65 22 72 40 50 50 C 28 60 34 78 65 78"
+          stroke="url(#hdrGrad)" stroke-width="9" stroke-linecap="round"/>
+        <circle cx="35" cy="22" r="5" fill="#9B5FFF" opacity="0.95"/>
+        <circle cx="65" cy="78" r="5" fill="#E8C55A" opacity="0.95"/>
+      </svg>
       <span class="logo-text">SPARK</span>
     </a>
     <nav class="header-nav" role="navigation" aria-label="Основная навигация">

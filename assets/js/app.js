@@ -106,9 +106,11 @@ document.addEventListener('DOMContentLoaded', function () {
       var reactAddBtn = event.target.closest('.react-add-btn[data-id]');
       if (reactAddBtn) {
         var ideaId = reactAddBtn.dataset.id;
-        GlobalEmojiPicker.show(reactAddBtn, function (emoji) {
-          react(ideaId, emoji, reactAddBtn);
-        });
+        if (window.GlobalEmojiPicker) {
+          window.GlobalEmojiPicker.show(reactAddBtn, function (emoji) {
+            react(ideaId, emoji, reactAddBtn);
+          });
+        }
         event.stopPropagation();
         return;
       }
@@ -139,9 +141,11 @@ document.addEventListener('DOMContentLoaded', function () {
       var reactAddBtn = event.target.closest('.react-add-btn[data-id]');
       if (reactAddBtn) {
         var ideaId = reactAddBtn.dataset.id;
-        GlobalEmojiPicker.show(reactAddBtn, function (emoji) {
-          react(ideaId, emoji, reactAddBtn);
-        });
+        if (window.GlobalEmojiPicker) {
+          window.GlobalEmojiPicker.show(reactAddBtn, function (emoji) {
+            react(ideaId, emoji, reactAddBtn);
+          });
+        }
         event.stopPropagation();
         return;
       }

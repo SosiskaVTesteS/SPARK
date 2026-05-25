@@ -65,15 +65,16 @@ function applyAboutLang() {
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const StarfieldEngine = (() => {
-  const STAR_COUNT  = 320;   // Количество звёзд
-  const FPS_TARGET  = 40;    // Целевой FPS (экономим батарею)
-  const FRAME_MS    = 1000 / FPS_TARGET;
+  let STAR_COUNT  = 320;   // Количество звёзд (изменяется в init)
+  let FPS_TARGET  = 40;    // Целевой FPS (экономим батарею)
+  let FRAME_MS    = 1000 / FPS_TARGET;
 
   // Состояния жизненного цикла звезды
   const STATE = { BORN: 0, BRIGHT: 1, DIM: 2, DEAD: 3 };
 
   let canvas, ctx, stars = [], lastFrame = 0, raf = null;
   let W = 0, H = 0;
+  let isPaused = false;
 
   /** Создать одну звезду в случайной позиции */
   function createStar(x, y) {
@@ -81,11 +82,12 @@ const StarfieldEngine = (() => {
     const maxAlpha = Math.random() * 0.55 + 0.2;         // 0.2–0.75
     const speed    = Math.random() * 0.004 + 0.001;      // скорость мерцания
     const phase    = Math.random() * Math.PI * 2;        // начальная фаза sin
+    const isMobile = W < 768;
 
     return {
       x:  x  ?? Math.random() * W,
       y:  y  ?? Math.random() * H,
-      size,
+      size: isMobile ? size * 0.85 : size,               // Чуть меньше на телефонах
       maxAlpha,
       alpha:     0,
       state:     STATE.BORN,
@@ -147,8 +149,8 @@ const StarfieldEngine = (() => {
     const color = s.warm ? `255,240,200` : `220,230,255`;
     ctx.fillStyle = `rgba(${color}, 1)`;
 
-    // Небольшой glow для крупных звёзд
-    if (s.size > 1.0 && s.alpha > 0.3) {
+    // Небольшой glow для крупных звёзд (отключим на мобильных для экономии GPU)
+    if (W >= 768 && s.size > 1.0 && s.alpha > 0.3) {
       ctx.shadowBlur  = s.size * 3.5;
       ctx.shadowColor = s.warm ? `rgba(255,220,120,0.6)` : `rgba(160,190,255,0.5)`;
     }
@@ -161,6 +163,7 @@ const StarfieldEngine = (() => {
 
   /** Главный цикл */
   function loop(ts) {
+    if (isPaused) return;
     raf = requestAnimationFrame(loop);
     if (ts - lastFrame < FRAME_MS) return;
     lastFrame = ts;
@@ -172,12 +175,13 @@ const StarfieldEngine = (() => {
     stars.forEach(s => { tickStar(s); drawStar(s); });
   }
 
-  /** Пересчитать размер canvas под экран */
+  /** Пересчитать размер canvas под экран (размер экрана вьюпорта!) */
   function resize() {
     W = window.innerWidth;
-    H = document.documentElement.scrollHeight;
-    // DPR для чёткости на ретина-экранах (ограничим 2x)
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    H = window.innerHeight; // Viewport-fixed height! Reduces canvas resolution from document height (~5000px) to screen height (~800px)
+    // DPR для чёткости на ретина-экранах (ограничим 2x на ПК, 1.25x на мобильных)
+    const maxDpr = W < 768 ? 1.25 : 2;
+    const dpr = Math.min(window.devicePixelRatio || 1, maxDpr);
     canvas.width  = W * dpr;
     canvas.height = H * dpr;
     canvas.style.width  = W + 'px';
@@ -185,10 +189,29 @@ const StarfieldEngine = (() => {
     ctx.scale(dpr, dpr);
   }
 
+  function handleVisibilityChange() {
+    if (document.hidden) {
+      isPaused = true;
+      if (raf) cancelAnimationFrame(raf);
+    } else {
+      if (isPaused) {
+        isPaused = false;
+        lastFrame = performance.now();
+        raf = requestAnimationFrame(loop);
+      }
+    }
+  }
+
   function init() {
     canvas = document.getElementById('starfield');
     if (!canvas) return;
     ctx = canvas.getContext('2d');
+
+    // Настраиваем лимиты под устройство
+    const isMobile = window.innerWidth < 768;
+    STAR_COUNT  = isMobile ? 100 : 320;
+    FPS_TARGET  = isMobile ? 30 : 40;
+    FRAME_MS    = 1000 / FPS_TARGET;
 
     resize();
     // Создаём звёзды сразу по всей высоте
@@ -203,6 +226,9 @@ const StarfieldEngine = (() => {
 
     raf = requestAnimationFrame(loop);
 
+    // Слушатель видимости
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     // Пересчёт при ресайзе (дебаунс 200ms)
     let resizeTimer;
     window.addEventListener('resize', () => {
@@ -212,7 +238,9 @@ const StarfieldEngine = (() => {
   }
 
   function destroy() {
+    isPaused = true;
     if (raf) cancelAnimationFrame(raf);
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
   }
 
   return { init, destroy };
@@ -640,12 +668,15 @@ function initHeaderBehavior() {
       if (curr < 80) {
         // Всегда показываем у самого верха
         header.classList.remove('header--hidden');
+        header.classList.remove('scrolled');
       } else if (delta > 8) {
         // Скролл вниз — прячем
         header.classList.add('header--hidden');
+        header.classList.add('scrolled');
       } else if (delta < -8) {
         // Скролл вверх — показываем
         header.classList.remove('header--hidden');
+        header.classList.add('scrolled');
       }
 
       lastScroll = curr;

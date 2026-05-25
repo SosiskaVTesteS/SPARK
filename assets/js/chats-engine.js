@@ -15,7 +15,16 @@ var ChatsEngine = (function () {
     realtimeChannel: null,
     presenceChannel: null,      // Track presence
     modalTab: 'DM',              // 'DM' or 'TEAM'
-    initialized: false
+    initialized: false,
+    isTabActive: true,
+    multiSelectMode: false,
+    selectedContacts: [],
+    searchMatches: [],
+    searchActiveIndex: -1,
+    pinSelectMode: false,
+    selectedPinMessages: [],
+    pinnedMessages: [],
+    activePinIndex: 0
   };
 
   var pollingInterval = null;
@@ -176,6 +185,25 @@ var ChatsEngine = (function () {
       return c.name.toLowerCase().includes(query) || c.username.toLowerCase().includes(query);
     });
 
+    // Sort Contacts by Pinned status first, then by last message time
+    filteredContacts.sort(function (a, b) {
+      var pinA = a.pinned ? 1 : 0;
+      var pinB = b.pinned ? 1 : 0;
+      if (pinA !== pinB) {
+        return pinB - pinA;
+      }
+      if (a.pinned && b.pinned) {
+        return (b.pinnedAt || 0) - (a.pinnedAt || 0);
+      }
+      var msgsA = getCachedMessages()[a.id] || [];
+      var msgsB = getCachedMessages()[b.id] || [];
+      var lastA = msgsA[msgsA.length - 1];
+      var lastB = msgsB[msgsB.length - 1];
+      var timeA = lastA ? lastA.created_at : 0;
+      var timeB = lastB ? lastB.created_at : 0;
+      return timeB - timeA;
+    });
+
     // 2. Filter Teams
     var filteredTeams = teams.filter(function (t) {
       return t.name.toLowerCase().includes(query);
@@ -199,13 +227,21 @@ var ChatsEngine = (function () {
           var isActive = state.activeChannelId === c.id ? ' active' : '';
           var statusClass = c.online ? '' : ' offline';
           var grad = ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(c.avColor) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
+          var pinBadge = c.pinned ? '<span class="chat-row-pin-badge" style="color:var(--ac);font-size:10px;margin-left:5px" title="Pinned chat">📌</span>' : '';
+          
+          var checkboxHtml = '';
+          if (state.multiSelectMode) {
+            var checkedAttr = state.selectedContacts.includes(c.id) ? ' checked' : '';
+            checkboxHtml = '<input type="checkbox" class="chat-row-checkbox" style="margin-right:10px;accent-color:var(--ac);transform:scale(1.2);cursor:pointer;pointer-events:none" ' + checkedAttr + '>';
+          }
           
           return ''
             + '<div class="chat-row-item' + isActive + '" data-chat-id="' + c.id + '">'
+            + checkboxHtml
             + '<div class="chat-avatar-circle" style="background:' + grad + '">' + c.username.replace('@', '').charAt(0).toUpperCase() + '</div>'
             + '<div class="chat-status-dot' + statusClass + '"></div>'
             + '<div class="chat-item-info">'
-            + '<div class="chat-item-name-row"><span class="chat-item-name">' + c.name + '</span><span class="chat-item-time">' + timeText + '</span></div>'
+            + '<div class="chat-item-name-row"><span class="chat-item-name">' + c.name + pinBadge + '</span><span class="chat-item-time">' + timeText + '</span></div>'
             + '<div class="chat-item-preview">' + _esc(preview) + '</div>'
             + '</div>'
             + '</div>';
@@ -242,11 +278,42 @@ var ChatsEngine = (function () {
       }
     }
 
-    // Wire up clicks on list items
+    // Wire up clicks, touch long-presses, and desktop right-clicks on list items
     document.querySelectorAll('.chat-row-item[data-chat-id]').forEach(function (el) {
-      el.addEventListener('click', function () {
-        var id = el.dataset.chatId;
+      var id = el.dataset.chatId;
+
+      // Click handler (differing based on multi-select mode)
+      el.addEventListener('click', function (e) {
+        if (state.multiSelectMode) {
+          toggleContactSelection(id);
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
         selectChannel(id);
+      });
+
+      // Long press touch handling (600ms hold)
+      var pressTimer;
+      el.addEventListener('touchstart', function (e) {
+        if (state.multiSelectMode) return;
+        var touch = e.touches[0];
+        pressTimer = setTimeout(function () {
+          showContactContextMenu(id, touch.clientX, touch.clientY);
+        }, 600);
+      }, { passive: true });
+
+      el.addEventListener('touchend', function () {
+        clearTimeout(pressTimer);
+      });
+      el.addEventListener('touchmove', function () {
+        clearTimeout(pressTimer);
+      });
+
+      // Desktop right-click handling
+      el.addEventListener('contextmenu', function (e) {
+        e.preventDefault();
+        showContactContextMenu(id, e.clientX, e.clientY);
       });
     });
   }
@@ -322,8 +389,8 @@ var ChatsEngine = (function () {
     }
   }
 
-  // Show dynamic Delete Confirmation Modal
-  function showDeleteConfirmModal(msgId, deleteType, onConfirm) {
+  // Show dynamic Delete Confirmation Modal (handles messages and chats)
+  function showDeleteConfirmModal(id, deleteType, onConfirm, isChat) {
     var existing = document.getElementById('moDeleteConfirm');
     if (existing) existing.remove();
 
@@ -331,31 +398,58 @@ var ChatsEngine = (function () {
     modal.id = 'moDeleteConfirm';
     modal.className = 'mo open';
     
-    var title = window.LANG === 'ru' ? 'Удалить сообщение?' : 'Delete message?';
+    var title = '';
     var bodyText = '';
     var buttonsHtml = '';
     
-    if (deleteType === 'both') {
-      bodyText = window.LANG === 'ru' 
-        ? 'Вы хотите удалить это сообщение только для себя или для всех участников?' 
-        : 'Do you want to delete this message only for yourself or for everyone?';
-        
-      buttonsHtml = ''
-        + '<button class="spark-btn-submit" id="btnDeleteForMe" style="background:var(--vl)">'
-        + (window.LANG === 'ru' ? 'Для меня' : 'Delete for Me')
-        + '</button>'
-        + '<button class="spark-btn-danger" id="btnDeleteForEveryone">'
-        + (window.LANG === 'ru' ? 'Для всех' : 'Delete for Everyone')
-        + '</button>';
+    if (isChat) {
+      title = window.LANG === 'ru' ? 'Удалить чат?' : 'Delete chat?';
+      if (deleteType === 'both') {
+        bodyText = window.LANG === 'ru' 
+          ? 'Вы хотите удалить этот чат только для себя или для всех участников?' 
+          : 'Do you want to delete this chat history only for yourself or for everyone?';
+          
+        buttonsHtml = ''
+          + '<button class="spark-btn-submit" id="btnDeleteForMe" style="background:var(--vl)">'
+          + (window.LANG === 'ru' ? 'Для меня' : 'Delete for Me')
+          + '</button>'
+          + '<button class="spark-btn-danger" id="btnDeleteForEveryone">'
+          + (window.LANG === 'ru' ? 'Для всех' : 'Delete for Everyone')
+          + '</button>';
+      } else {
+        bodyText = window.LANG === 'ru'
+          ? 'Вы уверены, что хотите удалить этот чат для себя? Это действие нельзя отменить.'
+          : 'Are you sure you want to delete this chat for yourself? This action cannot be undone.';
+          
+        buttonsHtml = ''
+          + '<button class="spark-btn-danger" id="btnDeleteForMe">'
+          + (window.LANG === 'ru' ? 'Удалить для себя' : 'Delete for Me')
+          + '</button>';
+      }
     } else {
-      bodyText = window.LANG === 'ru'
-        ? 'Вы уверены, что хотите удалить это сообщение для себя? Это действие нельзя отменить.'
-        : 'Are you sure you want to delete this message for yourself? This action cannot be undone.';
-        
-      buttonsHtml = ''
-        + '<button class="spark-btn-danger" id="btnDeleteForMe">'
-        + (window.LANG === 'ru' ? 'Удалить' : 'Delete for Me')
-        + '</button>';
+      title = window.LANG === 'ru' ? 'Удалить сообщение?' : 'Delete message?';
+      if (deleteType === 'both') {
+        bodyText = window.LANG === 'ru' 
+          ? 'Вы хотите удалить это сообщение только для себя или для всех участников?' 
+          : 'Do you want to delete this message only for yourself or for everyone?';
+          
+        buttonsHtml = ''
+          + '<button class="spark-btn-submit" id="btnDeleteForMe" style="background:var(--vl)">'
+          + (window.LANG === 'ru' ? 'Для меня' : 'Delete for Me')
+          + '</button>'
+          + '<button class="spark-btn-danger" id="btnDeleteForEveryone">'
+          + (window.LANG === 'ru' ? 'Для всех' : 'Delete for Everyone')
+          + '</button>';
+      } else {
+        bodyText = window.LANG === 'ru'
+          ? 'Вы уверены, что хотите удалить это сообщение для себя? Это действие нельзя отменить.'
+          : 'Are you sure you want to delete this message for yourself? This action cannot be undone.';
+          
+        buttonsHtml = ''
+          + '<button class="spark-btn-danger" id="btnDeleteForMe">'
+          + (window.LANG === 'ru' ? 'Удалить' : 'Delete for Me')
+          + '</button>';
+      }
     }
     
     var cancelText = window.LANG === 'ru' ? 'Отмена' : 'Cancel';
@@ -580,8 +674,7 @@ var ChatsEngine = (function () {
       return { id: m.id, content: m.content, read: m.read, reactions: m.reactions, media_url: m.media_url };
     }));
 
-    // 1. Partial Render Optimization: If the correct channel is already active, only update the messages list.
-    // This completely eliminates any borders/backgrounds twitching and keeps the input focused/un-wiped without complex hacks.
+    // 1. Partial Render Optimization: If the correct channel is already active, perform DOM Diffing
     var existingArea = document.getElementById('chatMsgArea');
     if (existingArea && existingArea.getAttribute('data-channel-id') === id) {
       var prevSignature = existingArea.getAttribute('data-msgs-signature');
@@ -589,17 +682,10 @@ var ChatsEngine = (function () {
         return; // No changes, do not update DOM
       }
       
-      // Determine if user is scrolled near the bottom
-      var wasAtBottom = (existingArea.scrollHeight - existingArea.clientHeight - existingArea.scrollTop) < 50;
-      
-      var newMessagesHtml = _renderMessagesList(msgs);
-      existingArea.innerHTML = newMessagesHtml;
+      diffMessagesDOM(msgs);
       existingArea.setAttribute('data-msgs-signature', msgsSignature);
-      if (wasAtBottom) {
-        existingArea.scrollTop = existingArea.scrollHeight;
-      }
       _wireActiveView();
-      return; // Return early, keeping the parent DOM fully static!
+      return; // Return early!
     }
 
     // 2. Full Render (only executed when opening a channel for the first time or switching channels)
@@ -636,6 +722,36 @@ var ChatsEngine = (function () {
       + '    </div>'
       + '  </div>'
       + '  <div class="chat-header-actions">'
+      + '    <button class="chat-header-icon-btn" id="chatSearchBtn" title="' + (window.LANG === 'ru' ? 'Поиск сообщений' : 'Search messages') + '">'
+      + '      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'
+      + '    </button>'
+      + '    <button class="chat-header-icon-btn" id="chatPinBtn" title="' + (window.LANG === 'ru' ? 'Закрепленные сообщения' : 'Pinned messages') + '">'
+      + '      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-.44-1.24l-2.78-3.5A2 2 0 0 1 15 9.26V5a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4.26a2 2 0 0 1-.78 1.54l-2.78 3.5A2 2 0 0 0 5 15.24V17z"/></svg>'
+      + '    </button>'
+      + '  </div>'
+      + '</div>'
+      /* Pinned messages slidebar banner wrapper (hidden by default) */
+      + '<div class="chat-pinned-slidebar-overlay" id="chatPinSlidebarOverlay" style="display:none;align-items:center;justify-content:space-between;padding:6px 20px;background:rgba(123,92,250,0.08);border-bottom:1px solid rgba(123,92,250,0.2);z-index:4;cursor:pointer">'
+      + '  <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1">'
+      + '    <span style="font-size:12px">📌</span>'
+      + '    <div style="display:flex;flex-direction:column;min-width:0">'
+      + '      <span style="font-size:10px;font-weight:700;color:var(--ac)">' + (window.LANG === 'ru' ? 'Закрепленное сообщение' : 'Pinned Message') + '</span>'
+      + '      <span id="chatPinnedPreviewText" style="font-size:11px;color:var(--mu2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></span>'
+      + '    </div>'
+      + '  </div>'
+      + '  <button id="btnUnpinActiveBtn" style="background:transparent;border:none;color:var(--red);font-size:12px;font-weight:bold;cursor:pointer;padding:4px">✕</button>'
+      + '</div>'
+      /* In-Chat Search Bar Overlay (hidden by default) */
+      + '<div class="chat-search-bar-overlay" id="chatSearchBarOverlay" style="display:none;align-items:center;justify-content:space-between;padding:8px 20px;background:rgba(5,6,15,0.65);border-bottom:1px solid rgba(255,255,255,0.06);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:4">'
+      + '  <div style="display:flex;align-items:center;gap:10px;flex:1">'
+      + '    <span style="font-size:12px;color:var(--mu2)">🔍</span>'
+      + '    <input type="text" id="chatSearchBox" placeholder="' + (window.LANG === 'ru' ? 'Поиск в этом чате...' : 'Search in this chat...') + '" style="background:transparent;border:none;outline:none;color:#fff;font-size:12px;width:100%" autocomplete="off">'
+      + '  </div>'
+      + '  <div style="display:flex;align-items:center;gap:12px">'
+      + '    <span id="chatSearchCount" style="font-size:11px;color:var(--mu2);white-space:nowrap">0 / 0</span>'
+      + '    <button id="btnSearchPrev" class="chat-header-icon-btn" style="width:24px;height:24px;border-radius:4px" title="Previous">▲</button>'
+      + '    <button id="btnSearchNext" class="chat-header-icon-btn" style="width:24px;height:24px;border-radius:4px" title="Next">▼</button>'
+      + '    <button id="btnSearchClose" class="chat-header-icon-btn" style="width:24px;height:24px;border-radius:4px;color:var(--red)" title="Close">✕</button>'
       + '  </div>'
       + '</div>'
       /* Messages list scroll (with data-channel-id for partial renders) */
@@ -745,15 +861,22 @@ var ChatsEngine = (function () {
           + '</div>';
       }
 
-      // Message options popup on bubble hover (Photo 1 design match)
-      var hoverMenu = ''
+      // Emojis reaction popup on top of bubble
+      var reactionsMenu = ''
         + '<div class="chat-bubble-context">'
         + '  <button class="chat-context-react-btn" data-msg-id="' + m.id + '" data-emoji="🔥">🔥</button>'
         + '  <button class="chat-context-react-btn" data-msg-id="' + m.id + '" data-emoji="💎">💎</button>'
         + '  <button class="chat-context-react-btn" data-msg-id="' + m.id + '" data-emoji="🚀">🚀</button>'
         + '  <button class="chat-context-react-btn" data-msg-id="' + m.id + '" data-emoji="💀">💀</button>'
         + '  <button class="chat-context-picker-btn" data-msg-id="' + m.id + '" title="More emojis">➕</button>'
-        + '  <button class="chat-context-delete-btn" data-msg-id="' + m.id + '" data-delete-type="' + (isSent ? 'both' : 'me') + '" title="' + (window.LANG === 'ru' ? 'Удалить сообщение' : 'Delete message') + '">🗑️</button>'
+        + '</div>';
+
+      // Delete message overlay below bubble
+      var deleteMenu = ''
+        + '<div class="chat-bubble-delete-context">'
+        + '  <button class="chat-context-delete-btn" style="background:transparent;border:none;color:var(--red);cursor:pointer;font-size:11px;font-weight:600;display:flex;align-items:center;gap:3px" data-msg-id="' + m.id + '" data-delete-type="' + (isSent ? 'both' : 'me') + '">'
+        + '    🗑️ ' + (window.LANG === 'ru' ? 'Удалить' : 'Delete')
+        + '  </button>'
         + '</div>';
 
       return ''
@@ -762,9 +885,10 @@ var ChatsEngine = (function () {
         + '  <div class="chat-msg-content-wrapper">'
         + '    <div class="chat-msg-sender-name">' + _esc(m.sender_name) + '</div>'
         + '    <div class="chat-msg-bubble">'
-        +        hoverMenu
+        +        reactionsMenu
         +        (m.media_url ? '' : _esc(m.content))
         +        mediaCard
+        +        deleteMenu
         + '    </div>'
         +      reactionsHtml
         + '    <div class="chat-msg-time">' + _formatTime(m.created_at) + statusTicks + '</div>'
@@ -869,27 +993,128 @@ var ChatsEngine = (function () {
     // 7. Mobile tap to toggle context menu on message bubbles
     document.querySelectorAll('.chat-msg-bubble').forEach(function (bubble) {
       bubble.addEventListener('click', function (e) {
-        if (e.target.closest('.chat-bubble-context')) return;
+        if (e.target.closest('.chat-bubble-context') || e.target.closest('.chat-bubble-delete-context')) return;
         var ctx = bubble.querySelector('.chat-bubble-context');
-        if (ctx) {
+        var delCtx = bubble.querySelector('.chat-bubble-delete-context');
+        if (ctx && delCtx) {
           var isOpened = ctx.style.display === 'flex';
-          document.querySelectorAll('.chat-bubble-context').forEach(function(c) {
+          document.querySelectorAll('.chat-bubble-context, .chat-bubble-delete-context').forEach(function(c) {
             c.style.display = '';
           });
           ctx.style.display = isOpened ? 'none' : 'flex';
+          delCtx.style.display = isOpened ? 'none' : 'flex';
           e.stopPropagation();
         }
       });
     });
 
     // 8. Stop click and touchstart propagation on context menus so tapping on them doesn't close them
-    document.querySelectorAll('.chat-bubble-context').forEach(function (ctx) {
+    document.querySelectorAll('.chat-bubble-context, .chat-bubble-delete-context').forEach(function (ctx) {
       ctx.addEventListener('click', function (e) {
         e.stopPropagation();
       });
       ctx.addEventListener('touchstart', function (e) {
         e.stopPropagation();
       }, { passive: true });
+    });
+
+    // 9. In-Chat Search Icon & Overlay clicks
+    var searchIconBtn = document.getElementById('chatSearchBtn');
+    var searchOverlay = document.getElementById('chatSearchBarOverlay');
+    if (searchIconBtn && searchOverlay) {
+      searchIconBtn.addEventListener('click', function () {
+        var isHidden = searchOverlay.style.display === 'none';
+        searchOverlay.style.display = isHidden ? 'flex' : 'none';
+        if (isHidden) {
+          var input = document.getElementById('chatSearchBox');
+          if (input) {
+            input.value = '';
+            input.focus();
+          }
+          performInChatSearch();
+        }
+      });
+    }
+
+    var searchBox = document.getElementById('chatSearchBox');
+    if (searchBox) {
+      searchBox.addEventListener('input', performInChatSearch);
+    }
+
+    var btnPrev = document.getElementById('btnSearchPrev');
+    if (btnPrev) {
+      btnPrev.addEventListener('click', function () {
+        if (state.searchMatches.length === 0) return;
+        state.searchActiveIndex--;
+        if (state.searchActiveIndex < 0) {
+          state.searchActiveIndex = state.searchMatches.length - 1; // loop to bottom
+        }
+        updateSearchCounter();
+        jumpToActiveSearchMatch();
+      });
+    }
+
+    var btnNext = document.getElementById('btnSearchNext');
+    if (btnNext) {
+      btnNext.addEventListener('click', function () {
+        if (state.searchMatches.length === 0) return;
+        state.searchActiveIndex++;
+        if (state.searchActiveIndex >= state.searchMatches.length) {
+          state.searchActiveIndex = 0; // loop to top
+        }
+        updateSearchCounter();
+        jumpToActiveSearchMatch();
+      });
+    }
+    var btnClose = document.getElementById('btnSearchClose');
+    if (btnClose) {
+      btnClose.addEventListener('click', function () {
+        if (searchOverlay) searchOverlay.style.display = 'none';
+        var box = document.getElementById('chatSearchBox');
+        if (box) box.value = '';
+        performInChatSearch();
+      });
+    }
+
+    // 10. In-Chat Message Pinning icon, banner slider & select mode clicks
+    var headerPinBtn = document.getElementById('chatPinBtn');
+    if (headerPinBtn) {
+      headerPinBtn.addEventListener('click', function () {
+        togglePinSelectMode();
+      });
+    }
+
+    var slidebar = document.getElementById('chatPinSlidebarOverlay');
+    if (slidebar) {
+      slidebar.addEventListener('click', function (e) {
+        if (e.target.id === 'btnUnpinActiveBtn') return;
+        state.activePinIndex++;
+        if (state.activePinIndex >= state.pinnedMessages.length) {
+          state.activePinIndex = 0;
+        }
+        renderPinnedSlidebar();
+        jumpToActivePinnedMessage();
+      });
+    }
+
+    var unpinBtn = document.getElementById('btnUnpinActiveBtn');
+    if (unpinBtn) {
+      unpinBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        unpinActiveMessage();
+      });
+    }
+
+    // Click on message bubble inside select to pin mode
+    document.querySelectorAll('.chat-message-row[data-msg-id]').forEach(function (row) {
+      row.addEventListener('click', function (e) {
+        if (state.pinSelectMode) {
+          var msgId = row.getAttribute('data-msg-id');
+          togglePinMessageSelection(msgId);
+          e.stopPropagation();
+          e.preventDefault();
+        }
+      });
     });
   }
 
@@ -936,6 +1161,9 @@ var ChatsEngine = (function () {
 
     // Mark all unread messages from this contact as read
     markMessagesAsRead(id);
+
+    // Load pinned messages asynchronously
+    loadPinnedMessagesForActiveChannel();
   }
 
   // Query Supabase for any unread direct messages sent to ME and update badges
@@ -1426,6 +1654,7 @@ var ChatsEngine = (function () {
   function _initPollingSubscription() {
     if (pollingInterval) clearInterval(pollingInterval);
     pollingInterval = setInterval(async function () {
+      if (!state.isTabActive) return; // Completely pause polling when tab is backgrounded!
       if (!window.supa || !window.ME) return;
       try {
         // 1. If a chat is open, refresh its history to load new messages and read status
@@ -1721,6 +1950,40 @@ var ChatsEngine = (function () {
     renderChatList();
     renderActiveConversation();
 
+    // Listen to tab visibility changes to pause background polling and toggle presence tracking
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) {
+        state.isTabActive = false;
+        if (state.presenceChannel && window.supa && window.ME) {
+          state.presenceChannel.untrack().catch(function (e) {
+            console.warn('Presence untrack failed on hidden:', e);
+          });
+        }
+      } else {
+        state.isTabActive = true;
+        
+        // Immediate sync upon tab refocus
+        if (window.supa && window.ME) {
+          if (state.activeChannelId) {
+            loadSupabaseHistory(state.activeChannelId);
+          }
+          updateUnreadBadge();
+          
+          // Re-track presence immediately when user refocuses the tab to set status back to Online
+          if (state.presenceChannel) {
+            state.presenceChannel.track({
+              username: window.PROFILE ? PROFILE.username : '@user',
+              online_at: new Date().toISOString()
+            }).catch(function (e) {
+              console.warn('Failed to re-track presence on visible:', e);
+            });
+          } else {
+            _initPresenceSubscription();
+          }
+        }
+      }
+    });
+
     // Realtime Database replication hooks
     if (window.supa && window.ME) {
       _initRealtimeSubscription();
@@ -1741,9 +2004,879 @@ var ChatsEngine = (function () {
     return h + ':' + m + ampm;
   }
 
+  // Dynamic visual micro-alerts
+  function showMicroAlert(message, type) {
+    var existing = document.getElementById('spark-micro-alert');
+    if (existing) existing.remove();
+
+    var alertEl = document.createElement('div');
+    alertEl.id = 'spark-micro-alert';
+    alertEl.className = 'spark-micro-alert' + (type === 'err' ? ' error' : '');
+    alertEl.textContent = message;
+    
+    alertEl.style.position = 'fixed';
+    alertEl.style.top = '24px';
+    alertEl.style.left = '50%';
+    alertEl.style.transform = 'translateX(-50%)';
+    alertEl.style.background = type === 'err' ? 'rgba(232, 90, 90, 0.95)' : 'rgba(123, 92, 250, 0.95)';
+    alertEl.style.color = '#fff';
+    alertEl.style.padding = '12px 24px';
+    alertEl.style.borderRadius = '12px';
+    alertEl.style.fontSize = '13px';
+    alertEl.style.fontWeight = '600';
+    alertEl.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
+    alertEl.style.zIndex = '100000';
+    alertEl.style.pointerEvents = 'none';
+    alertEl.style.animation = 'alertPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards';
+    
+    document.body.appendChild(alertEl);
+
+    if (!document.getElementById('style-micro-alert')) {
+      var style = document.createElement('style');
+      style.id = 'style-micro-alert';
+      style.textContent = '\n' +
+        '@keyframes alertPop {\n' +
+        '  from { transform: translate(-50%, -20px); opacity: 0; }\n' +
+        '  to { transform: translate(-50%, 0); opacity: 1; }\n' +
+        '}\n';
+      document.head.appendChild(style);
+    }
+
+    setTimeout(function () {
+      alertEl.style.opacity = '0';
+      alertEl.style.transition = 'opacity 0.3s';
+      setTimeout(function () {
+        alertEl.remove();
+      }, 300);
+    }, 2500);
+  }
+
+  // Toggle Pin / Unpin of contact in directory
+  function togglePinContact(contactId) {
+    var contacts = getContactsList();
+    var contact = contacts.find(function (c) { return c.id === contactId; });
+    if (!contact) return;
+
+    if (contact.pinned) {
+      contact.pinned = false;
+      contact.pinnedAt = null;
+      showMicroAlert(
+        window.LANG === 'ru' ? 'Чат откреплен' : 'Chat unpinned successfully'
+      );
+    } else {
+      var pinnedCount = contacts.filter(function (c) { return c.pinned; }).length;
+      if (pinnedCount >= 4) {
+        showMicroAlert(
+          window.LANG === 'ru' ? 'Закреплено максимум 4 чата' : 'Maximum 4 pinned chats allowed',
+          'err'
+        );
+        return;
+      }
+      contact.pinned = true;
+      contact.pinnedAt = Date.now();
+      showMicroAlert(
+        window.LANG === 'ru' ? 'Чат закреплен сверху' : 'Chat pinned to top'
+      );
+    }
+
+    saveContactsList(contacts);
+    renderChatList();
+  }
+
+  // Trigger chat deletion with confirmation modal
+  function triggerDeleteContact(contactId) {
+    showDeleteConfirmModal(contactId, 'both', async function (selectedType) {
+      var deleteForEveryone = (selectedType === 'everyone');
+      
+      // 1. Delete from database if delete_for_everyone
+      if (deleteForEveryone && window.supa && window.ME) {
+        try {
+          await supa.rpc('delete_conversation', {
+            target_channel: contactId,
+            delete_for_everyone: true
+          });
+        } catch (e) {
+          console.warn('RPC delete conversation failed:', e);
+        }
+      }
+
+      // 2. Clear locally
+      var contacts = getContactsList();
+      contacts = contacts.filter(function (c) { return c.id !== contactId; });
+      saveContactsList(contacts);
+
+      var cachedMsgs = getCachedMessages();
+      delete cachedMsgs[contactId];
+      cacheMessages(cachedMsgs);
+
+      if (state.activeChannelId === contactId) {
+        state.activeChannelId = null;
+        renderActiveConversation();
+      }
+
+      renderChatList();
+      showMicroAlert(
+        window.LANG === 'ru' ? 'Чат успешно удален' : 'Chat deleted successfully'
+      );
+    }, true);
+  }
+
+  // Show directory right-click / touch long press context menu
+  function showContactContextMenu(contactId, x, y) {
+    var existing = document.getElementById('directory-context-menu');
+    if (existing) existing.remove();
+
+    var contacts = getContactsList();
+    var contact = contacts.find(function (c) { return c.id === contactId; });
+    if (!contact) return;
+
+    var menu = document.createElement('div');
+    menu.id = 'directory-context-menu';
+    menu.style.position = 'absolute';
+    menu.style.zIndex = '99999';
+    menu.style.background = 'rgba(15, 18, 36, 0.96)';
+    menu.style.border = '1px solid rgba(255, 255, 255, 0.08)';
+    menu.style.borderRadius = '10px';
+    menu.style.padding = '4px 0';
+    menu.style.boxShadow = '0 10px 30px rgba(0,0,0,0.6)';
+    menu.style.width = '160px';
+    menu.style.backdropFilter = 'blur(20px)';
+    menu.style.webkitBackdropFilter = 'blur(20px)';
+
+    var pinLabel = contact.pinned
+      ? (window.LANG === 'ru' ? '📌 Открепить' : '📌 Unpin Chat')
+      : (window.LANG === 'ru' ? '📌 Закрепить' : '📌 Pin Chat');
+
+    var selectLabel = window.LANG === 'ru' ? '⚙️ Выбрать несколько' : '⚙️ Select Multiple';
+    var deleteLabel = window.LANG === 'ru' ? '🗑️ Удалить чат' : '🗑️ Delete Chat';
+
+    menu.innerHTML = ''
+      + '<button class="dir-ctx-btn" id="btnCtxPin" style="width:100%;text-align:left;background:transparent;border:none;color:#fff;padding:8px 12px;font-size:12px;cursor:pointer;font-family:inherit">' + pinLabel + '</button>'
+      + '<button class="dir-ctx-btn" id="btnCtxSelect" style="width:100%;text-align:left;background:transparent;border:none;color:#fff;padding:8px 12px;font-size:12px;cursor:pointer;font-family:inherit">' + selectLabel + '</button>'
+      + '<div style="height:1px;background:rgba(255,255,255,0.06);margin:4px 0"></div>'
+      + '<button class="dir-ctx-btn" id="btnCtxDelete" style="width:100%;text-align:left;background:transparent;border:none;color:var(--red);padding:8px 12px;font-size:12px;cursor:pointer;font-weight:600;font-family:inherit">' + deleteLabel + '</button>';
+
+    document.body.appendChild(menu);
+
+    var left = x;
+    var top = y;
+    if (left + 160 > window.innerWidth) left = window.innerWidth - 170;
+    if (top + 120 > window.innerHeight) top = window.innerHeight - 130;
+
+    menu.style.left = left + (window.scrollX || 0) + 'px';
+    menu.style.top = top + (window.scrollY || 0) + 'px';
+
+    if (!document.getElementById('style-dir-ctx')) {
+      var style = document.createElement('style');
+      style.id = 'style-dir-ctx';
+      style.textContent = '\n' +
+        '.dir-ctx-btn {\n' +
+        '  transition: background 0.2s;\n' +
+        '}\n' +
+        '.dir-ctx-btn:hover {\n' +
+        '  background: rgba(123, 92, 250, 0.15) !important;\n' +
+        '}\n';
+      document.head.appendChild(style);
+    }
+
+    document.getElementById('btnCtxPin').addEventListener('click', function (e) {
+      togglePinContact(contactId);
+      menu.remove();
+      e.stopPropagation();
+    });
+
+    document.getElementById('btnCtxSelect').addEventListener('click', function (e) {
+      startMultiSelectMode(contactId);
+      menu.remove();
+      e.stopPropagation();
+    });
+
+    document.getElementById('btnCtxDelete').addEventListener('click', function (e) {
+      menu.remove();
+      triggerDeleteContact(contactId);
+      e.stopPropagation();
+    });
+
+    var closeMenu = function () {
+      menu.remove();
+      window.removeEventListener('click', closeMenu);
+    };
+    setTimeout(function () {
+      window.addEventListener('click', closeMenu);
+    }, 50);
+  }
+
+  // Multi-Select Mode Operations
+  function startMultiSelectMode(initialId) {
+    state.multiSelectMode = true;
+    state.selectedContacts = initialId ? [initialId] : [];
+    renderChatList();
+    renderSidebarHeaderForMultiSelect();
+  }
+
+  function exitMultiSelectMode() {
+    state.multiSelectMode = false;
+    state.selectedContacts = [];
+    var bar = document.getElementById('chatMultiSelectBar');
+    if (bar) bar.remove();
+    renderSidebarHeaderForMultiSelect();
+    renderChatList();
+  }
+
+  function toggleContactSelection(contactId) {
+    var idx = state.selectedContacts.indexOf(contactId);
+    if (idx !== -1) {
+      state.selectedContacts.splice(idx, 1);
+    } else {
+      state.selectedContacts.push(contactId);
+    }
+    renderChatList();
+    renderSidebarHeaderForMultiSelect();
+  }
+
+  function bulkPinSelected() {
+    if (state.selectedContacts.length === 0) return;
+    var contacts = getContactsList();
+    var currentlyPinned = contacts.filter(function (c) { return c.pinned; });
+    var newlyToPin = state.selectedContacts.filter(function (id) {
+      var c = contacts.find(function (item) { return item.id === id; });
+      return c && !c.pinned;
+    });
+
+    if (currentlyPinned.length + newlyToPin.length > 4) {
+      showMicroAlert(
+        window.LANG === 'ru' ? 'Не удается закрепить. Максимум 4 закрепленных чата.' : 'Cannot pin. Maximum 4 pinned chats allowed.',
+        'err'
+      );
+      return;
+    }
+
+    newlyToPin.forEach(function (id) {
+      var c = contacts.find(function (item) { return item.id === id; });
+      if (c) {
+        c.pinned = true;
+        c.pinnedAt = Date.now();
+      }
+    });
+
+    saveContactsList(contacts);
+    exitMultiSelectMode();
+    showMicroAlert(
+      window.LANG === 'ru' ? 'Закреплено успешно' : 'Chats pinned successfully'
+    );
+  }
+
+  function bulkDeleteSelected() {
+    if (state.selectedContacts.length === 0) return;
+    showDeleteConfirmModal('bulk', 'both', async function (selectedType) {
+      var deleteForEveryone = (selectedType === 'everyone');
+      var contacts = getContactsList();
+      var cachedMsgs = getCachedMessages();
+
+      for (var i = 0; i < state.selectedContacts.length; i++) {
+        var id = state.selectedContacts[i];
+        
+        if (deleteForEveryone && window.supa && window.ME) {
+          try {
+            await supa.rpc('delete_conversation', {
+              target_channel: id,
+              delete_for_everyone: true
+            });
+          } catch (e) {
+            console.warn('Bulk RPC delete failed for ' + id, e);
+          }
+        }
+
+        contacts = contacts.filter(function (c) { return c.id !== id; });
+        delete cachedMsgs[id];
+
+        if (state.activeChannelId === id) {
+          state.activeChannelId = null;
+        }
+      }
+
+      saveContactsList(contacts);
+      cacheMessages(cachedMsgs);
+      exitMultiSelectMode();
+      renderActiveConversation();
+      
+      showMicroAlert(
+        window.LANG === 'ru' ? 'Выбранные чаты удалены' : 'Selected chats deleted successfully'
+      );
+    }, true);
+  }
+
+  function renderSidebarHeaderForMultiSelect() {
+    var header = document.querySelector('.chat-sidebar-header');
+    if (!header) return;
+
+    var existing = document.getElementById('chatMultiSelectBar');
+    if (existing) existing.remove();
+
+    if (!state.multiSelectMode) {
+      header.querySelectorAll('.chat-sidebar-title-row, .chat-search-wrap').forEach(function (el) {
+        el.style.display = '';
+      });
+      return;
+    }
+
+    header.querySelectorAll('.chat-sidebar-title-row, .chat-search-wrap').forEach(function (el) {
+      el.style.display = 'none';
+    });
+
+    var selectBar = document.createElement('div');
+    selectBar.id = 'chatMultiSelectBar';
+    selectBar.style.display = 'flex';
+    selectBar.style.alignItems = 'center';
+    selectBar.style.justifyContent = 'space-between';
+    selectBar.style.width = '100%';
+    selectBar.style.boxSizing = 'border-box';
+    selectBar.style.padding = '10px 0';
+
+    var countText = window.LANG === 'ru'
+      ? state.selectedContacts.length + ' выбрано'
+      : state.selectedContacts.length + ' selected';
+
+    var pinBtnText = window.LANG === 'ru' ? '📌 Закрепить' : '📌 Pin';
+    var deleteBtnText = window.LANG === 'ru' ? '🗑️ Удалить' : '🗑️ Delete';
+    var cancelText = window.LANG === 'ru' ? 'Отмена' : 'Cancel';
+
+    selectBar.innerHTML = ''
+      + '  <span style="font-size:12px;font-weight:600;color:#fff">' + countText + '</span>'
+      + '  <div style="display:flex;gap:6px">'
+      + '    <button id="btnBulkPin" class="chat-attach-btn" style="padding:4px 8px;font-size:11px">' + pinBtnText + '</button>'
+      + '    <button id="btnBulkDelete" class="chat-attach-btn" style="padding:4px 8px;font-size:11px;color:var(--red);border-color:rgba(232,90,90,0.2)">' + deleteBtnText + '</button>'
+      + '    <button id="btnBulkCancel" class="chat-attach-btn" style="padding:4px 8px;font-size:11px;background:transparent;border:none">' + cancelText + '</button>'
+      + '  </div>';
+
+    header.appendChild(selectBar);
+
+    document.getElementById('btnBulkCancel').addEventListener('click', function () {
+      exitMultiSelectMode();
+    });
+
+    document.getElementById('btnBulkPin').addEventListener('click', function () {
+      bulkPinSelected();
+    });
+
+    document.getElementById('btnBulkDelete').addEventListener('click', function () {
+      bulkDeleteSelected();
+    });
+  }
+
   function _esc(s) {
     if (typeof escapeHTML === 'function') return escapeHTML(s);
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function _escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  // Load pinned messages from database and local storage
+  async function loadPinnedMessagesForActiveChannel() {
+    var channelId = state.activeChannelId;
+    if (!channelId) return;
+
+    state.pinnedMessages = [];
+    state.activePinIndex = 0;
+
+    var localPins = [];
+    try {
+      var localCached = localStorage.getItem('spark_local_pins');
+      if (localCached) {
+        var parsed = JSON.parse(localCached);
+        localPins = parsed[channelId] || [];
+      }
+    } catch (e) {}
+
+    var dbPins = [];
+    if (window.supa && window.ME) {
+      try {
+        var res = await supa.from('pinned_messages')
+          .select('*, messages(*)')
+          .eq('channel_id', channelId);
+        if (res.data) {
+          dbPins = res.data.map(function (row) {
+            return {
+              id: row.id,
+              message_id: row.message_id,
+              content: row.messages ? row.messages.content : (window.LANG === 'ru' ? '[Сообщение]' : '[Message]'),
+              for_everyone: true,
+              pinned_by: row.pinned_by
+            };
+          });
+        }
+      } catch (e) {
+        console.warn('Failed to load DB pins:', e);
+      }
+    }
+
+    var allPins = [];
+    var msgs = getCachedMessages()[channelId] || [];
+    localPins.forEach(function (mId) {
+      var msg = msgs.find(function (m) { return m.id === mId; });
+      if (msg) {
+        allPins.push({
+          id: 'local_pin_' + mId,
+          message_id: mId,
+          content: msg.content,
+          for_everyone: false,
+          pinned_by: window.ME ? ME.id : 'me'
+        });
+      }
+    });
+
+    allPins = allPins.concat(dbPins);
+    state.pinnedMessages = allPins;
+
+    renderPinnedSlidebar();
+  }
+
+  function renderPinnedSlidebar() {
+    var banner = document.getElementById('chatPinSlidebarOverlay');
+    var textSpan = document.getElementById('chatPinnedPreviewText');
+    if (!banner || !textSpan) return;
+
+    if (state.pinnedMessages.length === 0) {
+      banner.style.display = 'none';
+      return;
+    }
+
+    banner.style.display = 'flex';
+    
+    if (state.activePinIndex >= state.pinnedMessages.length) {
+      state.activePinIndex = 0;
+    }
+
+    var pin = state.pinnedMessages[state.activePinIndex];
+    var content = pin.content;
+    if (content.length > 50) content = content.substring(0, 50) + '...';
+    
+    var prefix = state.pinnedMessages.length > 1
+      ? '📌 (' + (state.activePinIndex + 1) + ' / ' + state.pinnedMessages.length + ') '
+      : '📌 ';
+
+    textSpan.textContent = prefix + content;
+  }
+
+  function jumpToActivePinnedMessage() {
+    if (state.pinnedMessages.length === 0) return;
+    var pin = state.pinnedMessages[state.activePinIndex];
+    var row = document.querySelector('.chat-message-row[data-msg-id="' + pin.message_id + '"]');
+    if (row) {
+      row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      row.classList.add('search-pulse-glow');
+      setTimeout(function () {
+        row.classList.remove('search-pulse-glow');
+      }, 1500);
+    }
+  }
+
+  function togglePinSelectMode() {
+    state.pinSelectMode = !state.pinSelectMode;
+    state.selectedPinMessages = [];
+    
+    // Reset any preselected classes from rows
+    document.querySelectorAll('.chat-message-row.pin-selected').forEach(function (row) {
+      row.classList.remove('pin-selected');
+    });
+
+    if (state.pinSelectMode) {
+      showMicroAlert(
+        window.LANG === 'ru' ? 'Выберите сообщение для закрепления' : 'Select a message to pin'
+      );
+      renderPinSelectionPanel();
+    } else {
+      var panel = document.getElementById('chatPinSelectionPanel');
+      if (panel) panel.remove();
+      
+      // Restore normal inputs
+      var container = document.querySelector('.chat-main-input-container');
+      if (container) {
+        container.querySelectorAll('.chat-input-row').forEach(function (el) {
+          el.style.display = 'flex';
+        });
+      }
+    }
+  }
+
+  function togglePinMessageSelection(msgId) {
+    var idx = state.selectedPinMessages.indexOf(msgId);
+    if (idx !== -1) {
+      state.selectedPinMessages.splice(idx, 1);
+    } else {
+      state.selectedPinMessages.push(msgId);
+    }
+    
+    var row = document.querySelector('.chat-message-row[data-msg-id="' + msgId + '"]');
+    if (row) {
+      row.classList.toggle('pin-selected', idx === -1);
+    }
+    
+    renderPinSelectionPanel();
+  }
+
+  function renderPinSelectionPanel() {
+    var container = document.querySelector('.chat-main-input-container');
+    if (!container) return;
+
+    var existing = document.getElementById('chatPinSelectionPanel');
+    if (existing) existing.remove();
+
+    container.querySelectorAll('.chat-input-row, .chat-composed-attachment-preview').forEach(function (el) {
+      el.style.display = 'none';
+    });
+
+    var panel = document.createElement('div');
+    panel.id = 'chatPinSelectionPanel';
+    panel.style.display = 'flex';
+    panel.style.alignItems = 'center';
+    panel.style.justifyContent = 'space-between';
+    panel.style.width = '100%';
+    panel.style.boxSizing = 'border-box';
+    panel.style.padding = '10px 0';
+
+    var countText = window.LANG === 'ru'
+      ? state.selectedPinMessages.length + ' выбрано'
+      : state.selectedPinMessages.length + ' selected';
+
+    var pinBtnText = window.LANG === 'ru' ? '📌 Закрепить' : '📌 Pin Selected';
+    var cancelText = window.LANG === 'ru' ? 'Отмена' : 'Cancel';
+
+    panel.innerHTML = ''
+      + '  <span style="font-size:12px;font-weight:600;color:#fff">' + countText + '</span>'
+      + '  <div style="display:flex;gap:8px">'
+      + '    <button id="btnPinSubmit" class="chat-attach-btn" style="padding:6px 14px;font-size:12px">' + pinBtnText + '</button>'
+      + '    <button id="btnPinCancel" class="chat-attach-btn" style="padding:6px 14px;font-size:12px;background:transparent;border:none">' + cancelText + '</button>'
+      + '  </div>';
+
+    container.appendChild(panel);
+
+    document.getElementById('btnPinCancel').addEventListener('click', function () {
+      togglePinSelectMode();
+    });
+
+    document.getElementById('btnPinSubmit').addEventListener('click', function () {
+      submitPinSelectedMessages();
+    });
+  }
+
+  function submitPinSelectedMessages() {
+    if (state.selectedPinMessages.length === 0) return;
+    
+    showDeleteConfirmModal('pin', 'both', async function (pinType) {
+      var forEveryone = (pinType === 'everyone');
+      var channelId = state.activeChannelId;
+
+      for (var i = 0; i < state.selectedPinMessages.length; i++) {
+        var mId = state.selectedPinMessages[i];
+        
+        if (forEveryone) {
+          if (window.supa && window.ME && !mId.startsWith('m_local_')) {
+            try {
+              await supa.from('pinned_messages').insert({
+                channel_id: channelId,
+                message_id: mId,
+                pinned_by: ME.id,
+                for_everyone: true
+              });
+            } catch (e) {
+              console.warn('Supabase DB pin failed:', e);
+            }
+          }
+        } else {
+          var localPins = {};
+          try {
+            var cached = localStorage.getItem('spark_local_pins');
+            if (cached) localPins = JSON.parse(cached);
+          } catch (e) {}
+          
+          if (!localPins[channelId]) localPins[channelId] = [];
+          if (!localPins[channelId].includes(mId)) {
+            localPins[channelId].push(mId);
+          }
+          localStorage.setItem('spark_local_pins', JSON.stringify(localPins));
+        }
+      }
+
+      togglePinSelectMode();
+      await loadPinnedMessagesForActiveChannel();
+      showMicroAlert(
+        window.LANG === 'ru' ? 'Сообщения успешно закреплены' : 'Messages pinned successfully'
+      );
+    });
+
+    var popTitle = document.querySelector('#moDeleteConfirm .mo-title');
+    var popBody = document.querySelector('#moDeleteConfirm .mo-box div[style*="font-size:13px"]');
+    var popBtnMe = document.getElementById('btnDeleteForMe');
+    var popBtnEveryone = document.getElementById('btnDeleteForEveryone');
+
+    if (popTitle) popTitle.textContent = window.LANG === 'ru' ? 'Закрепить сообщения?' : 'Pin messages?';
+    if (popBody) popBody.textContent = window.LANG === 'ru'
+      ? 'Вы хотите закрепить эти сообщения только для себя или для всех участников?'
+      : 'Do you want to pin these messages only for yourself or for everyone?';
+    if (popBtnMe) popBtnMe.textContent = window.LANG === 'ru' ? 'Для меня' : 'Pin for Me';
+    if (popBtnEveryone) popBtnEveryone.textContent = window.LANG === 'ru' ? 'Для всех' : 'Pin for Everyone';
+  }
+
+  async function unpinActiveMessage() {
+    if (state.pinnedMessages.length === 0) return;
+    var pin = state.pinnedMessages[state.activePinIndex];
+    var channelId = state.activeChannelId;
+
+    if (pin.id.startsWith('local_pin_')) {
+      try {
+        var cached = localStorage.getItem('spark_local_pins');
+        if (cached) {
+          var localPins = JSON.parse(cached);
+          if (localPins[channelId]) {
+            localPins[channelId] = localPins[channelId].filter(function (id) { return id !== pin.message_id; });
+            localStorage.setItem('spark_local_pins', JSON.stringify(localPins));
+          }
+        }
+      } catch (e) {}
+    } else {
+      if (window.supa && window.ME) {
+        try {
+          await supa.from('pinned_messages').delete().eq('id', pin.id);
+        } catch (e) {
+          console.warn('Failed to delete DB pin:', e);
+        }
+      }
+    }
+
+    showMicroAlert(
+      window.LANG === 'ru' ? 'Сообщение успешно откреплено' : 'Message unpinned successfully'
+    );
+    
+    await loadPinnedMessagesForActiveChannel();
+  }
+
+  function performInChatSearch() {
+    var box = document.getElementById('chatSearchBox');
+    if (!box) return;
+    var query = box.value.trim().toLowerCase();
+    
+    // Clear existing highlights
+    document.querySelectorAll('.search-highlight').forEach(function (el) {
+      var parent = el.parentNode;
+      if (parent) {
+        // If wrapped in custom text wrapper span, replace the span with text node
+        if (parent.className === 'search-text-wrapper') {
+          var grandparent = parent.parentNode;
+          if (grandparent) {
+            grandparent.replaceChild(document.createTextNode(parent.textContent), parent);
+            grandparent.normalize();
+          }
+        } else {
+          parent.replaceChild(document.createTextNode(el.textContent), el);
+          parent.normalize();
+        }
+      }
+    });
+
+    state.searchMatches = [];
+    state.searchActiveIndex = -1;
+
+    var countSpan = document.getElementById('chatSearchCount');
+    if (countSpan) countSpan.textContent = '0 / 0';
+
+    if (!query) return;
+
+    var id = state.activeChannelId;
+    var msgs = getCachedMessages()[id] || [];
+    var deletedIds = getDeletedMessageIds();
+    
+    var matchedIds = [];
+    msgs.forEach(function (m) {
+      if (m.sender_id === 'system') return;
+      if (deletedIds.includes(m.id)) return;
+      if (m.content && m.content.toLowerCase().includes(query)) {
+        matchedIds.push(m.id);
+      }
+    });
+
+    state.searchMatches = matchedIds;
+
+    if (matchedIds.length > 0) {
+      state.searchActiveIndex = matchedIds.length - 1; // start at newest
+      
+      matchedIds.forEach(function (msgId) {
+        var row = document.querySelector('.chat-message-row[data-msg-id="' + msgId + '"]');
+        if (row) {
+          var bubble = row.querySelector('.chat-msg-bubble');
+          if (bubble) {
+            bubble.childNodes.forEach(function (node) {
+              if (node.nodeType === 3) { // TEXT_NODE
+                var text = node.textContent;
+                var lower = text.toLowerCase();
+                if (lower.includes(query)) {
+                  var span = document.createElement('span');
+                  span.className = 'search-text-wrapper';
+                  span.innerHTML = text.replace(new RegExp('(' + _escapeRegExp(query) + ')', 'gi'), '<mark class="search-highlight" style="background:rgba(232, 197, 90, 0.45);color:#fff;border-radius:4px;padding:0 2px;box-shadow:0 0 10px rgba(232, 197, 90, 0.45)">$1</mark>');
+                  node.parentNode.replaceChild(span, node);
+                }
+              }
+            });
+          }
+        }
+      });
+
+      updateSearchCounter();
+      jumpToActiveSearchMatch();
+    }
+  }
+
+  function updateSearchCounter() {
+    var countSpan = document.getElementById('chatSearchCount');
+    if (countSpan) {
+      var total = state.searchMatches.length;
+      var current = total > 0 ? (state.searchActiveIndex + 1) : 0;
+      countSpan.textContent = current + ' / ' + total;
+    }
+  }
+
+  function jumpToActiveSearchMatch() {
+    if (state.searchActiveIndex === -1 || state.searchMatches.length === 0) return;
+    var msgId = state.searchMatches[state.searchActiveIndex];
+    var row = document.querySelector('.chat-message-row[data-msg-id="' + msgId + '"]');
+    if (row) {
+      row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      row.classList.add('search-pulse-glow');
+      setTimeout(function () {
+        row.classList.remove('search-pulse-glow');
+      }, 1500);
+    }
+  }
+
+  // Incremental DOM Diffing and Reconciliation Renderer
+  function diffMessagesDOM(msgs) {
+    var existingArea = document.getElementById('chatMsgArea');
+    if (!existingArea) return;
+
+    var deletedIds = getDeletedMessageIds();
+    var visibleMsgs = msgs.filter(function (m) {
+      return !deletedIds.includes(m.id);
+    });
+
+    if (visibleMsgs.length === 0) {
+      existingArea.innerHTML = '<div style="text-align:center;padding:48px 0;color:var(--mu);font-size:12px">' 
+        + (window.LANG === 'ru' ? 'В этом секретном канале пока нет сообщений.' : 'No messages in this signal room yet.') 
+        + '</div>';
+      return;
+    }
+
+    var wasAtBottom = (existingArea.scrollHeight - existingArea.clientHeight - existingArea.scrollTop) < 60;
+
+    // Index existing DOM elements
+    var domRows = existingArea.querySelectorAll('.chat-message-row, .chat-system-message');
+    var domMap = {};
+    domRows.forEach(function (row) {
+      var id = row.getAttribute('data-msg-id') || row.textContent.trim();
+      domMap[id] = row;
+    });
+
+    // Reconcile list
+    visibleMsgs.forEach(function (m) {
+      var key = m.id;
+      var existingRow = domMap[key];
+
+      if (existingRow) {
+        // 1. Reconcile reactions
+        var rxContainer = existingRow.querySelector('.chat-msg-reactions');
+        var newRxHtml = '';
+        if (m.reactions && Object.keys(m.reactions).length > 0) {
+          newRxHtml = Object.keys(m.reactions).map(function (emoji) {
+            var reactionObj = m.reactions[emoji];
+            var myId = window.ME ? window.ME.id : 'me';
+            var userReacted = false;
+            var count = 0;
+            if (reactionObj) {
+              if (Array.isArray(reactionObj.users)) {
+                userReacted = reactionObj.users.includes(myId);
+                count = reactionObj.users.length;
+              } else {
+                userReacted = !!reactionObj.userReacted;
+                count = Number(reactionObj.count) || 0;
+              }
+            }
+            if (count === 0) return '';
+            var activeClass = userReacted ? ' active' : '';
+            return '<span class="chat-msg-react-pill' + activeClass + '" data-msg-id="' + m.id + '" data-emoji="' + emoji + '">'
+              + emoji + ' ' + count
+              + '</span>';
+          }).join('');
+        }
+
+        if (rxContainer) {
+          if (rxContainer.innerHTML !== newRxHtml) {
+            if (newRxHtml === '') {
+              rxContainer.remove();
+            } else {
+              rxContainer.innerHTML = newRxHtml;
+            }
+          }
+        } else if (newRxHtml !== '') {
+          var reactionsDiv = document.createElement('div');
+          reactionsDiv.className = 'chat-msg-reactions';
+          reactionsDiv.innerHTML = newRxHtml;
+          
+          var wrapper = existingRow.querySelector('.chat-msg-content-wrapper');
+          var timeDiv = existingRow.querySelector('.chat-msg-time');
+          if (wrapper && timeDiv) {
+            wrapper.insertBefore(reactionsDiv, timeDiv);
+          }
+        }
+
+        // 2. Reconcile ticks and time
+        var timeEl = existingRow.querySelector('.chat-msg-time');
+        if (timeEl) {
+          var isSent = m.sender_id === 'me' || (window.ME && m.sender_id === ME.id);
+          var statusTicks = '';
+          if (isSent) {
+            if (m.id.startsWith('m_local_')) {
+              statusTicks = '<span class="chat-msg-status-tick" style="margin-left:4px;font-size:9px;opacity:0.6">🕒</span>';
+            } else if (m.read) {
+              statusTicks = '<span class="chat-msg-status-tick read" style="color:var(--ac);margin-left:5px;font-weight:bold;font-size:11px">✓✓</span>';
+            } else {
+              statusTicks = '<span class="chat-msg-status-tick delivered" style="color:var(--mu2);margin-left:5px;font-size:11px">✓</span>';
+            }
+          }
+          var newTimeText = _formatTime(m.created_at) + statusTicks;
+          if (timeEl.innerHTML !== newTimeText) {
+            timeEl.innerHTML = newTimeText;
+          }
+        }
+
+        delete domMap[key];
+      } else {
+        // Message is new! Append it smoothly.
+        var tempWrap = document.createElement('div');
+        tempWrap.innerHTML = _renderMessagesList([m]);
+        var newRow = tempWrap.firstElementChild;
+        if (newRow) {
+          existingArea.appendChild(newRow);
+        }
+      }
+    });
+
+    // Remove deleted messages smoothly
+    Object.keys(domMap).forEach(function (deletedKey) {
+      var row = domMap[deletedKey];
+      if (row) {
+        row.style.opacity = '0';
+        row.style.transform = 'translateY(-10px) scale(0.95)';
+        row.style.transition = 'all 0.28s cubic-bezier(0.4, 0, 0.2, 1)';
+        setTimeout(function () {
+          row.remove();
+        }, 280);
+      }
+    });
+
+    if (wasAtBottom) {
+      existingArea.scrollTop = existingArea.scrollHeight;
+    }
   }
 
   return {

@@ -102,10 +102,19 @@ if (runtime) {
 
 try {
   if (SUPABASE_CONFIGURED && typeof supabase !== 'undefined') {
+    var clientOptions = { auth: runtime ? runtime.supabaseAuthOptions() : { persistSession: true, storageKey: 'spark_auth' } };
+    
+    // If the configured URL is a proxied URL (e.g. Vercel deployment), route Realtime WebSockets directly to standard Supabase to bypass Vercel WebSocket limitations
+    if (SUPABASE_URL && SUPABASE_URL.indexOf('supabase.co') === -1) {
+      clientOptions.realtime = {
+        url: 'wss://ppehttbtrlavnrytoweu.supabase.co/realtime/v1/websocket'
+      };
+    }
+    
     supa = supabase.createClient(
       SUPABASE_URL,
       SUPABASE_ANON_KEY,
-      { auth: runtime ? runtime.supabaseAuthOptions() : { persistSession: true, storageKey: 'spark_auth' } }
+      clientOptions
     );
   } else if (!SUPABASE_CONFIGURED) {
     console.warn('Supabase config is missing or invalid. Running in demo mode.');
