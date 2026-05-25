@@ -280,12 +280,18 @@ var ProfileEditEngine = (function () {
     if (content) {
       content.innerHTML = renderThemeStudio();
 
+      // Prevent click propagation inside the modal container so clicks don't hit the backdrop close handler
+      content.onclick = function (e) {
+        if (e) e.stopPropagation();
+      };
+
       // 0. Carousel Pagination dots click listeners
       var track = content.querySelector('#tsPresetTrack');
       var dots  = content.querySelectorAll('.ts-dot');
       if (track && dots.length > 0) {
         dots.forEach(function (dot) {
-          dot.onclick = function () {
+          dot.onclick = function (e) {
+            if (e) e.stopPropagation();
             var page = parseInt(dot.dataset.page, 10);
             dots.forEach(function (d) { d.classList.toggle('active', d === dot); });
             track.style.transform = 'translateX(-' + (page * 50) + '%)';
@@ -296,12 +302,13 @@ var ProfileEditEngine = (function () {
       // 1. Close button
       var closeBtn = content.querySelector('#tsClose');
       if (closeBtn) {
-        closeBtn.onclick = function() {
+        closeBtn.onclick = function(e) {
+          if (e) e.stopPropagation();
           modal.classList.remove('open');
         };
       }
       
-      // Backdrop click closes the modal
+      // Backdrop click closes the modal (only when clicking the grey backdrop itself)
       modal.onclick = function(e) {
         if (e.target === modal) {
           modal.classList.remove('open');
@@ -311,7 +318,8 @@ var ProfileEditEngine = (function () {
       // 2. Preset cards
       var presetCards = content.querySelectorAll('[data-ts-preset]');
       presetCards.forEach(function(card) {
-        card.onclick = function() {
+        card.onclick = function(e) {
+          if (e) e.stopPropagation();
           var id = card.dataset.tsPreset;
           if (window.ThemeEngine && ThemeEngine.PRESETS[id]) {
             var t = ThemeEngine.PRESETS[id];
@@ -331,6 +339,9 @@ var ProfileEditEngine = (function () {
       // 3. Color pickers inputs
       var pickers = content.querySelectorAll('.ts-color-input');
       pickers.forEach(function(input) {
+        input.onclick = function(e) {
+          if (e) e.stopPropagation();
+        };
         input.oninput = function() {
           content.removeAttribute('data-selected-preset');
           content.querySelectorAll('.ts-preset-card').forEach(function (c) {
@@ -342,7 +353,8 @@ var ProfileEditEngine = (function () {
       // 4. Reset button
       var resetBtn = content.querySelector('#tsReset');
       if (resetBtn) {
-        resetBtn.onclick = function() {
+        resetBtn.onclick = function(e) {
+          if (e) e.stopPropagation();
           if (window.ThemeEngine && ThemeEngine.PRESETS.cosmos) {
             var t = ThemeEngine.PRESETS.cosmos;
             content.dataset.selectedPreset = 'cosmos';
@@ -360,7 +372,8 @@ var ProfileEditEngine = (function () {
       // 5. Apply button
       var applyBtn = content.querySelector('#tsApply');
       if (applyBtn) {
-        applyBtn.onclick = function() {
+        applyBtn.onclick = function(e) {
+          if (e) e.stopPropagation();
           var presetId = content.dataset.selectedPreset;
           var base = (presetId && window.ThemeEngine && ThemeEngine.PRESETS[presetId]) 
                       ? ThemeEngine.PRESETS[presetId] 
