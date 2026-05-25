@@ -231,15 +231,22 @@ var ChatsEngine = (function () {
           
           var checkboxHtml = '';
           if (state.multiSelectMode) {
-            var checkedAttr = state.selectedContacts.includes(c.id) ? ' checked' : '';
-            checkboxHtml = '<input type="checkbox" class="chat-row-checkbox" style="margin-right:10px;accent-color:var(--ac);transform:scale(1.2);cursor:pointer;pointer-events:none" ' + checkedAttr + '>';
+            var isChecked = state.selectedContacts.includes(c.id);
+            var checkedClass = isChecked ? ' checked' : '';
+            checkboxHtml = '<div class="chat-custom-checkbox' + checkedClass + '">'
+              + '  <svg class="chat-checkbox-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" style="width:11px;height:11px;display:' + (isChecked ? 'block' : 'none') + '">'
+              + '    <polyline points="20 6 9 17 4 12"></polyline>'
+              + '  </svg>'
+              + '</div>';
           }
           
           return ''
             + '<div class="chat-row-item' + isActive + '" data-chat-id="' + c.id + '">'
             + checkboxHtml
-            + '<div class="chat-avatar-circle" style="background:' + grad + '">' + c.username.replace('@', '').charAt(0).toUpperCase() + '</div>'
-            + '<div class="chat-status-dot' + statusClass + '"></div>'
+            + '<div class="chat-avatar-wrapper">'
+            + '  <div class="chat-avatar-circle" style="background:' + grad + '">' + c.username.replace('@', '').charAt(0).toUpperCase() + '</div>'
+            + '  <div class="chat-status-dot' + statusClass + '"></div>'
+            + '</div>'
             + '<div class="chat-item-info">'
             + '<div class="chat-item-name-row"><span class="chat-item-name">' + c.name + pinBadge + '</span><span class="chat-item-time">' + timeText + '</span></div>'
             + '<div class="chat-item-preview">' + _esc(preview) + '</div>'
@@ -2342,11 +2349,11 @@ var ChatsEngine = (function () {
     var cancelText = window.LANG === 'ru' ? 'Отмена' : 'Cancel';
 
     selectBar.innerHTML = ''
-      + '  <span style="font-size:12px;font-weight:600;color:#fff">' + countText + '</span>'
-      + '  <div style="display:flex;gap:6px">'
-      + '    <button id="btnBulkPin" class="chat-attach-btn" style="padding:4px 8px;font-size:11px">' + pinBtnText + '</button>'
-      + '    <button id="btnBulkDelete" class="chat-attach-btn" style="padding:4px 8px;font-size:11px;color:var(--red);border-color:rgba(232,90,90,0.2)">' + deleteBtnText + '</button>'
-      + '    <button id="btnBulkCancel" class="chat-attach-btn" style="padding:4px 8px;font-size:11px;background:transparent;border:none">' + cancelText + '</button>'
+      + '  <span class="chat-multiselect-count">' + countText + '</span>'
+      + '  <div style="display:flex;align-items:center;gap:6px">'
+      + '    <button id="btnBulkPin" class="chat-multiselect-btn chat-multiselect-btn-pin">' + pinBtnText + '</button>'
+      + '    <button id="btnBulkDelete" class="chat-multiselect-btn chat-multiselect-btn-delete">' + deleteBtnText + '</button>'
+      + '    <button id="btnBulkCancel" class="chat-multiselect-btn chat-multiselect-btn-cancel">' + cancelText + '</button>'
       + '  </div>';
 
     header.appendChild(selectBar);
