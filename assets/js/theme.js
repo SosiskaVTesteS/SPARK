@@ -15,7 +15,7 @@ var ThemeEngine = (function () {
     return m ? parseInt(m[1], 16) + ',' + parseInt(m[2], 16) + ',' + parseInt(m[3], 16) : '123,92,250';
   }
 
-  /* ─── 8 Preset themes ─── */
+  /* ─── 16 Preset themes (8 Solid + 8 Multi-color V3) ─── */
   var PRESETS = {
     cosmos: {
       id: 'cosmos', name: 'Cosmos', icon: '🌌',
@@ -64,6 +64,54 @@ var ThemeEngine = (function () {
       vl: '#D97706', vl2: '#F59E0B', vlDk: '#92400E',
       ac: '#FCD34D', ac2: '#FDE68A',
       graph: '#FCD34D', mu2: '#8C7040'
+    },
+    aurora: {
+      id: 'aurora', name: 'Aurora', icon: '🌌',
+      vl: '#00F260', vl2: '#0575E6', vlDk: '#0575E6',
+      ac: '#5AE8C5', ac2: '#00F260',
+      graph: '#00F260', mu2: '#5B7FA6'
+    },
+    cyberpunk: {
+      id: 'cyberpunk', name: 'Cyberpunk', icon: '⚡',
+      vl: '#8B5CF6', vl2: '#EC4899', vlDk: '#EC4899',
+      ac: '#FCD34D', ac2: '#F43F5E',
+      graph: '#EC4899', mu2: '#7060A0'
+    },
+    sunset: {
+      id: 'sunset', name: 'Sunset', icon: '🌇',
+      vl: '#FF5E62', vl2: '#FF9966', vlDk: '#FF9966',
+      ac: '#E8C55A', ac2: '#FF5E62',
+      graph: '#FF5E62', mu2: '#8C6E4B'
+    },
+    nebula: {
+      id: 'nebula', name: 'Nebula', icon: '💫',
+      vl: '#4F46E5', vl2: '#10B981', vlDk: '#10B981',
+      ac: '#E5E7EB', ac2: '#34D399',
+      graph: '#10B981', mu2: '#4B7A5C'
+    },
+    neon: {
+      id: 'neon', name: 'Neon', icon: '💡',
+      vl: '#EC4899', vl2: '#2DD4BF', vlDk: '#2DD4BF',
+      ac: '#FBBF24', ac2: '#2DD4BF',
+      graph: '#EC4899', mu2: '#8C4B5C'
+    },
+    flare: {
+      id: 'flare', name: 'Flare', icon: '☀️',
+      vl: '#F59E0B', vl2: '#EF4444', vlDk: '#EF4444',
+      ac: '#FFFFFF', ac2: '#EF4444',
+      graph: '#F59E0B', mu2: '#8C7040'
+    },
+    magic: {
+      id: 'magic', name: 'Magic', icon: '🧪',
+      vl: '#2563EB', vl2: '#D946EF', vlDk: '#D946EF',
+      ac: '#5AE8C5', ac2: '#D946EF',
+      graph: '#D946EF', mu2: '#5B7FA6'
+    },
+    prism: {
+      id: 'prism', name: 'Prism', icon: '💎',
+      vl: '#F43F5E', vl2: '#3B82F6', vlDk: '#10B981',
+      ac: '#FBBF24', ac2: '#8B5CF6',
+      graph: '#3B82F6', mu2: '#7060A0'
     }
   };
 

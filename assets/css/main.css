@@ -1874,3 +1874,72 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
   .ts-preset-name { font-size: 9px; }
 }
 
+/* ═══════════════════════════════════════════════════════
+   SPARK V3 Theme presets carousel & premium dynamic shimmers
+   ═══════════════════════════════════════════════════════ */
+.ts-preset-carousel {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  margin-bottom: 4px;
+}
+
+.ts-preset-track {
+  display: flex;
+  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  width: 200%; /* 2 pages */
+}
+
+.ts-preset-page {
+  width: 50%; /* 100% of container */
+  flex-shrink: 0;
+  box-sizing: border-box;
+  padding: 4px;
+}
+
+.ts-preset-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  margin-bottom: 6px;
+}
+
+.ts-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ts-dot:hover {
+  background: rgba(255, 255, 255, 0.45);
+  transform: scale(1.2);
+}
+
+.ts-dot.active {
+  background: var(--ac);
+  box-shadow: 0 0 10px var(--ac);
+  width: 18px; /* Elegant pill indicator for Page 1 / Page 2 */
+  border-radius: 4px;
+}
+
+/* --- V3 PREMIUM GRADIENT BUTTONS SHIMMER --- */
+.hbtn-gold, .auth-btn, .spark-btn-submit {
+  background-size: 200% auto !important;
+  background-image: var(--g-vl) !important;
+  animation: premiumBtnGradient 6s ease infinite !important;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+@keyframes premiumBtnGradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+

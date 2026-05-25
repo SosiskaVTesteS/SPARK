@@ -197,15 +197,43 @@ var ProfileEditEngine = (function () {
     var presets = ThemeEngine.PRESETS;
     var active  = ThemeEngine.getActive();
 
-    var presetCards = Object.keys(presets).map(function (id) {
-      var p = presets[id];
-      var isActive = active && active.id === id;
-      var locName = window.T ? T(id) : p.name;
-      return '<button type="button" class="ts-preset-card' + (isActive ? ' active' : '') + '" data-ts-preset="' + id + '" style="--p-vl:' + p.vl + ';--p-ac:' + p.ac + '">'
-        + '<span class="ts-preset-icon">' + p.icon + '</span>'
-        + '<span class="ts-preset-name">' + locName + '</span>'
-        + '</button>';
-    }).join('');
+    var keys = Object.keys(presets);
+    var page1Keys = keys.slice(0, 8);
+    var page2Keys = keys.slice(8, 16);
+    
+    var isPage2Active = active && page2Keys.includes(active.id);
+    var initialTransform = isPage2Active ? 'style="transform:translateX(-50%)"' : '';
+    
+    function renderPageCards(keysList) {
+      return keysList.map(function (id) {
+        var p = presets[id];
+        var isActive = active && active.id === id;
+        var locName = window.T ? T(id) : p.name;
+        return '<button type="button" class="ts-preset-card' + (isActive ? ' active' : '') + '" data-ts-preset="' + id + '" style="--p-vl:' + p.vl + ';--p-ac:' + p.ac + '">'
+          + '<span class="ts-preset-icon">' + p.icon + '</span>'
+          + '<span class="ts-preset-name">' + locName + '</span>'
+          + '</button>';
+      }).join('');
+    }
+
+    var page1Html = renderPageCards(page1Keys);
+    var page2Html = renderPageCards(page2Keys);
+
+    var carouselHtml = ''
+      + '<div class="ts-preset-carousel">'
+      + '  <div class="ts-preset-track" id="tsPresetTrack" ' + initialTransform + '>'
+      + '    <div class="ts-preset-page">'
+      + '      <div class="ts-preset-grid">' + page1Html + '</div>'
+      + '    </div>'
+      + '    <div class="ts-preset-page">'
+      + '      <div class="ts-preset-grid">' + page2Html + '</div>'
+      + '    </div>'
+      + '  </div>'
+      + '  <div class="ts-preset-pagination">'
+      + '    <span class="ts-dot' + (!isPage2Active ? ' active' : '') + '" data-page="0"></span>'
+      + '    <span class="ts-dot' + (isPage2Active ? ' active' : '') + '" data-page="1"></span>'
+      + '  </div>'
+      + '</div>';
 
     var pickerRows = [
       { label: window.T ? T('tsPrimary') : 'Primary / Buttons',   key: 'vl',    tip: window.T ? T('tsPrimaryTip') : 'Invest button, active tabs, links' },
@@ -225,7 +253,7 @@ var ProfileEditEngine = (function () {
 
     return '<div class="ts-header"><div class="ts-title">' + (window.T ? T('themeStudioTitle') : '🎨 Theme Studio') + '</div><button class="ts-close" id="tsClose">✕</button></div>'
       + '<div class="stitle" style="margin:16px 0 10px">' + (window.T ? T('presets') : 'Presets') + '</div>'
-      + '<div class="ts-preset-grid">' + presetCards + '</div>'
+      + carouselHtml
       + '<div class="divider" style="margin:18px 0"></div>'
       + '<div class="stitle" style="margin-bottom:12px">' + (window.T ? T('customColors') : 'Custom Colours') + '</div>'
       + '<div class="ts-pickers">' + pickerRows + '</div>'
@@ -251,6 +279,19 @@ var ProfileEditEngine = (function () {
     if (!modal) return;
     if (content) {
       content.innerHTML = renderThemeStudio();
+
+      // 0. Carousel Pagination dots click listeners
+      var track = content.querySelector('#tsPresetTrack');
+      var dots  = content.querySelectorAll('.ts-dot');
+      if (track && dots.length > 0) {
+        dots.forEach(function (dot) {
+          dot.onclick = function () {
+            var page = parseInt(dot.dataset.page, 10);
+            dots.forEach(function (d) { d.classList.toggle('active', d === dot); });
+            track.style.transform = 'translateX(-' + (page * 50) + '%)';
+          };
+        });
+      }
       
       // 1. Close button
       var closeBtn = content.querySelector('#tsClose');
