@@ -690,96 +690,88 @@ var SparkTour = (function () {
         id:'welcome', el:null, elMob:null,
         t:_T('🎉 Welcome aboard!','🎉 Добро пожаловать!'),
         b:_T(
-          'Your account is live and 4,520 SPK are already in your wallet. This quick tour will have you investing like a Prophet in under 60 seconds.',
-          'Аккаунт создан, и 4 520 SPK уже на вашем балансе. Этот тур научит вас инвестировать как Пророк менее чем за 60 секунд.'
+          'Your account is live and <span class="spk-t3-hl">4,520 SPK</span> are already in your wallet. This quick tour will have you investing like a <span class="spk-t3-hl">Prophet</span> in under 60 seconds.',
+          'Аккаунт создан, и <span class="spk-t3-hl">4 520 SPK</span> уже на вашем балансе. Этот тур научит вас инвестировать как <span class="spk-t3-hl">Пророк</span> менее чем за 60 секунд.'
         )
       },
       {
         id:'wallet', el:'.wallet-badge', elMob:'.wallet-badge',
         t:_T('💰 SPK Wallet','💰 SPK-кошелёк'),
         b:_T(
-          'Your balance lives here. You received 4,520 SPK as a welcome gift — that\'s real investing power. Every idea you back increases this number.',
-          'Здесь ваш баланс. Вы получили 4 520 SPK в подарок — это реальные инвестиционные ресурсы. Каждая поддержанная идея увеличивает эту цифру.'
+          'Your balance lives here. You received <span class="spk-t3-hl">4,520 SPK</span> as a welcome gift — that\'s real investing power. Every idea you back increases this number.',
+          'Здесь ваш баланс. Вы получили <span class="spk-t3-hl">4 520 SPK</span> в подарок — это реальные инвестиционные ресурсы. Каждая поддержанная идея увеличивает эту цифру.'
         )
       },
       {
         id:'post', el:'#btnPostIdea', elMob:'#btnPostIdea',
         t:_T('💡 Post Your First Idea','💡 Опубликуйте первую идею'),
         b:_T(
-          'Got a startup idea? Click here — fill in title, sector, duration, and minimum bet, then hold the Publish button for 2 seconds. Your idea goes live instantly.',
-          'Есть стартап-идея? Кликните сюда — заполните заголовок, сектор, срок и минимальную ставку, затем удержите кнопку публикации 2 секунды. Идея появится мгновенно.'
+          'Got a startup idea? Click here — fill in <span class="spk-t3-hl">Title</span>, <span class="spk-t3-hl">Sector</span>, <span class="spk-t3-hl">Duration</span>, and <span class="spk-t3-hl">Minimum Bet</span>, then hold the <span class="spk-t3-hl">Publish</span> button for 2 seconds. Your idea goes live instantly.',
+          'Есть стартап-идея? Кликните сюда — заполните <span class="spk-t3-hl">Заголовок</span>, <span class="spk-t3-hl">Сектор</span>, <span class="spk-t3-hl">Срок</span> и <span class="spk-t3-hl">Минимальную ставку</span>, затем удержите кнопку <span class="spk-t3-hl">Опубликовать</span> 2 секунды. Идея появится мгновенно.'
         )
       },
       {
         id:'search', el:'#srchIn', elMob:'#srchIn',
         t:_T('🔍 Search Ideas','🔍 Поиск идей'),
         b:_T(
-          'Type any keyword to filter the feed in real time. The results update as you type — no page reload needed.',
-          'Введите ключевое слово, и лента обновится прямо во время ввода. Никаких перезагрузок.'
+          'Type any keyword in the <span class="spk-t3-hl">Search</span> bar to filter the feed in real time. The results update as you type — no page reload needed.',
+          'Введите ключевое слово в строке <span class="spk-t3-hl">Поиск</span>, и лента обновится прямо во время ввода. Никаких перезагрузок.'
         )
       },
       {
         id:'sort', el:'.frow', elMob:'.frow',
         t:_T('📊 Sort & Discover','📊 Сортировка и поиск'),
         b:_T(
-          'Sort the feed by New, Popular, Profitable or Ending Soon. One click — the entire feed reorders instantly. Chase momentum.',
-          'Сортируйте ленту: Новые, Популярные, Прибыльные или Скоро заканчиваются. Один клик — и лента мгновенно перестраивается. Ловите импульс.'
+          'Sort the feed by <span class="spk-t3-hl">New</span>, <span class="spk-t3-hl">Popular</span>, <span class="spk-t3-hl">Profitable</span> or <span class="spk-t3-hl">Ending Soon</span>. One click — the entire feed reorders instantly. Chase momentum.',
+          'Сортируйте ленту: <span class="spk-t3-hl">Новые</span>, <span class="spk-t3-hl">Популярные</span>, <span class="spk-t3-hl">Прибыльные</span> или <span class="spk-t3-hl">Скоро заканчиваются</span>. Один клик — и лента мгновенно перестраивается.'
         )
       },
       {
         id:'tags', el:'.trow', elMob:'.trow',
         t:_T('#️⃣ Sector Tags','#️⃣ Теги секторов'),
         b:_T(
-          'Filter by sector: AI · DeFi · CleanEnergy · Hardware · Web3 · B2B SaaS. Stack multiple tags to narrow your focus down to exactly what you\'re hunting.',
-          'Фильтр по сектору: AI · DeFi · CleanEnergy · Hardware · Web3 · B2B SaaS. Комбинируйте теги, чтобы найти именно то, что ищете.'
-        )
-      },
-      {
-        id:'card', el:'.card', elMob:'.card',
-        t:_T('📈 Idea Card','📈 Карточка идеи'),
-        b:_T(
-          'Each card shows: title, description, active investors, SPK pool, time remaining, and a live investment growth chart. Tap "Invest" to back it with your SPK.',
-          'Каждая карточка: заголовок, описание, инвесторы, пул SPK, оставшееся время и живой график. Нажмите «Вложить», чтобы поддержать идею своими SPK.'
+          'Filter by sector: <span class="spk-t3-hl">AI</span> · <span class="spk-t3-hl">DeFi</span> · <span class="spk-t3-hl">CleanEnergy</span> · <span class="spk-t3-hl">Hardware</span> · <span class="spk-t3-hl">Web3</span> · <span class="spk-t3-hl">B2B SaaS</span>. Stack multiple tags to narrow your focus down to exactly what you\'re hunting.',
+          'Фильтр по сектору: <span class="spk-t3-hl">AI</span> · <span class="spk-t3-hl">DeFi</span> · <span class="spk-t3-hl">CleanEnergy</span> · <span class="spk-t3-hl">Hardware</span> · <span class="spk-t3-hl">Web3</span> · <span class="spk-t3-hl">B2B SaaS</span>. Комбинируйте теги, чтобы найти именно то, что ищете.'
         )
       },
       {
         id:'trending', el:'#trendListDesk', elMob:'#trendListMob',
         t:_T('🔥 Trending Now','🔥 В тренде прямо сейчас'),
         b:_T(
-          'The left sidebar ranks the hottest sectors by total SPK invested in the last hour. Watch it to spot momentum surges before they become obvious.',
-          'Левая панель ранжирует горячие секторы по SPK за последний час. Следите за ней, чтобы замечать рост раньше других.'
+          'The left sidebar ranks the hottest <span class="spk-t3-hl">Sectors</span> by total <span class="spk-t3-hl">SPK</span> invested in the last hour. Watch it to spot momentum surges before they become obvious.',
+          'Левая панель ранжирует горячие <span class="spk-t3-hl">Секторы</span> по <span class="spk-t3-hl">SPK</span> за последний час. Следите за ней, чтобы замечать рост раньше других.'
         )
       },
       {
         id:'leaderboard', el:'#leaderListDesk', elMob:'#leaderListMob',
         t:_T('🏆 Prophet Leaderboard','🏆 Топ Пророков'),
         b:_T(
-          'Top investors ranked by portfolio performance. Back the right ideas early → climb the ranks → earn the Prophet title. Your name could be here.',
-          'Топ инвесторов по результатам портфеля. Поддерживайте нужные идеи первыми → поднимайтесь в рейтинге → заработайте статус Пророка. Ваше имя может быть здесь.'
+          'Top investors ranked by portfolio performance. Back the right ideas early → climb the ranks → earn the <span class="spk-t3-hl">Prophet</span> title. Your name could be here.',
+          'Топ инвесторов по результатам портфеля. Поддерживайте нужные идеи первыми → поднимайтесь в рейтинге → заработайте статус <span class="spk-t3-hl">Пророка</span>. Ваше имя может быть здесь.'
         )
       },
       {
         id:'chats', el:'#btnChatsDesk', elMob:'#panel-chats',
         t:_T('💬 SPARK Chats','💬 Чаты SPARK'),
         b:_T(
-          'Direct messages + thematic team channels. Share analytics dashboards, discuss ideas before investing, pin key intel, and search your conversation history.',
-          'Личные сообщения + тематические каналы. Делитесь аналитикой, обсуждайте идеи до вложений, закрепляйте ключевые данные и ищите по истории чата.'
+          'Direct messages + thematic team <span class="spk-t3-hl">Channels</span>. Share analytics dashboards, discuss ideas before investing, pin key intel, and search your conversation history.',
+          'Личные сообщения + тематические <span class="spk-t3-hl">Каналы</span>. Делитесь аналитикой, обсуждайте идеи до вложений, закрепляйте ключевые данные и ищите по истории чата.'
         )
       },
       {
         id:'profile', el:'#btnProfDesk', elMob:'#panel-profile',
         t:_T('👤 Your Profile','👤 Ваш профиль'),
         b:_T(
-          'Edit username, bio, avatar colour, and theme. The Theme Studio packs 16 presets — Cosmos, Cyberpunk, Aurora, and more — plus custom colour pickers.',
-          'Никнейм, bio, цвет аватара и тема. Студия тем: 16 пресетов — Космос, Киберпанк, Аврора и другие — плюс кастомные цветовые пикеры.'
+          'Edit <span class="spk-t3-hl">Username</span>, <span class="spk-t3-hl">Bio</span>, avatar colour, and theme. The <span class="spk-t3-hl">Theme Studio</span> packs 16 presets — Cosmos, Cyberpunk, Aurora, and more — plus custom colour pickers.',
+          'Никнейм (<span class="spk-t3-hl">Username</span>), <span class="spk-t3-hl">Bio</span>, цвет аватара и тема. <span class="spk-t3-hl">Студия тем</span>: 16 пресетов — Космос, Киберпанк, Аврора и другие — плюс кастомные цветовые пикеры.'
         )
       },
       {
         id:'finish', el:null, elMob:null,
         t:_T('🚀 You\'re a SPARK Insider!','🚀 Вы — инсайдер SPARK!'),
         b:_T(
-          'Tour complete. 🎯 Your daily login bonus is already ticking. Come back every day to compound your SPK. The leaderboard awaits — go light up the future.',
-          'Тур завершён. 🎯 Ваш ежедневный бонус уже начисляется. Заходите каждый день для накопления SPK. Таблица лидеров ждёт — зажигайте будущее.'
+          'Tour complete. 🎯 Your daily <span class="spk-t3-hl">compounding login bonus</span> is already ticking. Come back every day to compound your <span class="spk-t3-hl">SPK</span>. The leaderboard awaits — go light up the future.',
+          'Тур завершён. 🎯 Ваш ежедневный <span class="spk-t3-hl">накопительный бонус за вход</span> уже начисляется. Заходите каждый день для накопления <span class="spk-t3-hl">SPK</span>. Таблица лидеров ждёт — зажигайте будущее.'
         )
       }
     ];
@@ -910,6 +902,11 @@ var SparkTour = (function () {
 .spk-t3-lang-btn.on {
   background:rgba(123,92,250,.25); border:1px solid rgba(123,92,250,.35);
   color:#C4ADFF;
+}
+.spk-t3-hl {
+  color:#C4ADFF;
+  font-weight:600;
+  text-shadow:0 0 8px rgba(196,173,255,.2);
 }
 
 /* ════ Mobile bottom-sheet ════ */
@@ -1245,44 +1242,12 @@ var SparkTour = (function () {
       window.openPanel(targetPanel);
     }
 
-    if (step.id === 'card') {
-      _ensureMockCard();
-    }
-
     var selStr = mob ? step.elMob : step.el;
     var el     = null;
     if (selStr) { try { el = document.querySelector(selStr); } catch(e){} }
 
     /* Scroll target into view */
-    if (el) {
-      if (step.id === 'card') {
-        setTimeout(function() {
-          if (mob) {
-            var rect = el.getBoundingClientRect();
-            var elementTop = rect.top + (window.pageYOffset || document.documentElement.scrollTop);
-            window.scrollTo({
-              top: elementTop - 70, // header margin offset (62px header + 8px padding)
-              behavior: 'smooth'
-            });
-          } else {
-            var feed = document.querySelector('.feed');
-            if (feed) {
-              var rect = el.getBoundingClientRect();
-              var feedRect = feed.getBoundingClientRect();
-              var elementTopInFeed = rect.top - feedRect.top + feed.scrollTop;
-              feed.scrollTo({
-                top: elementTopInFeed - 10, // safe top margin below fbar
-                behavior: 'smooth'
-              });
-            } else {
-              el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
-            }
-          }
-        }, 150);
-      } else {
-        el.scrollIntoView({ behavior:'smooth', block:'center', inline:'nearest' });
-      }
-    }
+    if (el) el.scrollIntoView({ behavior:'smooth', block:'center', inline:'nearest' });
 
     // Start self-healing dynamic tracking immediately
     _target = null;
