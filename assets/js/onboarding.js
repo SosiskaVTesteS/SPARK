@@ -654,7 +654,7 @@ var SparkTour = (function () {
         )
       },
       {
-        id:'wallet', el:'.wallet-badge', elMob:null,
+        id:'wallet', el:'.wallet-badge', elMob:'.wallet-badge',
         t:_T('💰 SPK Wallet','💰 SPK-кошелёк'),
         b:_T(
           'Your balance lives here. You received 4,520 SPK as a welcome gift — that\'s real investing power. Every idea you back increases this number.',
@@ -702,7 +702,7 @@ var SparkTour = (function () {
         )
       },
       {
-        id:'trending', el:'#trendListDesk', elMob:null,
+        id:'trending', el:'#trendListDesk', elMob:'#trendListMob',
         t:_T('🔥 Trending Now','🔥 В тренде прямо сейчас'),
         b:_T(
           'The left sidebar ranks the hottest sectors by total SPK invested in the last hour. Watch it to spot momentum surges before they become obvious.',
@@ -710,7 +710,7 @@ var SparkTour = (function () {
         )
       },
       {
-        id:'leaderboard', el:'#leaderListDesk', elMob:null,
+        id:'leaderboard', el:'#leaderListDesk', elMob:'#leaderListMob',
         t:_T('🏆 Prophet Leaderboard','🏆 Топ Пророков'),
         b:_T(
           'Top investors ranked by portfolio performance. Back the right ideas early → climb the ranks → earn the Prophet title. Your name could be here.',
@@ -718,7 +718,7 @@ var SparkTour = (function () {
         )
       },
       {
-        id:'chats', el:'#btnChatsDesk', elMob:'.mob-tab[data-panel="chats"]',
+        id:'chats', el:'#btnChatsDesk', elMob:'#panel-chats',
         t:_T('💬 SPARK Chats','💬 Чаты SPARK'),
         b:_T(
           'Direct messages + thematic team channels. Share analytics dashboards, discuss ideas before investing, pin key intel, and search your conversation history.',
@@ -726,7 +726,7 @@ var SparkTour = (function () {
         )
       },
       {
-        id:'profile', el:'#btnProfDesk', elMob:'.mob-tab[data-panel="profile"]',
+        id:'profile', el:'#btnProfDesk', elMob:'#panel-profile',
         t:_T('👤 Your Profile','👤 Ваш профиль'),
         b:_T(
           'Edit username, bio, avatar colour, and theme. The Theme Studio packs 16 presets — Cosmos, Cyberpunk, Aurora, and more — plus custom colour pickers.',
@@ -942,6 +942,15 @@ var SparkTour = (function () {
   function _placePanels(rect) {
     var vw = window.innerWidth;
     var vh = window.innerHeight;
+    
+    if (!rect) {
+      _panels.top.style.cssText    = 'top:0;left:0;width:' + vw + 'px;height:' + vh + 'px;';
+      _panels.bottom.style.cssText = 'top:0;left:0;width:0;height:0;';
+      _panels.left.style.cssText   = 'top:0;left:0;width:0;height:0;';
+      _panels.right.style.cssText  = 'top:0;left:0;width:0;height:0;';
+      return;
+    }
+    
     var x1 = rect.left   - PAD;
     var y1 = rect.top    - PAD;
     var x2 = rect.right  + PAD;
@@ -1161,6 +1170,17 @@ var SparkTour = (function () {
     _idx = idx;
     var step   = _steps[idx];
     var mob    = _isMob();
+
+    /* Switch mobile panel programmatically to reveal the element */
+    if (mob && typeof window.openPanel === 'function') {
+      var targetPanel = 'feed';
+      if (step.id === 'trending') targetPanel = 'trends';
+      else if (step.id === 'leaderboard') targetPanel = 'leaders';
+      else if (step.id === 'chats') targetPanel = 'chats';
+      else if (step.id === 'profile') targetPanel = 'profile';
+      window.openPanel(targetPanel);
+    }
+
     var selStr = mob ? step.elMob : step.el;
     var el     = null;
     if (selStr) { try { el = document.querySelector(selStr); } catch(e){} }
@@ -1178,7 +1198,9 @@ var SparkTour = (function () {
         _placePanels(rect);
         _placeRing(rect);
         _raf = requestAnimationFrame(_trackLoop);
-      }, el ? 280 : 0);
+      }, 280);
+    } else {
+      _placePanels(null);
     }
 
     var isFirst = idx === 0;
