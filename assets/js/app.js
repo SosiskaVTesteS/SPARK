@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', function () {
     cardsList.addEventListener('click', function (event) {
       var investBtn = event.target.closest('[data-invest-id]');
       if (investBtn) {
-        // Pass ID as string — UUIDs must not be parsed as integers
+        // Pass ID as string вЂ” UUIDs must not be parsed as integers
         openInvest(investBtn.dataset.investId);
         return;
       }
@@ -290,7 +290,7 @@ function setAuthErr(m) {
 
 var activeButtonTimers = new Map();
 
-// ════ Unified Auth State Machine ════
+// в•ђв•ђв•ђв•ђ Unified Auth State Machine в•ђв•ђв•ђв•ђ
 var AuthFlowManager = {
   state: 'IDLE',
   btn: null,
@@ -516,7 +516,7 @@ async function doVerifyRegistration() {
       return;
     }
 
-    // ════ Optimistic UI Transition ════
+    // в•ђв•ђв•ђв•ђ Optimistic UI Transition в•ђв•ђв•ђв•ђ
     // Transition IMMEDIATELY to application since database setup succeeded!
     toast(T('regComplete'), 'var(--ac2)');
 
@@ -530,8 +530,11 @@ async function doVerifyRegistration() {
     ME = tempUser;
 
     showRegistrationForm();
+    // Flag this as a fresh registration so the post-reg tour fires
+    window._sparkNewRegistration = true;
     enterApp();
     AuthFlowManager.stop();
+
 
     // Async background session handshake
     (async function () {
@@ -703,21 +706,21 @@ window.claimDailyBonus = async function() {
     if (appEntered) {
       renderProfile();
     }
-    toast('🎁 Ежедневный бонус: +' + (bonusData.amount || 10) + ' SPK!', 'var(--ac)');
+    toast('рџЋЃ Р•Р¶РµРґРЅРµРІРЅС‹Р№ Р±РѕРЅСѓСЃ: +' + (bonusData.amount || 10) + ' SPK!', 'var(--ac)');
   } else if (r.ok && r.data && r.data.data && r.data.data.message === 'already_claimed') {
     // Just quietly update local state to avoid further attempts today
     PROFILE.last_daily_bonus_claim = new Date().toISOString();
   }
 };
 
-// ═══ Load ideas from DB and populate LIVE array ═══
+// в•ђв•ђв•ђ Load ideas from DB and populate LIVE array в•ђв•ђв•ђ
 async function loadIdeasFromDB() {
   // Show loading state in feed
   var cl = document.getElementById('cardsList');
   if (cl) cl.innerHTML = '<div style="text-align:center;color:var(--mu);padding:40px 20px;font-size:14px">Loading ideas...</div>';
 
   if (!supa) {
-    // No DB — show empty state
+    // No DB вЂ” show empty state
     renderFeed();
     renderTrends();
     renderLeaders();
@@ -760,7 +763,7 @@ async function loadIdeasFromDB() {
   applyLiveActivityI18n();
 }
 
-// ═══ Convert a DB ideas row to LIVE array object ═══
+// в•ђв•ђв•ђ Convert a DB ideas row to LIVE array object в•ђв•ђв•ђ
 function dbRowToLiveIdea(row, profilesMap) {
   var uname = (profilesMap && profilesMap[row.author_id]) || '@user';
   var letter = uname.replace('@', '').charAt(0).toUpperCase();
@@ -771,7 +774,7 @@ function dbRowToLiveIdea(row, profilesMap) {
   var minBet = Number(row.min_bet) || 10;
   var pct = pool > 0 ? Math.min(Math.round((pool / Math.max(minBet * 5, 1)) * 100), 999) : 0;
   // Calculate hours left from expires_at
-  var cdH = '—';
+  var cdH = 'вЂ”';
   if (row.expires_at) {
     var msLeft = new Date(row.expires_at).getTime() - Date.now();
     if (msLeft > 0) {
@@ -782,7 +785,7 @@ function dbRowToLiveIdea(row, profilesMap) {
     }
   }
   // Calculate 'tm' (time since posted)
-  var tm = '—';
+  var tm = 'вЂ”';
   if (row.created_at) {
     var msSince = Date.now() - new Date(row.created_at).getTime();
     var minSince = Math.floor(msSince / 60000);
@@ -843,7 +846,7 @@ function detectTag(title) {
   return 'B2B SaaS';
 }
 
-// ═══ Render live trends table from LIVE data ═══
+// в•ђв•ђв•ђ Render live trends table from LIVE data в•ђв•ђв•ђ
 function renderTrends() {
   var tagTotals = {};
   LIVE.forEach(function(idea) {
@@ -856,7 +859,7 @@ function renderTrends() {
 
   function buildHtml(list) {
     if (list.length === 0) {
-      return '<div style="color:var(--mu);font-size:12px;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных — опубликуйте первую идею!' : 'No data yet — publish the first idea!') + '</div>';
+      return '<div style="color:var(--mu);font-size:12px;padding:8px 0">' + (LANG === 'ru' ? 'РќРµС‚ РґР°РЅРЅС‹С… вЂ” РѕРїСѓР±Р»РёРєСѓР№С‚Рµ РїРµСЂРІСѓСЋ РёРґРµСЋ!' : 'No data yet вЂ” publish the first idea!') + '</div>';
     }
     return list.map(function(tag, i) {
       var total = tagTotals[tag];
@@ -878,13 +881,13 @@ function renderTrends() {
   if (mob) mob.innerHTML = html;
 }
 
-// ═══ Render leaders from profiles DB ═══
+// в•ђв•ђв•ђ Render leaders from profiles DB в•ђв•ђв•ђ
 async function renderLeaders() {
   var rankColors = ['gold', 'silver', 'bronze'];
   var loadingHtml = '<div style="color:var(--mu);font-size:12px;padding:8px 0">Loading...</div>';
 
   if (!supa) {
-    var emptyHtml = '<div style="color:var(--mu);font-size:12px;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных' : 'No data yet') + '</div>';
+    var emptyHtml = '<div style="color:var(--mu);font-size:12px;padding:8px 0">' + (LANG === 'ru' ? 'РќРµС‚ РґР°РЅРЅС‹С…' : 'No data yet') + '</div>';
     var ld = document.getElementById('leaderListDesk');
     if (ld) ld.innerHTML = emptyHtml;
     var lm = document.getElementById('leaderListMob');
@@ -923,13 +926,13 @@ async function renderLeaders() {
         + '<div class="lav" style="background:' + gradients[i] + '">' + letter + '</div>'
         + '<div class="linf">'
         + '<div class="lname">' + uname + '</div>'
-        + '<div class="lsub">' + invCount + ' ' + (LANG === 'ru' ? 'вложений' : 'investments') + '</div>'
+        + '<div class="lsub">' + invCount + ' ' + (LANG === 'ru' ? 'РІР»РѕР¶РµРЅРёР№' : 'investments') + '</div>'
         + '</div>'
         + '<div class="lprofit"' + profitColor + '>' + bal.toLocaleString() + ' SPK</div>'
         + '</div>';
     }).join('');
   } else {
-    html = '<div style="color:var(--mu);font-size:12px;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных' : 'No data yet') + '</div>';
+    html = '<div style="color:var(--mu);font-size:12px;padding:8px 0">' + (LANG === 'ru' ? 'РќРµС‚ РґР°РЅРЅС‹С…' : 'No data yet') + '</div>';
   }
 
   var ld = document.getElementById('leaderListDesk');
@@ -1007,7 +1010,14 @@ function enterApp() {
   if (window.ChatsEngine) {
     ChatsEngine.init();
   }
+  // Phase 2 interactive tour — runs for new registrations and first-time logins.
+  // SparkTour.init() checks localStorage internally and is a no-op for
+  // users who already completed the tour.
+  if (window.SparkTour) {
+    SparkTour.init();
+  }
 }
+
 
 function updateHeader() {
   var letter = PROFILE.username.replace('@', '').charAt(0).toUpperCase();
@@ -1049,7 +1059,7 @@ function setVmErr(m) {
 
 async function checkEmailVerified() {
   var btn = document.getElementById('vmConfirmBtn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Проверяем…'; }
+  if (btn) { btn.disabled = true; btn.textContent = 'РџСЂРѕРІРµСЂСЏРµРјвЂ¦'; }
   setVmErr('');
 
   if (!supa) { hideVerify(); enterApp(); return; }
@@ -1071,7 +1081,7 @@ async function checkEmailVerified() {
       }
     }
   } catch (e) {
-    setVmErr('Ошибка сети. Попробуйте ещё раз.');
+    setVmErr('РћС€РёР±РєР° СЃРµС‚Рё. РџРѕРїСЂРѕР±СѓР№С‚Рµ РµС‰С‘ СЂР°Р·.');
     console.warn('checkEmailVerified error', e);
     if (btn) { btn.disabled = false; btn.textContent = T('verifyDone'); }
     return;
@@ -1082,7 +1092,7 @@ async function checkEmailVerified() {
     hideVerify();
     enterApp();
   } else {
-    setVmErr('Почта ещё не подтверждена. Проверьте папку «Спам».');
+    setVmErr('РџРѕС‡С‚Р° РµС‰С‘ РЅРµ РїРѕРґС‚РІРµСЂР¶РґРµРЅР°. РџСЂРѕРІРµСЂСЊС‚Рµ РїР°РїРєСѓ В«РЎРїР°РјВ».');
     if (btn) { btn.disabled = false; btn.textContent = T('verifyDone'); }
   }
 }
@@ -1096,9 +1106,9 @@ async function resendVerification() {
       email: PENDING_EMAIL,
       options: { emailRedirectTo: window.location.origin + window.location.pathname }
     });
-    setVmErr(r.error ? 'Не удалось: ' + r.error.message : '✉️ Письмо отправлено!');
+    setVmErr(r.error ? 'РќРµ СѓРґР°Р»РѕСЃСЊ: ' + r.error.message : 'вњ‰пёЏ РџРёСЃСЊРјРѕ РѕС‚РїСЂР°РІР»РµРЅРѕ!');
   } catch (e) {
-    setVmErr('Ошибка отправки.');
+    setVmErr('РћС€РёР±РєР° РѕС‚РїСЂР°РІРєРё.');
   }
 }
 
@@ -1187,7 +1197,7 @@ function applyStaticI18n() {
   setText('.frow [data-sort="ending"]', T('endingSort'));
   setText('.trow .flabel', T('tagLabel'));
   setText('.trow [data-tag="all"]', T('all'));
-  setPlaceholder('#srchIn', LANG === 'ru' ? 'Поиск идей...' : 'Search ideas...');
+  setPlaceholder('#srchIn', LANG === 'ru' ? 'РџРѕРёСЃРє РёРґРµР№...' : 'Search ideas...');
 
   setText('.mob-tab[data-panel="feed"] span', T('feed'));
   setText('.mob-tab[data-panel="leaders"] span', T('leaders'));
@@ -1207,8 +1217,8 @@ function applyStaticI18n() {
   setText('#moCreate .mf:nth-of-type(3) label', T('duration'));
   setText('#btnPub', T('holdPublish'));
   setText('#moCreate .hbtn-hint', T('holdHint'));
-  setPlaceholder('#ciTitle', LANG === 'ru' ? 'В чем идея?' : "What's the idea?");
-  setPlaceholder('#ciDesc', LANG === 'ru' ? 'Опишите...' : 'Describe it...');
+  setPlaceholder('#ciTitle', LANG === 'ru' ? 'Р’ С‡РµРј РёРґРµСЏ?' : "What's the idea?");
+  setPlaceholder('#ciDesc', LANG === 'ru' ? 'РћРїРёС€РёС‚Рµ...' : 'Describe it...');
 
   setText('#invTitle', T('investModal'));
   setText('#moInvest .inv-bal span', T('yourBalance'));
@@ -1289,7 +1299,7 @@ function shortTopic(idea) {
   if (!idea) return 'N/A';
   var source = String(idea.title || idea.tag || '').trim();
   if (!source) return 'N/A';
-  return source.length > 14 ? source.slice(0, 14) + '…' : source;
+  return source.length > 14 ? source.slice(0, 14) + 'вЂ¦' : source;
 }
 
 function topByCategory(tags, maxItems) {
@@ -1351,10 +1361,10 @@ function applyLiveActivityI18n() {
     var title = escapeHTML((idea.title || '').slice(0, 22));
     var pool = Number(idea.pool) || 0;
     r.innerHTML = '<span style="color:var(--ac2)">' + u + '</span> '
-      + (LANG === 'ru' ? 'вложил(а) ' : 'invested ')
+      + (LANG === 'ru' ? 'РІР»РѕР¶РёР»(Р°) ' : 'invested ')
       + '<strong style="color:var(--tx)">' + pool + ' SPK</strong> '
-      + (LANG === 'ru' ? 'в "' : 'in "') + title + '"'
-      + '<div style="font-size:10px;margin-top:1px">' + escapeHTML(idea.tm || '—') + '</div>';
+      + (LANG === 'ru' ? 'РІ "' : 'in "') + title + '"'
+      + '<div style="font-size:10px;margin-top:1px">' + escapeHTML(idea.tm || 'вЂ”') + '</div>';
   });
   // Clear unused rows
   for (var j = entries.length; j < 3; j++) {
@@ -1384,7 +1394,7 @@ function profileHTML(sfx) {
   var avIdx     = Number(PROFILE.avatar_color) || 0;
   var avGrad    = window.ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avIdx) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
   var activeTheme = window.ThemeEngine ? ThemeEngine.getActive() : {};
-  var themeIcon = activeTheme.icon || '🌌';
+  var themeIcon = activeTheme.icon || 'рџЊЊ';
 
   return '<div class="phero">'
     + '<div class="pav-lg" style="background:' + avGrad + '">' + L + '</div>'
@@ -1393,9 +1403,9 @@ function profileHTML(sfx) {
     + '<span class="pbadge">' + T('verifiedInvestor') + '</span></div>'
     + '<div class="srow" style="margin-bottom:18px">'
     + '<div class="sbox"><span class="sval">' + (PROFILE.ideas_count || 0) + '</span><span class="skey">' + T('ideas') + '</span></div>'
-    + '<div class="sbox"><span class="sval">' + (typeof PROFILE.profit_pct === 'number' && PROFILE.profit_pct !== 0 ? (PROFILE.profit_pct > 0 ? '+' : '') + PROFILE.profit_pct + '%' : '—') + '</span><span class="skey">' + T('profit') + '</span></div>'
+    + '<div class="sbox"><span class="sval">' + (typeof PROFILE.profit_pct === 'number' && PROFILE.profit_pct !== 0 ? (PROFILE.profit_pct > 0 ? '+' : '') + PROFILE.profit_pct + '%' : 'вЂ”') + '</span><span class="skey">' + T('profit') + '</span></div>'
     + '<div class="sbox"><span class="sval">' + (PROFILE.investments_count || 0) + '</span><span class="skey">' + T('invested') + '</span></div>'
-    + '<div class="sbox"><span class="sval">' + (PROFILE.rank ? '#' + PROFILE.rank : '—') + '</span><span class="skey">' + T('rank') + '</span></div></div>'
+    + '<div class="sbox"><span class="sval">' + (PROFILE.rank ? '#' + PROFILE.rank : 'вЂ”') + '</span><span class="skey">' + T('rank') + '</span></div></div>'
     /* Profile Edit section */
     + (window.ProfileEditEngine ? ProfileEditEngine.renderEditSection(sfx) : '')
     + '<div class="myideas-section" id="myideasSec-' + sfx + '">'
@@ -1427,13 +1437,13 @@ function profileHTML(sfx) {
     + '<span class="lang-cur" id="lc' + sfx + '">' + LANG.toUpperCase() + '</span>'
     + '<div class="lang-dd" id="ldd-' + sfx + '">'
     + '<div class="lang-opt' + (LANG === 'en' ? ' sel' : '') + '" data-lang="en" data-set-lang="en"><span style="font-size:11px; font-weight:bold; color:var(--mu);">EN</span> English</div>'
-    + '<div class="lang-opt' + (LANG === 'ru' ? ' sel' : '') + '" data-lang="ru" data-set-lang="ru"><span style="font-size:11px; font-weight:bold; color:var(--mu);">RU</span> Русский</div>'
+    + '<div class="lang-opt' + (LANG === 'ru' ? ' sel' : '') + '" data-lang="ru" data-set-lang="ru"><span style="font-size:11px; font-weight:bold; color:var(--mu);">RU</span> Р СѓСЃСЃРєРёР№</div>'
     + '</div></div>'
     + '<div class="sset" data-pulse="1" data-settings="notifications"><span>' + T('notifications') + '</span>'
     + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--mu)"><polyline points="9 18 15 12 9 6"/></svg></div>'
     + '<div class="sset" data-pulse="1" data-settings="privacy"><span>' + T('privacy') + '</span>'
     + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--mu)"><polyline points="9 18 15 12 9 6"/></svg></div>'
-    + '<a class="sset" href="about.html" style="text-decoration:none;color:inherit"><span>' + (typeof T === 'function' && T('aboutUs') !== 'aboutUs' ? T('aboutUs') : (window.LANG === 'ru' ? 'О нас' : 'About us')) + '</span>'
+    + '<a class="sset" href="about.html" style="text-decoration:none;color:inherit"><span>' + (typeof T === 'function' && T('aboutUs') !== 'aboutUs' ? T('aboutUs') : (window.LANG === 'ru' ? 'Рћ РЅР°СЃ' : 'About us')) + '</span>'
     + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--mu)"><polyline points="9 18 15 12 9 6"/></svg></a>'
     + '<div class="sset" data-logout="1"><span style="color:var(--red)">' + T('logout') + '</span>'
     + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--red)"><polyline points="9 18 15 12 9 6"/></svg></div>'
@@ -1560,7 +1570,7 @@ function investGraphHTML(x) {
   var histJSON = JSON.stringify(history).replace(/"/g, '&quot;');
   var expired = isExpired(x);
   var cdText = expired 
-    ? ('&#8987; ' + (LANG === 'ru' ? 'Завершено' : 'Ended'))
+    ? ('&#8987; ' + (LANG === 'ru' ? 'Р—Р°РІРµСЂС€РµРЅРѕ' : 'Ended'))
     : ('&#8987; ' + x.cd + 'h ' + T('cleft'));
   return '<div class="igraph-wrap">'
     + '<div class="igraph-header"><span>' + T('iot') + '</span><span class="igraph-label-right">&#8593; +' + x.pct + '%</span></div>'
@@ -1662,7 +1672,7 @@ function filtered() {
   });
   if (sort === 'popular') a.sort(function (a1, b1) { return b1.investors - a1.investors; });
   if (sort === 'profit') a.sort(function (a2, b2) { return b2.pct - a2.pct; });
-  // Safe parseInt: '—' or empty string returns Infinity (shown last in ending-soon)
+  // Safe parseInt: 'вЂ”' or empty string returns Infinity (shown last in ending-soon)
   if (sort === 'ending') a.sort(function (a3, b3) {
     var va = parseInt(a3.cd, 10); var vb = parseInt(b3.cd, 10);
     va = Number.isFinite(va) ? va : Infinity;
@@ -1682,12 +1692,12 @@ function reactHTML(id) {
       html += '<button class="rbbl ' + on + '" data-id="' + id + '" data-e="' + e + '"><span class="rem">' + e + '</span><span class="rct">' + cnt + '</span></button>';
     }
   });
-  html += '<button class="rbbl react-add-btn" data-id="' + id + '" title="Add reaction"><span class="rem">➕</span></button>';
+  html += '<button class="rbbl react-add-btn" data-id="' + id + '" title="Add reaction"><span class="rem">вћ•</span></button>';
   return html;
 }
 
 function cardHTML(x) {
-  var fire = (getRS(x.id).counts['🔥'] || 0) >= FIRE_T;
+  var fire = (getRS(x.id).counts['рџ”Ґ'] || 0) >= FIRE_T;
   var safeUser = escapeHTML(x.u);
   var safeTag = escapeHTML(x.tag);
   var safeTitle = escapeHTML(x.title);
@@ -1696,11 +1706,11 @@ function cardHTML(x) {
   var safeBg = sanitizeCssBackground(x.bg);
   var safeAv = safeAvatar(x.av);
   var expired = isExpired(x);
-  var btnText = expired ? (LANG === 'ru' ? 'Завершено' : 'Ended') : T('binv');
+  var btnText = expired ? (LANG === 'ru' ? 'Р—Р°РІРµСЂС€РµРЅРѕ' : 'Ended') : T('binv');
   var disabledAttr = expired ? ' disabled style="opacity:0.5;cursor:not-allowed;"' : '';
   return '<div class="card' + (fire ? ' fire' : '') + '" data-cid="' + x.id + '">'
     + '<div class="ch"><div class="cav" style="background:' + safeBg + '">' + safeAv + '</div>'
-    + '<div class="cm"><div class="cu">' + safeUser + '</div><div class="ct">' + safeTime + ' · #' + safeTag + '</div></div>'
+    + '<div class="cm"><div class="cu">' + safeUser + '</div><div class="ct">' + safeTime + ' В· #' + safeTag + '</div></div>'
     + '<div class="cmen"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></div></div>'
     + '<div class="ctitle">' + safeTitle + '</div><div class="cbody">' + safeBody + '</div>'
     + investGraphHTML(x)
@@ -1734,18 +1744,18 @@ function renderPgn(tp) {
   var ps = [];
   if (tp <= 5) { for (var i = 1; i <= tp; i++) ps.push(i); } else {
     var l = Math.max(1, page - 1), r = Math.min(tp, page + 1);
-    if (l > 2) ps.push('…l');
+    if (l > 2) ps.push('вЂ¦l');
     for (var p2 = l; p2 <= r; p2++) ps.push(p2);
-    if (r < tp - 1) ps.push('…r');
+    if (r < tp - 1) ps.push('вЂ¦r');
   }
-  var h = mkbtn('«', 1, page === 1, false) + mkbtn('‹', page - 1, page === 1, false);
-  if (!ps.includes(1)) { h += mkbtn('1', 1, false, false); if (ps[0] !== '…l') h += '<span class="psep">…</span>'; }
+  var h = mkbtn('В«', 1, page === 1, false) + mkbtn('вЂ№', page - 1, page === 1, false);
+  if (!ps.includes(1)) { h += mkbtn('1', 1, false, false); if (ps[0] !== 'вЂ¦l') h += '<span class="psep">вЂ¦</span>'; }
   ps.forEach(function (p) {
-    if (p === '…l' || p === '…r') h += '<span class="psep">…</span>';
+    if (p === 'вЂ¦l' || p === 'вЂ¦r') h += '<span class="psep">вЂ¦</span>';
     else h += mkbtn(p, p, false, p === page);
   });
-  if (!ps.includes(tp)) { if (ps[ps.length - 1] !== '…r') h += '<span class="psep">…</span>'; h += mkbtn(tp, tp, false, false); }
-  h += mkbtn('›', page + 1, page === tp, false) + mkbtn('»', tp, page === tp, false);
+  if (!ps.includes(tp)) { if (ps[ps.length - 1] !== 'вЂ¦r') h += '<span class="psep">вЂ¦</span>'; h += mkbtn(tp, tp, false, false); }
+  h += mkbtn('вЂє', page + 1, page === tp, false) + mkbtn('В»', tp, page === tp, false);
   pg.innerHTML = h;
   pg.querySelectorAll('.pbtn:not([disabled])').forEach(function (b) {
     b.addEventListener('click', function () { page = parseInt(b.dataset.p, 10); renderFeed(); });
@@ -1799,7 +1809,7 @@ function react(ideaId, emoji, btn) {
     });
   });
   var card = document.querySelector('.card[data-cid="' + ideaId + '"]');
-  if (card) card.classList.toggle('fire', (rs.counts['🔥'] || 0) >= FIRE_T);
+  if (card) card.classList.toggle('fire', (rs.counts['рџ”Ґ'] || 0) >= FIRE_T);
 }
 
 var CUR_IDEA = null;
@@ -1817,8 +1827,8 @@ function openInvest(id) {
   var maxAllowed = Math.max(min, PROFILE.spk_balance);
   var invTitle = document.getElementById('invTitle');
   if (invTitle) {
-    var titlePrefix = LANG === 'ru' ? 'Инвестировать в "' : 'Invest in "';
-    invTitle.textContent = titlePrefix + String(idea.title || '').slice(0, 28) + '…" 🚀';
+    var titlePrefix = LANG === 'ru' ? 'РРЅРІРµСЃС‚РёСЂРѕРІР°С‚СЊ РІ "' : 'Invest in "';
+    invTitle.textContent = titlePrefix + String(idea.title || '').slice(0, 28) + 'вЂ¦" рџљЂ';
   }
   var invBal = document.getElementById('invBal');
   if (invBal) invBal.textContent = PROFILE.spk_balance.toLocaleString() + ' SPK';
@@ -1884,7 +1894,7 @@ async function doInvest() {
     return;
   }
   if (amt > PROFILE.spk_balance) {
-    toast('❌ ' + T('insufficientBalance'), 'var(--red)');
+    toast('вќЊ ' + T('insufficientBalance'), 'var(--red)');
     if (btn) btn.disabled = false;
     return;
   }
@@ -1907,7 +1917,7 @@ async function doInvest() {
             usingLegacyInvestFallback = true;
             if (!investFallbackNoticeShown) {
               investFallbackNoticeShown = true;
-              toast('⚠️ ' + T('legacyInvestMode'), 'var(--ac2)');
+              toast('вљ пёЏ ' + T('legacyInvestMode'), 'var(--ac2)');
             }
             var currentBalance = Number(PROFILE.spk_balance || 0);
             var nextBalance = currentBalance - amt;
@@ -1937,7 +1947,7 @@ async function doInvest() {
       updateHeader();
     }
     closeMo('moInvest');
-    toast('✅ Invested ' + amt + ' SPK!', 'var(--ac)');
+    toast('вњ… Invested ' + amt + ' SPK!', 'var(--ac)');
     // Update the local idea object with new totals from DB response
     if (CUR_IDEA) {
       var ideaIdx = LIVE.findIndex(function(x) { return x.id === CUR_IDEA.id; });
@@ -1969,11 +1979,11 @@ async function doInvest() {
     });
     console.warn(e);
     var msg = String((e && e.message) || '').toLowerCase();
-    if (msg.includes('insufficient_balance')) toast('❌ ' + T('insufficientBalance'), 'var(--red)');
-    else if (msg.includes('amount_below_min_bet')) toast('❌ ' + T('amountBelowMinBet'), 'var(--red)');
-    else if (msg.includes('idea_not_found')) toast('❌ ' + T('ideaNotFound'), 'var(--red)');
-    else if (msg.includes('auth_required')) toast('❌ ' + T('signInRequired'), 'var(--red)');
-    else toast('❌ ' + T('secureInvestFailed'), 'var(--red)');
+    if (msg.includes('insufficient_balance')) toast('вќЊ ' + T('insufficientBalance'), 'var(--red)');
+    else if (msg.includes('amount_below_min_bet')) toast('вќЊ ' + T('amountBelowMinBet'), 'var(--red)');
+    else if (msg.includes('idea_not_found')) toast('вќЊ ' + T('ideaNotFound'), 'var(--red)');
+    else if (msg.includes('auth_required')) toast('вќЊ ' + T('signInRequired'), 'var(--red)');
+    else toast('вќЊ ' + T('secureInvestFailed'), 'var(--red)');
   } finally {
     if (btn) btn.disabled = false;
   }
@@ -2002,7 +2012,7 @@ async function doPublish() {
   var title = ciTitle.value.trim();
   var desc = ciDesc ? ciDesc.value.trim() : '';
   var min = ciMin ? clampAmount(ciMin.value, 1, 1000000) : 10;
-  if (!title) { toast('❌ Add a title', 'var(--red)'); return; }
+  if (!title) { toast('вќЊ Add a title', 'var(--red)'); return; }
   var secs = { '24h': 86400, '7d': 604800 }[selDur] || 86400;
   var exp = new Date(Date.now() + secs * 1000).toISOString();
   var uname = PROFILE.username;
@@ -2022,14 +2032,14 @@ async function doPublish() {
       if (r.data) insertLive(r.data, uname, letter);
     } catch (e) {
       console.warn('insert error', e);
-      toast('❌ Publish failed. Try again.', 'var(--red)');
+      toast('вќЊ Publish failed. Try again.', 'var(--red)');
       return;
     }
   } else {
     insertLive({ id: Date.now(), title: title, desc: desc, min_bet: min, expires_at: exp }, uname, letter);
   }
   closeMo('moCreate');
-  toast('рџљЂ Idea published!', 'var(--ac)');
+  toast('СЂСџС™Р‚ Idea published!', 'var(--ac)');
 }
 
 function insertLive(row, uname, letter) {
@@ -2106,7 +2116,7 @@ function initRealtime() {
           var latest = await supa.from('ideas').select('id, title').order('created_at', {ascending: false}).limit(1).single();
           if (latest.data && latest.data.id && latest.data.id !== latestId) {
             if (!LIVE.filter(function(x) { return x.id === latest.data.id; }).length) {
-              toast('✨ New: ' + (latest.data.title || '').slice(0, 26), 'var(--ac2)');
+              toast('вњЁ New: ' + (latest.data.title || '').slice(0, 26), 'var(--ac2)');
             }
           }
         }
@@ -2164,7 +2174,7 @@ function initRealtime() {
           var rtUsername = r.author_username || '@anon';
           insertLive(r, rtUsername, rtUsername.replace('@', '').charAt(0).toUpperCase() || 'A');
         }
-        toast('✨ New: ' + (r.title || '').slice(0, 26), 'var(--ac2)');
+        toast('вњЁ New: ' + (r.title || '').slice(0, 26), 'var(--ac2)');
       }).on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'ideas' }, function (p2) {
         // Update existing idea in LIVE with fresh investment data
         var updated = p2.new;
@@ -2418,14 +2428,18 @@ async function bootApp() {
       return;
     }
   }
-  // РЎРµСЃСЃРёСЏ РЅРµ РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅР° вЂ” СЃРЅРёРјР°РµРј presession-РєР»Р°СЃСЃ, РїРѕРєР°Р·С‹РІР°РµРј СЌРєСЂР°РЅ РІС…РѕРґР°
+  // No session - route through onboarding (first-visit detection handled inside).
   document.documentElement.classList.remove('spark-presession');
-  document.documentElement.classList.add('auth-active');
-  var authScreen = document.getElementById('authScreen');
-  if (authScreen) authScreen.classList.remove('gone');
   var launchOverlay = document.getElementById('launchOverlay');
   if (launchOverlay) launchOverlay.classList.add('gone');
   applyLang();
+  if (window.SparkOnboarding) {
+    window.SparkOnboarding.init();
+  } else {
+    document.documentElement.classList.add('auth-active');
+    var authScreen = document.getElementById('authScreen');
+    if (authScreen) authScreen.classList.remove('gone');
+  }
 }
 
 window.addEventListener('error', function (event) {
@@ -2436,6 +2450,7 @@ window.addEventListener('error', function (event) {
     col: event.colno
   });
 });
+
 
 window.addEventListener('unhandledrejection', function (event) {
   var reason = event && event.reason;
@@ -2584,7 +2599,7 @@ document.addEventListener('DOMContentLoaded', function() {
   if (formDelPwd) {
     formDelPwd.addEventListener('submit', async function (e) {
       e.preventDefault();
-      if (!ME) { toast(T('signInRequired') || 'Войдите в аккаунт', 'var(--red)'); return; }
+      if (!ME) { toast(T('signInRequired') || 'Р’РѕР№РґРёС‚Рµ РІ Р°РєРєР°СѓРЅС‚', 'var(--red)'); return; }
       if (AuthFlowManager.isProcessing()) return;
 
       var btn = document.getElementById('btnSendDelCode');
@@ -2607,7 +2622,7 @@ document.addEventListener('DOMContentLoaded', function() {
       } catch (err) {
         var errMsg = err.message || '';
         if (errMsg.indexOf('Incorrect password') !== -1 || errMsg.indexOf('Incorrect') !== -1) {
-          errMsg = T('pwdErr') || 'Неверный пароль';
+          errMsg = T('pwdErr') || 'РќРµРІРµСЂРЅС‹Р№ РїР°СЂРѕР»СЊ';
         }
         toast(T('delErr') + ': ' + errMsg, 'var(--red)');
       } finally {
@@ -2690,7 +2705,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // ═══ CHATS SYSTEM INITIALIZATION ═══
+  // в•ђв•ђв•ђ CHATS SYSTEM INITIALIZATION в•ђв•ђв•ђ
   var btnChatsDesk = document.getElementById('btnChatsDesk');
   if (btnChatsDesk) {
     btnChatsDesk.addEventListener('click', function () {
