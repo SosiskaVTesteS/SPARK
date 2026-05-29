@@ -803,8 +803,7 @@ var SparkTour = (function () {
   backdrop-filter:blur(2px);
   -webkit-backdrop-filter:blur(2px);
   pointer-events:all;
-  transition:all .35s cubic-bezier(.4,0,.2,1);
-  will-change:transform;
+  will-change:top,left,width,height;
 }
 /* top,right,bottom,left panels each get explicit coords in JS */
 
@@ -1010,7 +1009,8 @@ var SparkTour = (function () {
   /* Place pulsing ring */
   function _placeRing(rect) {
     _ring.style.cssText =
-      'left:'   + (rect.left   - PAD) + 'px;'
+      'display:block;'
+      + 'left:'   + (rect.left   - PAD) + 'px;'
       + 'top:'  + (rect.top    - PAD) + 'px;'
       + 'width:' + (rect.width + PAD*2) + 'px;'
       + 'height:'+ (rect.height+ PAD*2) + 'px;'
@@ -1020,10 +1020,33 @@ var SparkTour = (function () {
 
   /* requestAnimationFrame loop to keep panels/ring in sync with target */
   function _trackLoop() {
-    if (!_target) return;
-    var r = _target.getBoundingClientRect();
-    _placePanels(r);
-    _placeRing(r);
+    var mob = _isMob();
+    var step = _steps[_idx];
+    if (!step) {
+      _raf = requestAnimationFrame(_trackLoop);
+      return;
+    }
+    
+    var selStr = mob ? step.elMob : step.el;
+    var el = null;
+    if (selStr) { try { el = document.querySelector(selStr); } catch(e){} }
+    
+    if (el) {
+      var r = el.getBoundingClientRect();
+      _placePanels(r);
+      _placeRing(r);
+      
+      if (_target !== el) {
+        if (_target) _dropTarget(_target);
+        _liftTarget(el);
+        _target = el;
+      }
+    } else {
+      _placePanels(null);
+      if (_ring) _ring.style.cssText = 'display:none;';
+      if (_target) { _dropTarget(_target); _target = null; }
+    }
+    
     _raf = requestAnimationFrame(_trackLoop);
   }
 
@@ -1233,20 +1256,9 @@ var SparkTour = (function () {
     /* Scroll target into view */
     if (el) el.scrollIntoView({ behavior:'smooth', block:'center', inline:'nearest' });
 
-    var rect = null;
-    if (el) {
-      /* Give element a brief moment to settle after scroll */
-      setTimeout(function() {
-        rect = el.getBoundingClientRect();
-        _liftTarget(el);
-        _target = el;
-        _placePanels(rect);
-        _placeRing(rect);
-        _raf = requestAnimationFrame(_trackLoop);
-      }, 280);
-    } else {
-      _placePanels(null);
-    }
+    // Start self-healing dynamic tracking immediately
+    _target = null;
+    _raf = requestAnimationFrame(_trackLoop);
 
     var isFirst = idx === 0;
     var isLast  = idx === _steps.length - 1;
