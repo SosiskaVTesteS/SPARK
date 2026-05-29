@@ -1254,7 +1254,35 @@ var SparkTour = (function () {
     if (selStr) { try { el = document.querySelector(selStr); } catch(e){} }
 
     /* Scroll target into view */
-    if (el) el.scrollIntoView({ behavior:'smooth', block:'center', inline:'nearest' });
+    if (el) {
+      if (step.id === 'card') {
+        setTimeout(function() {
+          if (mob) {
+            var rect = el.getBoundingClientRect();
+            var elementTop = rect.top + (window.pageYOffset || document.documentElement.scrollTop);
+            window.scrollTo({
+              top: elementTop - 70, // header margin offset (62px header + 8px padding)
+              behavior: 'smooth'
+            });
+          } else {
+            var feed = document.querySelector('.feed');
+            if (feed) {
+              var rect = el.getBoundingClientRect();
+              var feedRect = feed.getBoundingClientRect();
+              var elementTopInFeed = rect.top - feedRect.top + feed.scrollTop;
+              feed.scrollTo({
+                top: elementTopInFeed - 10, // safe top margin below fbar
+                behavior: 'smooth'
+              });
+            } else {
+              el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+            }
+          }
+        }, 150);
+      } else {
+        el.scrollIntoView({ behavior:'smooth', block:'center', inline:'nearest' });
+      }
+    }
 
     // Start self-healing dynamic tracking immediately
     _target = null;

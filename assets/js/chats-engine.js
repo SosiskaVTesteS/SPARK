@@ -514,7 +514,7 @@ var ChatsEngine = (function () {
       pickerEl.className = 'global-emoji-picker';
       pickerEl.style.display = 'none';
       pickerEl.style.position = 'absolute';
-      pickerEl.style.zIndex = '9999';
+      pickerEl.style.zIndex = '100005';
       
       var gridHtml = EMOJIS_LIST.map(function (e) {
         return '<button class="picker-emoji-btn" data-emoji="' + e + '">' + e + '</button>';
