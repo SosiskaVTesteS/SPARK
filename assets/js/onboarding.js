@@ -639,6 +639,47 @@ var SparkTour = (function () {
   var _steps       = [];
   var _raf         = null;  // requestAnimationFrame id for ring tracking
   var _sheetDrag   = null;  // touch tracking for swipe-dismiss
+  var _mockCardInjected = false;
+  var _originalFeedHtml = '';
+
+  function _ensureMockCard() {
+    var cl = document.getElementById('cardsList');
+    if (!cl) return;
+    var existingCard = cl.querySelector('.card');
+    if (existingCard) return;
+    _originalFeedHtml = cl.innerHTML;
+    var mockIdea = {
+      id: 'mock-tour-idea',
+      u: '@future_founder',
+      av: 'F',
+      bg: 'linear-gradient(135deg, #7B5CFA, #E85AA0)',
+      tag: detectTag ? detectTag('NeuroFlow — AI Workflow Engine') : 'AI Tools',
+      title: _T('NeuroFlow — AI Workflow Engine', 'NeuroFlow — ИИ-движок для задач'),
+      desc: _T('Autonomous AI agents executing complex B2B pipelines. Built-in revenue sharing via SPK hold-confirm contracts.', 'Автономные ИИ-агенты для сложных B2B-задач. Встроенное распределение выручки через смарт-контракты в SPK.'),
+      pct: 420,
+      pool: '45200',
+      investors: 88,
+      cd: '24',
+      tm: '5m'
+    };
+    if (typeof window.cardHTML === 'function') {
+      cl.innerHTML = window.cardHTML(mockIdea);
+    } else {
+      cl.innerHTML = '<div class="card" data-cid="mock-tour-idea"><div class="ch"><div class="cav" style="background:linear-gradient(135deg, #7B5CFA, #E85AA0)">F</div><div class="cm"><div class="cu">@future_founder</div><div class="ct">5m · #AI Tools</div></div></div><div class="ctitle">NeuroFlow — AI Workflow Engine</div><div class="cbody">Autonomous AI agents executing complex B2B pipelines.</div></div>';
+    }
+    _mockCardInjected = true;
+    if (typeof window.animateAllGraphs === 'function') {
+      try { window.animateAllGraphs(cl); } catch(e){}
+    }
+  }
+
+  function _restoreOriginalFeed() {
+    if (!_mockCardInjected) return;
+    var cl = document.getElementById('cardsList');
+    if (cl) cl.innerHTML = _originalFeedHtml;
+    _mockCardInjected = false;
+    _originalFeedHtml = '';
+  }
 
   /* ─────────────────────────────────────────────────────
      STEP DEFINITIONS  (tied to real SPARK selectors)
@@ -694,7 +735,7 @@ var SparkTour = (function () {
         )
       },
       {
-        id:'card', el:'.card:first-child', elMob:'.card:first-child',
+        id:'card', el:'.card', elMob:'.card',
         t:_T('📈 Idea Card','📈 Карточка идеи'),
         b:_T(
           'Each card shows: title, description, active investors, SPK pool, time remaining, and a live investment growth chart. Tap "Invest" to back it with your SPK.',
@@ -1181,6 +1222,10 @@ var SparkTour = (function () {
       window.openPanel(targetPanel);
     }
 
+    if (step.id === 'card') {
+      _ensureMockCard();
+    }
+
     var selStr = mob ? step.elMob : step.el;
     var el     = null;
     if (selStr) { try { el = document.querySelector(selStr); } catch(e){} }
@@ -1231,6 +1276,7 @@ var SparkTour = (function () {
     if (_target) { _dropTarget(_target); _target = null; }
     if (_tip)    { _tip.remove();    _tip   = null; }
     if (_sheet)  { _sheet.remove();  _sheet = null; }
+    _restoreOriginalFeed();
   }
 
   /* ─────────────────────────────────────────────────────
