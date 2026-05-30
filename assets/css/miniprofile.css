@@ -107,17 +107,17 @@
   z-index: 1;
   width: 100%;
   max-width: 400px;
-  background: linear-gradient(155deg, rgba(12,15,36,0.98), rgba(6,9,24,0.99));
+  background: linear-gradient(155deg, var(--bg-card), var(--bg-elevated));
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-radius: 24px;
-  border: 1px solid rgba(123, 92, 250, 0.28);
+  border: 1px solid rgba(var(--vl-rgb, 123, 92, 250), 0.28);
   overflow: hidden;
 
   /* Свечение */
   box-shadow:
-    0 0 0 1px rgba(123, 92, 250, 0.08),
-    0 -4px 40px rgba(123, 92, 250, 0.12),
+    0 0 0 1px rgba(var(--vl-rgb, 123, 92, 250), 0.08),
+    0 -4px 40px var(--vl-glow, rgba(123, 92, 250, 0.12)),
     0 28px 75px rgba(0, 0, 0, 0.85);
 
   /* Скрытое состояние — уезжает вниз */
@@ -161,9 +161,9 @@
 /* Дефолтная туманность */
 .mp-card__nebula {
   background:
-    radial-gradient(ellipse 100% 80% at 0% 50%,   rgba(123, 92, 250, 0.16) 0%, transparent 55%),
-    radial-gradient(ellipse 70%  60% at 100% 10%,  rgba(232, 90, 160, 0.10) 0%, transparent 55%),
-    radial-gradient(ellipse 50%  40% at 50% 100%,  rgba(123, 92, 250, 0.06) 0%, transparent 50%);
+    radial-gradient(ellipse 100% 80% at 0% 50%,   rgba(var(--vl-rgb, 123, 92, 250), 0.16) 0%, transparent 55%),
+    radial-gradient(ellipse 70%  60% at 100% 10%,  rgba(var(--ac-rgb, 232, 90, 160), 0.10) 0%, transparent 55%),
+    radial-gradient(ellipse 50%  40% at 50% 100%,  rgba(var(--vl-rgb, 123, 92, 250), 0.06) 0%, transparent 50%);
 }
 
 /* Кнопка закрытия */

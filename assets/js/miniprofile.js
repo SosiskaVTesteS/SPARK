@@ -199,9 +199,49 @@ const MiniProfile = (() => {
     elStatInvested.textContent = user.invested;
     elStatRank.textContent     = user.rankNum;
 
+    /* Динамическая локализация лейблов */
+    const labelIdeas = document.getElementById('mpLabelIdeas');
+    const labelInvested = document.getElementById('mpLabelInvested');
+    const labelRank = document.getElementById('mpLabelRank');
+
+    if (labelIdeas) labelIdeas.textContent = isRu ? 'Идей' : 'Ideas';
+    if (labelInvested) labelInvested.textContent = isRu ? 'Вложено' : 'Invested';
+    if (labelRank) labelRank.textContent = isRu ? 'Место' : 'Rank';
+
     /* Кнопки — добавляем data-user-id для обработчиков */
     elBtnMessage.dataset.userId = user.id;
     elBtnProfile.dataset.userId = user.id;
+
+    /* Динамическая локализация текста кнопок с SVG */
+    if (elBtnMessage) {
+      elBtnMessage.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+        + '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>'
+        + '</svg>'
+        + (isRu ? 'Написать' : 'Message');
+      elBtnMessage.setAttribute('aria-label', isRu ? 'Написать сообщение' : 'Send message');
+    }
+
+    if (elBtnProfile) {
+      elBtnProfile.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+        + '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>'
+        + '<circle cx="12" cy="7" r="4"/>'
+        + '</svg>'
+        + (isRu ? 'Профиль' : 'Profile');
+      elBtnProfile.setAttribute('aria-label', isRu ? 'Открыть полный профиль' : 'Open full profile');
+    }
+
+    /* Скрытие кнопки "Написать" для собственного профиля */
+    const currentHandle = (window.PROFILE && window.PROFILE.username) ? String(window.PROFILE.username).toLowerCase().trim() : '';
+    const clickedHandle = user.handle ? String(user.handle).toLowerCase().trim() : '';
+    const isMe = (window.ME && String(window.ME.id) === String(user.id)) || 
+                 (window.PROFILE && String(window.PROFILE.id) === String(user.id)) ||
+                 (currentHandle && (currentHandle === clickedHandle || '@' + currentHandle === clickedHandle || currentHandle === '@' + clickedHandle));
+
+    if (isMe) {
+      elBtnMessage.style.display = 'none';
+    } else {
+      elBtnMessage.style.display = '';
+    }
   }
 
   /* ── Открыть карточку ───────────────────────────────── */
