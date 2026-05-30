@@ -76,8 +76,20 @@ const MiniProfile = (() => {
   let currentUser  = null;
   let triggerEl    = null; // элемент, который открыл карточку (для возврата фокуса)
 
+  /* ── Кэш профилей (для оптимизации и исключения лишних запросов к Supabase) ── */
+  const profileCache = new Map();
+  const CACHE_TTL = 180000; // 3 минуты жизни кэша
+
   /* ── Получить данные пользователя (Supabase / Mock) ── */
   async function fetchUser(userId) {
+    const now = Date.now();
+    if (profileCache.has(userId)) {
+      const cached = profileCache.get(userId);
+      if (now - cached.timestamp < CACHE_TTL) {
+        return cached.data;
+      }
+    }
+
     // Если Supabase подключен и передан UUID
     if (window.supa && typeof userId === 'string' && userId.length > 20) {
       try {
@@ -124,7 +136,7 @@ const MiniProfile = (() => {
           let uname = row.username || '@user';
           if (!uname.startsWith('@')) uname = '@' + uname;
 
-          return {
+          const userData = {
             id:          row.id,
             name:        uname.replace('@', ''),
             handle:      uname,
@@ -138,6 +150,8 @@ const MiniProfile = (() => {
             avatarLabel: uname.replace('@', '').slice(0, 2).toUpperCase(),
             theme:       theme
           };
+          profileCache.set(userId, { data: userData, timestamp: now });
+          return userData;
         }
       } catch (err) {
         console.warn('[MiniProfile] Supabase profile fetch failed, using fallback:', err);
@@ -145,7 +159,11 @@ const MiniProfile = (() => {
     }
 
     // Если UUID не найден в БД или это локальный демо-ID
-    return MOCK_USERS[userId] ?? null;
+    const mockUser = MOCK_USERS[userId] ?? null;
+    if (mockUser) {
+      profileCache.set(userId, { data: mockUser, timestamp: now });
+    }
+    return mockUser;
   }
 
   /* ── Заполнить карточку данными ─────────────────────── */
@@ -372,7 +390,14 @@ const MiniProfile = (() => {
     bindTriggers();
 
     /* MutationObserver — подхватывает новые триггеры (динамический контент) */
-    const observer = new MutationObserver(() => bindTriggers());
+    let boundRafId = null;
+    const observer = new MutationObserver(() => {
+      if (boundRafId) return;
+      boundRafId = requestAnimationFrame(() => {
+        bindTriggers();
+        boundRafId = null;
+      });
+    });
     observer.observe(document.body, { childList: true, subtree: true });
   }
 

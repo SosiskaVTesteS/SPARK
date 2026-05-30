@@ -27,7 +27,7 @@
 <!-- font-display=swap prevents invisible text during font load -->
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet"></noscript>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" onerror="(function(){var s=document.createElement('script');s.src='https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js';document.head.appendChild(s);})()"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer onerror="(function(){var s=document.createElement('script');s.src='https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js';s.defer=true;document.head.appendChild(s);})()"></script>
 <link rel="stylesheet" href="assets/css/main.css">
 <link rel="stylesheet" href="assets/css/animations.css">
 <link rel="stylesheet" href="assets/css/chats.css">
@@ -37,7 +37,7 @@
 <link rel="stylesheet" href="assets/css/spark-onboarding.css">
 <!-- MiniProfile User Portal -->
 <link rel="stylesheet" href="assets/css/miniprofile.css">
-<script src="assets/js/spark-onboarding.js"></script>
+<script src="assets/js/spark-onboarding.js" defer></script>
 <!-- Мгновенное скрытие экрана входа при наличии сессии (до рендера) -->
 <style>
   html.spark-presession #authScreen { display: none !important; }
@@ -670,14 +670,14 @@
 </div>
 
 <!-- Настройка: скопируйте assets/js/config.example.js → assets/js/config.js (или используйте fallback) -->
-<script src="assets/js/config.js" onerror="document.write('<script src=\'assets/js/config.example.js\'></script>')"></script>
-<script src="assets/js/profile-edit.js"></script>
-<script src="assets/js/animations.js"></script>
-<script src="assets/js/integrations.js"></script>
-<script src="assets/js/data.js"></script>
-<script src="assets/js/chats-engine.js"></script>
-<script src="assets/js/onboarding.js"></script>
-<script src="assets/js/app.js"></script>
-<script src="assets/js/miniprofile.js"></script>
+<script src="assets/js/config.js" defer onerror="document.write('<script src=\'assets/js/config.example.js\' defer></script>')"></script>
+<script src="assets/js/profile-edit.js" defer></script>
+<script src="assets/js/animations.js" defer></script>
+<script src="assets/js/integrations.js" defer></script>
+<script src="assets/js/data.js" defer></script>
+<script src="assets/js/chats-engine.js" defer></script>
+<script src="assets/js/onboarding.js" defer></script>
+<script src="assets/js/app.js" defer></script>
+<script src="assets/js/miniprofile.js" defer></script>
 </body>
 </html>

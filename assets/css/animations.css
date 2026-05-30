@@ -645,3 +645,26 @@ header { transition: transform 0.3s var(--ease-smooth); }
 .obs-coming-soon ~ .obs-shell .obs-orbit {
   animation: none !important;
 }
+
+/* ════════════════════════════════════════════════
+   HIGH-PERFORMANCE HARDWARE GPU COMPOSITING
+   ════════════════════════════════════════════════ */
+
+/* Force GPU promotion to bypass costly main-thread repaint cycles */
+.card,
+.mp-portal,
+.spark-ripple,
+#toast,
+.chat-bubble-context {
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
+}
+
+/* Modern CSS Containment: skip offscreen paint & layout operations */
+.li,
+.trend-item {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 68px; /* Average height budget for smooth scroll */
+}
+
