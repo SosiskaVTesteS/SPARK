@@ -207,6 +207,14 @@
   opacity: 0;
 }
 
+.ob-slide.ob-exiting {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  pointer-events: none;
+}
+
 /* ─── Text content ─── */
 .ob-content {
   flex: 1 1 auto;

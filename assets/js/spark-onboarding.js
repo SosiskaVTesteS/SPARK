@@ -562,8 +562,9 @@
     }
 
     /* Remove old slide */
-    var old = wrap.querySelector('.ob-slide:not(.ob-entering-right):not(.ob-entering-left)');
+    var old = wrap.querySelector('.ob-slide:not(.ob-entering-right):not(.ob-entering-left):not(.ob-exiting)');
     if (old && direction) {
+      old.classList.add('ob-exiting');
       old.style.transition = 'transform 0.38s cubic-bezier(0.4,0,0.2,1),opacity 0.38s ease';
       old.style.transform = direction === 'right' ? 'translateX(-52px)' : 'translateX(52px)';
       old.style.opacity = '0';

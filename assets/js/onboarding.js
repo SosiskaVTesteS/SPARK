@@ -627,6 +627,48 @@ var SparkTour = (function () {
   function _mark()   { try{localStorage.setItem(_TOUR_KEY,'1');}catch(e){} }
   function _T(en,ru) { return _getLang()==='ru' ? ru : en; }
 
+  function _getStepIcon(id) {
+    var svg = '';
+    switch(id) {
+      case 'welcome':
+        svg = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="url(#t3-icon-grad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>';
+        break;
+      case 'wallet':
+        svg = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="url(#t3-icon-grad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"></path><path d="M4 6v12a2 2 0 0 0 2 2h14v-4"></path><path d="M18 12a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h4v-6h-4z"></path></svg>';
+        break;
+      case 'post':
+        svg = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="url(#t3-icon-grad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A5 5 0 0 0 8 8c0 1 .3 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"></path><line x1="9" y1="18" x2="15" y2="18"></line><line x1="10" y1="22" x2="14" y2="22"></line></svg>';
+        break;
+      case 'search':
+        svg = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="url(#t3-icon-grad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>';
+        break;
+      case 'sort':
+        svg = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="url(#t3-icon-grad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>';
+        break;
+      case 'tags':
+        svg = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="url(#t3-icon-grad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>';
+        break;
+      case 'trending':
+        svg = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="url(#t3-icon-grad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>';
+        break;
+      case 'leaderboard':
+        svg = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="url(#t3-icon-grad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34"></path><path d="M12 2a4 4 0 0 0-4 4v5a4 4 0 0 0 8 0V6a4 4 0 0 0-4-4z"></path></svg>';
+        break;
+      case 'chats':
+        svg = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="url(#t3-icon-grad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>';
+        break;
+      case 'profile':
+        svg = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="url(#t3-icon-grad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>';
+        break;
+      case 'finish':
+        svg = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="url(#t3-icon-grad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
+        break;
+      default:
+        svg = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="url(#t3-icon-grad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>';
+    }
+    return svg;
+  }
+
   /* ── DOM refs kept during tour ── */
   var _overlay     = null;  // container div
   var _panels      = {};    // {top,right,bottom,left}
@@ -763,7 +805,7 @@ var SparkTour = (function () {
         t:_T('👤 Your Profile','👤 Ваш профиль'),
         b:_T(
           'Edit <span class="spk-t3-hl">Username</span>, <span class="spk-t3-hl">Bio</span>, avatar colour, and theme. The <span class="spk-t3-hl">Theme Studio</span> packs 16 presets — Cosmos, Cyberpunk, Aurora, and more — plus custom colour pickers.',
-          'Никнейм (<span class="spk-t3-hl">Username</span>), <span class="spk-t3-hl">Bio</span>, цвет аватара и тема. <span class="spk-t3-hl">Студия тем</span>: 16 пресетов — Космос, Киберпанк, Аврора и другие — плюс кастомные цветовые пикеры.'
+          'Измените <span class="spk-t3-hl">Никнейм</span> (<span class="spk-t3-hl">Username</span>), <span class="spk-t3-hl">Bio</span>, <span class="spk-t3-hl">цвет аватара</span> и <span class="spk-t3-hl">тему</span>. В <span class="spk-t3-hl">Студии тем</span> доступно <span class="spk-t3-hl">16 пресетов</span> (Космос, Киберпанк, Аврора и др.) и ручная настройка.'
         )
       },
       {
@@ -791,162 +833,254 @@ var SparkTour = (function () {
 /* ── Four backdrop panels ── */
 .spk-t3-panel {
   position:fixed;
-  background:rgba(3,4,12,.84);
-  backdrop-filter:blur(3px);
-  -webkit-backdrop-filter:blur(3px);
+  background:rgba(4,5,18,0.76);
+  backdrop-filter:blur(5px);
+  -webkit-backdrop-filter:blur(5px);
   pointer-events:all;
   will-change:top,left,width,height;
-  transition:top .3s ease,left .3s ease,width .3s ease,height .3s ease;
+  transition:top .3s cubic-bezier(0.25, 1, 0.5, 1),
+             left .3s cubic-bezier(0.25, 1, 0.5, 1),
+             width .3s cubic-bezier(0.25, 1, 0.5, 1),
+             height .3s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 /* ── Pulsing neon ring ── */
 .spk-t3-ring {
   position:fixed;
-  border-radius:12px;
+  border-radius:14px;
   pointer-events:none;
   z-index:99982;
   will-change:opacity,box-shadow;
-  animation:t3Ring 1.9s ease-in-out infinite;
-  border:1.5px solid rgba(123,92,250,0.55);
+  animation:t3Ring 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  border:2px solid rgba(123,92,250,0.55);
 }
 @keyframes t3Ring {
-  0%,100% { box-shadow:0 0 0 0 rgba(123,92,250,0), 0 0 0 0 rgba(232,90,160,0); border-color:rgba(123,92,250,0.3); }
-  40%     { box-shadow:0 0 0 6px rgba(123,92,250,.38), 0 0 0 14px rgba(232,90,160,.14); border-color:rgba(123,92,250,0.7); }
-  70%     { box-shadow:0 0 0 10px rgba(123,92,250,.15), 0 0 0 22px rgba(232,90,160,.05); border-color:rgba(123,92,250,0.45); }
+  0%,100% { box-shadow:0 0 0 0 rgba(123,92,250,0), 0 0 0 0 rgba(232,90,160,0); border-color:rgba(123,92,250,0.4); }
+  50%     { box-shadow:0 0 0 8px rgba(123,92,250,.35), 0 0 0 18px rgba(232,90,160,.12); border-color:rgba(232,90,160,0.7); }
 }
 
 /* ── Desktop tooltip card ── */
 .spk-t3-tip {
   position:fixed;
-  width:348px;
-  background:linear-gradient(155deg,rgba(12,15,36,.98),rgba(6,9,24,.99));
-  border:1px solid rgba(123,92,250,.28);
-  border-radius:20px;
-  padding:0 0 18px;
+  width:358px;
+  background:linear-gradient(135deg, rgba(16,12,38,0.85) 0%, rgba(8,6,20,0.95) 100%);
+  backdrop-filter:blur(16px) saturate(180%);
+  -webkit-backdrop-filter:blur(16px) saturate(180%);
+  border:1px solid rgba(123,92,250,.35);
+  border-radius:24px;
+  padding:0 0 20px;
   overflow:hidden;
   box-shadow:
-    0 28px 70px rgba(0,0,0,.82),
-    0 0 0 1px rgba(255,255,255,.05) inset,
-    0 0 50px rgba(123,92,250,.1);
+    0 24px 60px rgba(0,0,0,.85),
+    inset 0 1px 1px rgba(255,255,255,.12),
+    0 0 40px rgba(123,92,250,.15);
   z-index:99984;
   pointer-events:all;
   will-change:transform,opacity;
-  animation:t3TipIn .38s cubic-bezier(.34,1.56,.64,1) forwards;
+  animation:t3TipIn .42s cubic-bezier(.34,1.56,.64,1) forwards;
 }
-/* Gradient accent top bar */
-.spk-t3-tip::after {
-  content:'';
+
+/* Dynamic Gradient accent top progress bar */
+.spk-t3-tip-progress-line {
   position:absolute;
-  top:0;left:0;right:0;height:2.5px;
+  top:0;left:0;height:3.5px;
   background:linear-gradient(90deg,#7B5CFA,#E85AA0,#E8C55A,#5AE8C5);
-  opacity:0.8;
+  box-shadow:0 0 10px rgba(123,92,250,0.7);
+  z-index:10;
+  transition:width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
-@keyframes t3TipIn{from{opacity:0;transform:scale(.9) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+
+@keyframes t3TipIn{from{opacity:0;transform:scale(.92) translateY(12px)}to{opacity:1;transform:scale(1) translateY(0)}}
+
+/* background micro-particle ambient glow */
+.spk-t3-tip-bg-glow {
+  position:absolute;
+  top:-50px;left:-50px;width:200px;height:200px;
+  background:radial-gradient(circle,rgba(123,92,250,0.15) 0%,transparent 70%);
+  filter:blur(30px);
+  pointer-events:none;
+  z-index:0;
+}
 
 /* arrow pointer */
 .spk-t3-tip::before {
   content:'';
   position:absolute;
-  width:10px; height:10px;
-  background:rgba(12,15,36,.98);
-  border-left:1px solid rgba(123,92,250,.22);
-  border-top:1px solid rgba(123,92,250,.22);
-  border-radius:2px;
+  width:12px; height:12px;
+  background:rgba(12,10,30,0.92);
+  border-left:1px solid rgba(123,92,250,.28);
+  border-top:1px solid rgba(123,92,250,.28);
+  border-radius:3px;
   z-index:1;
 }
-.spk-t3-tip.arrow-bottom::before { top:auto; bottom:-6px; transform:rotate(225deg); left:28px; }
-.spk-t3-tip.arrow-top::before    { top:-6px;             transform:rotate(45deg);  left:28px; }
-.spk-t3-tip.arrow-right::before  { right:-6px; top:24px; transform:rotate(135deg); }
-.spk-t3-tip.arrow-left::before   { left:-6px;  top:24px; transform:rotate(-45deg); }
+.spk-t3-tip.arrow-bottom::before { top:auto; bottom:-7px; transform:rotate(225deg); left:28px; }
+.spk-t3-tip.arrow-top::before    { top:-7px;             transform:rotate(45deg);  left:28px; }
+.spk-t3-tip.arrow-right::before  { right:-7px; top:28px; transform:rotate(135deg); }
+.spk-t3-tip.arrow-left::before   { left:-7px;  top:28px; transform:rotate(-45deg); }
 .spk-t3-tip.arrow-none::before   { display:none; }
 
-/* tip inner padding (after bar) */
-.spk-t3-tip-inner { padding:18px 22px 0; }
+/* tip inner padding */
+.spk-t3-tip-inner { padding:22px 24px 0; position:relative; z-index:2; }
+
+/* header row containing icon and counter */
+.spk-t3-header {
+  display:flex; align-items:center; justify-content:space-between;
+  gap:12px; margin-bottom:16px; position:relative; z-index:2;
+}
+
+/* icon box */
+.spk-t3-icon-box {
+  display:flex; align-items:center; justify-content:center;
+  width:36px; height:36px; border-radius:10px;
+  background:rgba(123, 92, 250, 0.12); border:1px solid rgba(123, 92, 250, 0.25);
+  color:#fff;
+  flex-shrink:0;
+  box-shadow:0 0 12px rgba(123, 92, 250, 0.1);
+}
+.spk-t3-icon-box svg {
+  filter:drop-shadow(0 2px 6px rgba(123, 92, 250, 0.35));
+  animation:t3IconPulse 2.5s ease-in-out infinite;
+}
+@keyframes t3IconPulse {
+  0%,100% { transform:scale(1); opacity:0.9; }
+  50%     { transform:scale(1.08); opacity:1; filter:drop-shadow(0 2px 10px rgba(123, 92, 250, 0.7)); }
+}
 
 /* step counter chip */
 .spk-t3-counter {
-  display:inline-flex; align-items:center; gap:6px;
-  font-size:10px; font-weight:700; letter-spacing:.08em;
+  display:inline-flex; align-items:center; gap:8px;
+  font-size:10px; font-weight:800; letter-spacing:.08em;
   text-transform:uppercase; color:#5AE8C5;
-  background:rgba(90,232,197,.08); border:1px solid rgba(90,232,197,.2);
-  border-radius:20px; padding:3px 10px; margin-bottom:12px;
+  background:linear-gradient(135deg,rgba(90,232,197,.12) 0%,rgba(90,232,197,.04) 100%);
+  border:1px solid rgba(90,232,197,.25);
+  border-radius:20px; padding:4px 12px;
+  box-shadow:0 2px 8px rgba(90,232,197,0.05);
 }
 .spk-t3-counter::before {
   content:'';
   display:inline-block;
-  width:5px; height:5px; border-radius:50%;
+  width:6px; height:6px; border-radius:50%;
   background:#5AE8C5;
   animation:t3CounterPulse 1.6s ease-in-out infinite;
 }
-@keyframes t3CounterPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(0.7)} }
+@keyframes t3CounterPulse { 0%,100%{opacity:1;transform:scale(1);box-shadow:0 0 4px #5AE8C5} 50%{opacity:.4;transform:scale(0.7);box-shadow:none} }
 
 .spk-t3-title {
-  font-size:15.5px; font-weight:800; color:#EEF0FF;
-  font-family:'Syne',sans-serif; margin-bottom:9px; line-height:1.25;
+  font-size:16.5px; font-weight:800; color:#EEF0FF;
+  font-family:'Syne',sans-serif; margin-bottom:10px; line-height:1.25;
   letter-spacing:-0.01em;
 }
 .spk-t3-body {
-  font-size:13px; color:rgba(180,185,215,.88); line-height:1.65;
-  font-family:'DM Sans',sans-serif; margin-bottom:16px;
+  font-size:13px; color:rgba(180,185,215,.85); line-height:1.65;
+  font-family:'DM Sans',sans-serif; margin-bottom:18px;
+}
+
+/* content change micro-animation */
+.spk-t3-content-anim {
+  animation:t3ContentFadeIn 0.38s cubic-bezier(0.25, 1, 0.5, 1) both;
+  position:relative; z-index:2;
+}
+@keyframes t3ContentFadeIn {
+  from { opacity: 0; transform: translateY(6px); filter: blur(2px); }
+  to   { opacity: 1; transform: translateY(0); filter: blur(0); }
 }
 
 /* nav row */
 .spk-t3-nav {
   display:flex; align-items:center; justify-content:space-between; gap:8px;
-  padding:0 22px;
+  padding:0 24px; position:relative; z-index:3;
 }
 .spk-t3-btn {
-  padding:8px 16px; border-radius:9px; cursor:pointer; font-size:12.5px;
+  padding:10px 18px; border-radius:10px; cursor:pointer; font-size:12.5px;
   font-family:'Syne',sans-serif; font-weight:700; line-height:1;
-  border:1px solid rgba(255,255,255,.09);
-  background:rgba(255,255,255,.05); color:rgba(255,255,255,.5);
-  transition:all .2s; flex-shrink:0;
+  border:1px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.03); color:rgba(255,255,255,.5);
+  transition:all .25s cubic-bezier(0.4, 0, 0.2, 1); flex-shrink:0;
   white-space:nowrap;
 }
-.spk-t3-btn:hover { background:rgba(255,255,255,.1); color:#EEF0FF; border-color:rgba(255,255,255,.16); }
-.spk-t3-btn.prim {
-  background:linear-gradient(135deg,#7B5CFA,#5A3FD0);
-  border-color:rgba(123,92,250,.5); color:#fff;
-  box-shadow:0 4px 18px rgba(123,92,250,.4);
+.spk-t3-btn:hover {
+  background:rgba(255,255,255,.08);
+  color:#EEF0FF;
+  border-color:rgba(255,255,255,.15);
+  transform: translateY(-1px);
 }
-.spk-t3-btn.prim:hover { box-shadow:0 6px 26px rgba(123,92,250,.6); transform:translateY(-1px); }
-.spk-t3-btn.prim:active { transform:translateY(0) scale(0.97); }
-.spk-t3-btn.skip { background:transparent; border-color:transparent; color:rgba(255,255,255,.25); font-size:11.5px; }
-.spk-t3-btn.skip:hover { color:rgba(255,255,255,.55); }
+.spk-t3-btn:active {
+  transform: translateY(0);
+}
+.spk-t3-btn.prim {
+  background:linear-gradient(135deg,#7B5CFA,#E85AA0);
+  border:1px solid rgba(232,90,160,.4);
+  color:#fff;
+  box-shadow:0 4px 18px rgba(123,92,250,.35);
+  position:relative;
+  overflow:hidden;
+}
+.spk-t3-btn.prim::before {
+  content:'';
+  position:absolute;
+  top:0; left:-100%; width:100%; height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.25),transparent);
+  transition:left 0.6s ease;
+}
+.spk-t3-btn.prim:hover::before {
+  left:100%;
+}
+.spk-t3-btn.prim:hover {
+  box-shadow:0 6px 26px rgba(123,92,250,.55), 0 0 15px rgba(232,90,160,.2);
+  transform:translateY(-2px);
+}
+.spk-t3-btn.prim:active {
+  transform:translateY(0) scale(0.97);
+}
+.spk-t3-btn.skip {
+  background:transparent;
+  border-color:transparent;
+  color:rgba(255,255,255,.3);
+  font-size:11.5px;
+}
+.spk-t3-btn.skip:hover {
+  color:rgba(255,255,255,.6);
+  transform:none;
+}
 
 /* lang switcher */
 .spk-t3-lang {
-  position:absolute; top:14px; right:15px;
-  display:flex; gap:3px; align-items:center;
-  background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07);
-  border-radius:7px; padding:2px;
+  display:flex; gap:4px; align-items:center;
+  background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06);
+  border-radius:9px; padding:3px;
+  z-index: 10;
 }
 .spk-t3-lang-btn {
-  padding:3px 9px; border-radius:5px; border:none;
-  background:transparent; color:rgba(255,255,255,.28);
+  padding:4px 10px; border-radius:6px; border:none;
+  background:transparent; color:rgba(255,255,255,.35);
   font-family:'Syne',sans-serif; font-size:10px; font-weight:700;
-  cursor:pointer; transition:all .2s; letter-spacing:.05em;
+  cursor:pointer; transition:all .25s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing:.05em;
 }
 .spk-t3-lang-btn.on {
-  background:rgba(123,92,250,.25); border:1px solid rgba(123,92,250,.35);
-  color:#C4ADFF;
+  background:rgba(123,92,250,.22); border:1px solid rgba(123,92,250,.35);
+  color:#D2C4FF;
+  box-shadow: 0 2px 10px rgba(123,92,250,0.2);
 }
 
 /* highlight spans */
 .spk-t3-hl {
-  color:#C4ADFF;
+  color:#D2C4FF;
   font-weight:600;
-  background:rgba(155,95,255,0.1);
-  border-radius:3px;
-  padding:0 3px;
-  text-shadow:none;
+  background:rgba(123, 92, 250, 0.18);
+  border:1px solid rgba(123, 92, 250, 0.28);
+  border-radius:5px;
+  padding:1px 5px;
+  text-shadow:0 0 10px rgba(123,92,250,0.4);
+  display:inline-block;
+  margin:1px 0;
 }
 
 /* ════ Mobile bottom-sheet ════ */
 .spk-t3-sheet {
   position:fixed; bottom:0; left:0; right:0; z-index:99986;
-  background:linear-gradient(180deg,rgba(10,13,32,.97),rgba(6,9,22,.99));
-  border-top:1px solid rgba(123,92,250,.25);
+  background:linear-gradient(180deg,rgba(12,16,42,.95),rgba(6,8,24,.99));
+  border-top:1px solid rgba(123,92,250,.35);
   border-radius:24px 24px 0 0;
   overflow:hidden;
   box-shadow:0 -24px 70px rgba(0,0,0,.85), 0 0 0 1px rgba(255,255,255,.04) inset;
@@ -956,21 +1090,25 @@ var SparkTour = (function () {
   transition:transform .38s cubic-bezier(.4,0,.2,1);
   max-height:72svh; overflow-y:auto;
 }
-/* Gradient accent top bar on sheet */
-.spk-t3-sheet::before {
-  content:'';
-  display:block;
-  height:2.5px;
+
+/* Gradient accent top progress bar on sheet */
+.spk-t3-sheet-progress-line {
+  position:absolute;
+  top:0;left:0;height:3.5px;
   background:linear-gradient(90deg,#7B5CFA,#E85AA0,#E8C55A,#5AE8C5);
-  opacity:0.75;
+  box-shadow:0 0 10px rgba(123,92,250,0.7);
+  z-index:10;
+  transition:width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 .spk-t3-sheet.open { transform:translateY(0); }
 .spk-t3-sheet-handle {
-  width:40px; height:4px; border-radius:2px;
-  background:rgba(255,255,255,.13); margin:16px auto 20px;
+  width:44px; height:5px; border-radius:3px;
+  background:rgba(255,255,255,.18); margin:12px auto 16px;
   flex-shrink:0;
+  position:relative; z-index:3;
 }
-.spk-t3-sheet-inner { padding:0 20px 12px; }
+.spk-t3-sheet-inner { padding:0 24px 20px; position:relative; z-index:2; }
 
 .spk-t3-sheet .spk-t3-counter,
 .spk-t3-sheet .spk-t3-title,
@@ -987,7 +1125,7 @@ var SparkTour = (function () {
 
   /* ─────────────────────────────────────────────────────
      SPOTLIGHT  core logic
-  ───────────────────────────────────────────────────── */
+     ───────────────────────────────────────────────────── */
 
   /* Elevate target element above overlay */
   function _liftTarget(el) {
@@ -1089,10 +1227,12 @@ var SparkTour = (function () {
 
   /* ─────────────────────────────────────────────────────
      TOOLTIP CARD  (desktop)
-  ───────────────────────────────────────────────────── */
+     ───────────────────────────────────────────────────── */
   function _buildTip(step, isFirst, isLast, total, idx) {
     var tip = document.createElement('div');
     tip.className = 'spk-t3-tip';
+
+    var progressPercent = Math.round(((idx + 1) / total) * 100);
 
     /* Lang switcher — only on first step */
     var langHtml = isFirst
@@ -1102,11 +1242,22 @@ var SparkTour = (function () {
         + '</div>'
       : '';
 
-    tip.innerHTML = '<div class="spk-t3-tip-inner">'
-      + langHtml
-      + '<div class="spk-t3-counter">' + (idx+1) + ' / ' + total + '</div>'
-      + '<div class="spk-t3-title">'   + step.t  + '</div>'
-      + '<div class="spk-t3-body">'    + step.b  + '</div>'
+    var iconBoxHtml = '<div class="spk-t3-icon-box">' + _getStepIcon(step.id) + '</div>';
+
+    tip.innerHTML = '<div class="spk-t3-tip-progress-line" style="width: ' + progressPercent + '%"></div>'
+      + '<div class="spk-t3-tip-bg-glow"></div>'
+      + '<div class="spk-t3-tip-inner">'
+      + '  <div class="spk-t3-header">'
+      +      iconBoxHtml
+      + '    <div class="spk-t3-counter-wrap">'
+      + '      <div class="spk-t3-counter">' + (idx+1) + ' / ' + total + '</div>'
+      + '    </div>'
+      +      langHtml
+      + '  </div>'
+      + '  <div class="spk-t3-content-anim">'
+      + '    <div class="spk-t3-title">' + step.t + '</div>'
+      + '    <div class="spk-t3-body">'  + step.b + '</div>'
+      + '  </div>'
       + '</div>'
       + '<div class="spk-t3-nav">'
       + (idx > 0
@@ -1126,7 +1277,7 @@ var SparkTour = (function () {
     tip.classList.remove('arrow-top','arrow-bottom','arrow-left','arrow-right','arrow-none');
     var vw = window.innerWidth;
     var vh = window.innerHeight;
-    var tw = 348;
+    var tw = 358;
     var th = 220; /* approx */
     var gap = 18;
 
@@ -1177,25 +1328,39 @@ var SparkTour = (function () {
 
   /* ─────────────────────────────────────────────────────
      BOTTOM SHEET  (mobile)
-  ───────────────────────────────────────────────────── */
+     ───────────────────────────────────────────────────── */
   function _buildSheet(step, isFirst, isLast, total, idx) {
     var sh = document.createElement('div');
     sh.className = 'spk-t3-sheet';
 
+    var progressPercent = Math.round(((idx + 1) / total) * 100);
+
     var langHtml = isFirst
-      ? '<div class="spk-t3-lang" style="float:right;margin-top:-4px">'
+      ? '<div class="spk-t3-lang" style="position:static; float:right; margin-top:-4px">'
         + '<button class="spk-t3-lang-btn' + (_getLang()==='ru'?' on':'') + '" data-tl="ru">RU</button>'
         + '<button class="spk-t3-lang-btn' + (_getLang()==='en'?' on':'') + '" data-tl="en">EN</button>'
-        + '</div><div style="clear:both"></div>'
+        + '</div>'
       : '';
 
-    sh.innerHTML = '<div class="spk-t3-sheet-handle"></div>'
+    var iconBoxHtml = '<div class="spk-t3-icon-box">' + _getStepIcon(step.id) + '</div>';
+
+    sh.innerHTML = '<div class="spk-t3-sheet-progress-line" style="width: ' + progressPercent + '%"></div>'
+      + '<div class="spk-t3-tip-bg-glow"></div>'
+      + '<div class="spk-t3-sheet-handle"></div>'
       + '<div class="spk-t3-sheet-inner">'
-      + langHtml
-      + '<div class="spk-t3-counter">' + (idx+1) + ' / ' + total + '</div>'
-      + '<div class="spk-t3-title">'   + step.t  + '</div>'
-      + '<div class="spk-t3-body">'    + step.b  + '</div>'
-      + '<div class="spk-t3-nav">'
+      + '  <div class="spk-t3-header" style="margin-bottom: 12px;">'
+      +      iconBoxHtml
+      + '    <div class="spk-t3-counter-wrap">'
+      + '      <div class="spk-t3-counter">' + (idx+1) + ' / ' + total + '</div>'
+      + '    </div>'
+      +      langHtml
+      + '    <div style="clear:both"></div>'
+      + '  </div>'
+      + '  <div class="spk-t3-content-anim">'
+      + '    <div class="spk-t3-title">' + step.t + '</div>'
+      + '    <div class="spk-t3-body">'  + step.b + '</div>'
+      + '  </div>'
+      + '  <div class="spk-t3-nav">'
       + (idx > 0
         ? '<button class="spk-t3-btn" id="t3-back">' + _T('← Back','← Назад') + '</button>'
         : '<span></span>')
@@ -1332,6 +1497,22 @@ var SparkTour = (function () {
   function _buildOverlay() {
     _overlay = document.createElement('div');
     _overlay.id = 'spk-tour3';
+
+    // Inject SVG gradients
+    var svgGrads = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svgGrads.style.cssText = 'position:absolute; width:0; height:0; overflow:hidden; pointer-events:none;';
+    svgGrads.setAttribute('aria-hidden', 'true');
+    svgGrads.innerHTML = '<defs>'
+      + '<linearGradient id="t3-icon-grad" x1="0%" y1="0%" x2="100%" y2="100%">'
+      + '  <stop offset="0%" stop-color="#7B5CFA" />'
+      + '  <stop offset="100%" stop-color="#E85AA0" />'
+      + '</linearGradient>'
+      + '<linearGradient id="t3-prog-grad" x1="0%" y1="0%" x2="100%" y2="100%">'
+      + '  <stop offset="0%" stop-color="#7B5CFA" />'
+      + '  <stop offset="100%" stop-color="#5AE8C5" />'
+      + '</linearGradient>'
+      + '</defs>';
+    _overlay.appendChild(svgGrads);
 
     _panels.top    = document.createElement('div');
     _panels.right  = document.createElement('div');
