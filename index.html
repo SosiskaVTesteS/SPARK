@@ -35,6 +35,8 @@
 <script src="assets/js/theme.js"></script>
 <!-- OnboardingEngine v1 — 9-slide pre-registration guide (новый, расширенный) -->
 <link rel="stylesheet" href="assets/css/spark-onboarding.css">
+<!-- MiniProfile User Portal -->
+<link rel="stylesheet" href="assets/css/miniprofile.css">
 <script src="assets/js/spark-onboarding.js"></script>
 <!-- Мгновенное скрытие экрана входа при наличии сессии (до рендера) -->
 <style>
@@ -596,6 +598,77 @@
   </div>
 </div>
 
+<!-- ════ МИНИ-ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ (10K$ PORTAL) ════ -->
+<div
+  class="mp-portal"
+  id="miniProfilePortal"
+  aria-hidden="true"
+  aria-label="Мини-профиль пользователя"
+>
+  <div class="mp-overlay" id="mpOverlay" aria-hidden="true"></div>
+  <div class="mp-card" id="mpCard" role="dialog" aria-modal="true" aria-labelledby="mpUserName">
+    <div class="mp-card__stars" aria-hidden="true"></div>
+    <div class="mp-card__nebula" id="mpNebula" aria-hidden="true"></div>
+    <button class="mp-card__close" id="mpClose" aria-label="Закрыть профиль">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+    <div class="mp-card__header">
+      <div class="mp-card__avatar-wrap">
+        <div class="mp-card__avatar" id="mpAvatar" aria-hidden="true"></div>
+        <span class="mp-card__status-dot" id="mpStatusDot" aria-hidden="true"></span>
+      </div>
+      <div class="mp-card__identity">
+        <div class="mp-card__name" id="mpUserName">—</div>
+        <div class="mp-card__handle" id="mpHandle">—</div>
+        <div class="mp-card__badges">
+          <div class="mp-badge mp-badge--status" id="mpStatusBadge">
+            <span class="mp-badge__dot" aria-hidden="true"></span>
+            <span class="mp-badge__label" id="mpStatusLabel">—</span>
+          </div>
+          <div class="mp-badge mp-badge--rank" id="mpRankBadge">
+            <span class="mp-badge__icon" id="mpRankIcon" aria-hidden="true"></span>
+            <span class="mp-badge__label" id="mpRankLabel">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mp-card__stats" role="list" aria-label="Статистика пользователя">
+      <div class="mp-card__stat" role="listitem">
+        <span class="mp-card__stat-num" id="mpStatIdeas">—</span>
+        <span class="mp-card__stat-label">Идей</span>
+      </div>
+      <div class="mp-card__stat-divider" aria-hidden="true"></div>
+      <div class="mp-card__stat" role="listitem">
+        <span class="mp-card__stat-num" id="mpStatInvested">—</span>
+        <span class="mp-card__stat-label">Invested</span>
+      </div>
+      <div class="mp-card__stat-divider" aria-hidden="true"></div>
+      <div class="mp-card__stat" role="listitem">
+        <span class="mp-card__stat-num" id="mpStatRank">—</span>
+        <span class="mp-card__stat-label">Rank</span>
+      </div>
+    </div>
+    <div class="mp-card__actions">
+      <button class="mp-card__btn mp-card__btn--primary" id="mpBtnMessage" aria-label="Написать сообщение">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        Написать
+      </button>
+      <button class="mp-card__btn mp-card__btn--secondary" id="mpBtnProfile" aria-label="Открыть полный профиль">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+        Профиль
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- Настройка: скопируйте assets/js/config.example.js → assets/js/config.js (или используйте fallback) -->
 <script src="assets/js/config.js" onerror="document.write('<script src=\'assets/js/config.example.js\'></script>')"></script>
 <script src="assets/js/profile-edit.js"></script>
@@ -605,5 +678,6 @@
 <script src="assets/js/chats-engine.js"></script>
 <script src="assets/js/onboarding.js"></script>
 <script src="assets/js/app.js"></script>
+<script src="assets/js/miniprofile.js"></script>
 </body>
 </html>

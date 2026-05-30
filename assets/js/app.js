@@ -814,6 +814,7 @@ function dbRowToLiveIdea(row, profilesMap) {
   var bg = gradients[idxSeed % gradients.length];
   return {
     id: row.id,
+    author_id: row.author_id,
     u: uname,
     av: letter,
     bg: bg,
@@ -918,10 +919,13 @@ async function renderLeaders() {
         'linear-gradient(135deg,#e85a7a,#c55ae8)'
       ];
       var profitColor = i < 3 ? '' : ' style="color:var(--ac)"';
+      var triggerId = p.id;
+      var lavTriggerAttr = triggerId ? ' class="lav mp-trigger" data-user-id="' + triggerId + '"' : ' class="lav"';
+      var linfTriggerAttr = triggerId ? ' class="linf mp-trigger" data-user-id="' + triggerId + '"' : ' class="linf"';
       return '<div class="li">'
         + '<span class="' + rankClass + '"' + rankStyle + '>' + (i + 1) + '</span>'
-        + '<div class="lav" style="background:' + gradients[i] + '">' + letter + '</div>'
-        + '<div class="linf">'
+        + '<div' + lavTriggerAttr + ' style="background:' + gradients[i] + '">' + letter + '</div>'
+        + '<div' + linfTriggerAttr + '>'
         + '<div class="lname">' + uname + '</div>'
         + '<div class="lsub">' + invCount + ' ' + (LANG === 'ru' ? 'вложений' : 'investments') + '</div>'
         + '</div>'
@@ -1702,9 +1706,12 @@ function cardHTML(x) {
   var expired = isExpired(x);
   var btnText = expired ? (LANG === 'ru' ? 'Завершено' : 'Ended') : T('binv');
   var disabledAttr = expired ? ' disabled style="opacity:0.5;cursor:not-allowed;"' : '';
+  var triggerId = x.author_id || (x.u === '@future_founder' ? 1 : '');
+  var triggerAttr = triggerId ? ' class="cav mp-trigger" data-user-id="' + triggerId + '"' : ' class="cav"';
+  var nameTriggerAttr = triggerId ? ' class="cu mp-trigger" data-user-id="' + triggerId + '"' : ' class="cu"';
   return '<div class="card' + (fire ? ' fire' : '') + '" data-cid="' + x.id + '">'
-    + '<div class="ch"><div class="cav" style="background:' + safeBg + '">' + safeAv + '</div>'
-    + '<div class="cm"><div class="cu">' + safeUser + '</div><div class="ct">' + safeTime + ' · #' + safeTag + '</div></div>'
+    + '<div class="ch"><div' + triggerAttr + ' style="background:' + safeBg + '">' + safeAv + '</div>'
+    + '<div class="cm"><div' + nameTriggerAttr + '>' + safeUser + '</div><div class="ct">' + safeTime + ' · #' + safeTag + '</div></div>'
     + '<div class="cmen"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></div></div>'
     + '<div class="ctitle">' + safeTitle + '</div><div class="cbody">' + safeBody + '</div>'
     + investGraphHTML(x)

@@ -711,6 +711,9 @@ var ChatsEngine = (function () {
     var avGrad = ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avIndex) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
     var avBorderRadius = team ? '10px' : '50%';
 
+    var triggerAttr = (contact && contact.id) ? ' class="chat-avatar-circle mp-trigger" data-user-id="' + contact.id + '"' : ' class="chat-avatar-circle"';
+    var nameTriggerAttr = (contact && contact.id) ? ' class="chat-header-name mp-trigger" data-user-id="' + contact.id + '"' : ' class="chat-header-name"';
+
     // Active conversation pane frame markup
     rightPane.innerHTML = ''
       /* Header */
@@ -719,9 +722,9 @@ var ChatsEngine = (function () {
       + '    <button class="chat-back-btn-mob" id="chatBackBtnMob">'
       + '      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>'
       + '    </button>'
-      + '    <div class="chat-avatar-circle" style="background:' + avGrad + ';border-radius:' + avBorderRadius + '">' + avText + '</div>'
+      + '    <div' + triggerAttr + ' style="background:' + avGrad + ';border-radius:' + avBorderRadius + '">' + avText + '</div>'
       + '    <div class="chat-header-info">'
-      + '      <div class="chat-header-name">' + _esc(titleName) + '</div>'
+      + '      <div' + nameTriggerAttr + '>' + _esc(titleName) + '</div>'
       + '      <div class="chat-header-status' + (isOffline ? ' offline' : '') + '">'
       + '        <span style="width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block"></span>'
       + '        <span>' + statusText + '</span>'
@@ -886,11 +889,14 @@ var ChatsEngine = (function () {
         + '  </button>'
         + '</div>';
 
+      var triggerId = isSent ? (window.ME ? ME.id : '') : m.sender_id;
+      var avatarTriggerAttr = triggerId ? ' class="chat-msg-avatar mp-trigger" data-user-id="' + triggerId + '"' : ' class="chat-msg-avatar"';
+      var senderTriggerAttr = triggerId ? ' class="chat-msg-sender-name mp-trigger" data-user-id="' + triggerId + '"' : ' class="chat-msg-sender-name"';
       return ''
         + '<div class="chat-message-row' + rowClass + '" data-msg-id="' + m.id + '">'
-        + '  <div class="chat-msg-avatar" style="background:' + avGrad + '">' + avText + '</div>'
+        + '  <div' + avatarTriggerAttr + ' style="background:' + avGrad + '">' + avText + '</div>'
         + '  <div class="chat-msg-content-wrapper">'
-        + '    <div class="chat-msg-sender-name">' + _esc(m.sender_name) + '</div>'
+        + '    <div' + senderTriggerAttr + '>' + _esc(m.sender_name) + '</div>'
         + '    <div class="chat-msg-bubble">'
         +        reactionsMenu
         +        (m.media_url ? '' : _esc(m.content))
