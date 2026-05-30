@@ -791,106 +791,134 @@ var SparkTour = (function () {
 /* ── Four backdrop panels ── */
 .spk-t3-panel {
   position:fixed;
-  background:rgba(3,4,12,.82);
-  backdrop-filter:blur(2px);
-  -webkit-backdrop-filter:blur(2px);
+  background:rgba(3,4,12,.84);
+  backdrop-filter:blur(3px);
+  -webkit-backdrop-filter:blur(3px);
   pointer-events:all;
   will-change:top,left,width,height;
+  transition:top .3s ease,left .3s ease,width .3s ease,height .3s ease;
 }
-/* top,right,bottom,left panels each get explicit coords in JS */
 
-/* ── Pulsing neon ring (tracks target element) ── */
+/* ── Pulsing neon ring ── */
 .spk-t3-ring {
   position:fixed;
-  border-radius:10px;
+  border-radius:12px;
   pointer-events:none;
   z-index:99982;
-  will-change:opacity,transform;
-  animation:t3Ring 1.8s ease-in-out infinite;
+  will-change:opacity,box-shadow;
+  animation:t3Ring 1.9s ease-in-out infinite;
+  border:1.5px solid rgba(123,92,250,0.55);
 }
 @keyframes t3Ring {
-  0%,100% { box-shadow: 0 0 0 0 rgba(123,92,250,.0), 0 0 0 0 rgba(232,90,160,.0); }
-  40%     { box-shadow: 0 0 0 6px rgba(123,92,250,.45), 0 0 0 12px rgba(232,90,160,.2); }
-  70%     { box-shadow: 0 0 0 10px rgba(123,92,250,.18), 0 0 0 20px rgba(232,90,160,.06); }
+  0%,100% { box-shadow:0 0 0 0 rgba(123,92,250,0), 0 0 0 0 rgba(232,90,160,0); border-color:rgba(123,92,250,0.3); }
+  40%     { box-shadow:0 0 0 6px rgba(123,92,250,.38), 0 0 0 14px rgba(232,90,160,.14); border-color:rgba(123,92,250,0.7); }
+  70%     { box-shadow:0 0 0 10px rgba(123,92,250,.15), 0 0 0 22px rgba(232,90,160,.05); border-color:rgba(123,92,250,0.45); }
 }
 
-/* ── Desktop tooltip card (glassmorphism) ── */
+/* ── Desktop tooltip card ── */
 .spk-t3-tip {
   position:fixed;
-  width:340px;
-  background:linear-gradient(155deg,rgba(14,18,44,.97),rgba(8,12,30,.99));
-  border:1px solid rgba(123,92,250,.3);
-  border-radius:18px;
-  padding:20px 22px 16px;
+  width:348px;
+  background:linear-gradient(155deg,rgba(12,15,36,.98),rgba(6,9,24,.99));
+  border:1px solid rgba(123,92,250,.28);
+  border-radius:20px;
+  padding:0 0 18px;
+  overflow:hidden;
   box-shadow:
-    0 24px 60px rgba(0,0,0,.75),
-    0 0 0 1px rgba(255,255,255,.04) inset,
-    0 0 40px rgba(123,92,250,.12);
+    0 28px 70px rgba(0,0,0,.82),
+    0 0 0 1px rgba(255,255,255,.05) inset,
+    0 0 50px rgba(123,92,250,.1);
   z-index:99984;
   pointer-events:all;
   will-change:transform,opacity;
-  animation:t3TipIn .35s cubic-bezier(.34,1.56,.64,1) forwards;
+  animation:t3TipIn .38s cubic-bezier(.34,1.56,.64,1) forwards;
 }
-@keyframes t3TipIn{from{opacity:0;transform:scale(.92) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+/* Gradient accent top bar */
+.spk-t3-tip::after {
+  content:'';
+  position:absolute;
+  top:0;left:0;right:0;height:2.5px;
+  background:linear-gradient(90deg,#7B5CFA,#E85AA0,#E8C55A,#5AE8C5);
+  opacity:0.8;
+}
+@keyframes t3TipIn{from{opacity:0;transform:scale(.9) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
 
 /* arrow pointer */
 .spk-t3-tip::before {
   content:'';
   position:absolute;
   width:10px; height:10px;
-  background:rgba(14,18,44,.97);
-  border-left:1px solid rgba(123,92,250,.25);
-  border-top:1px solid rgba(123,92,250,.25);
+  background:rgba(12,15,36,.98);
+  border-left:1px solid rgba(123,92,250,.22);
+  border-top:1px solid rgba(123,92,250,.22);
   border-radius:2px;
+  z-index:1;
 }
 .spk-t3-tip.arrow-bottom::before { top:auto; bottom:-6px; transform:rotate(225deg); left:28px; }
 .spk-t3-tip.arrow-top::before    { top:-6px;             transform:rotate(45deg);  left:28px; }
-.spk-t3-tip.arrow-right::before  { right:-6px; top:20px; transform:rotate(135deg); }
-.spk-t3-tip.arrow-left::before   { left:-6px;  top:20px; transform:rotate(-45deg); }
+.spk-t3-tip.arrow-right::before  { right:-6px; top:24px; transform:rotate(135deg); }
+.spk-t3-tip.arrow-left::before   { left:-6px;  top:24px; transform:rotate(-45deg); }
 .spk-t3-tip.arrow-none::before   { display:none; }
 
-/* counter chip */
+/* tip inner padding (after bar) */
+.spk-t3-tip-inner { padding:18px 22px 0; }
+
+/* step counter chip */
 .spk-t3-counter {
-  display:inline-block; font-size:10px; font-weight:700; letter-spacing:.06em;
+  display:inline-flex; align-items:center; gap:6px;
+  font-size:10px; font-weight:700; letter-spacing:.08em;
   text-transform:uppercase; color:#5AE8C5;
-  background:rgba(90,232,197,.09); border:1px solid rgba(90,232,197,.18);
-  border-radius:20px; padding:2px 10px; margin-bottom:10px;
+  background:rgba(90,232,197,.08); border:1px solid rgba(90,232,197,.2);
+  border-radius:20px; padding:3px 10px; margin-bottom:12px;
 }
+.spk-t3-counter::before {
+  content:'';
+  display:inline-block;
+  width:5px; height:5px; border-radius:50%;
+  background:#5AE8C5;
+  animation:t3CounterPulse 1.6s ease-in-out infinite;
+}
+@keyframes t3CounterPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(0.7)} }
+
 .spk-t3-title {
-  font-size:15px; font-weight:800; color:#fff;
-  font-family:'Syne',sans-serif; margin-bottom:8px; line-height:1.22;
+  font-size:15.5px; font-weight:800; color:#EEF0FF;
+  font-family:'Syne',sans-serif; margin-bottom:9px; line-height:1.25;
+  letter-spacing:-0.01em;
 }
 .spk-t3-body {
-  font-size:12.5px; color:rgba(255,255,255,.48); line-height:1.62;
-  font-family:'DM Sans',sans-serif; margin-bottom:15px;
+  font-size:13px; color:rgba(180,185,215,.88); line-height:1.65;
+  font-family:'DM Sans',sans-serif; margin-bottom:16px;
 }
 
 /* nav row */
 .spk-t3-nav {
-  display:flex; align-items:center; justify-content:space-between; gap:6px;
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  padding:0 22px;
 }
 .spk-t3-btn {
-  padding:7px 14px; border-radius:8px; cursor:pointer; font-size:12px;
+  padding:8px 16px; border-radius:9px; cursor:pointer; font-size:12.5px;
   font-family:'Syne',sans-serif; font-weight:700; line-height:1;
   border:1px solid rgba(255,255,255,.09);
-  background:rgba(255,255,255,.055); color:rgba(255,255,255,.55);
+  background:rgba(255,255,255,.05); color:rgba(255,255,255,.5);
   transition:all .2s; flex-shrink:0;
+  white-space:nowrap;
 }
-.spk-t3-btn:hover { background:rgba(255,255,255,.1); color:#fff; }
+.spk-t3-btn:hover { background:rgba(255,255,255,.1); color:#EEF0FF; border-color:rgba(255,255,255,.16); }
 .spk-t3-btn.prim {
   background:linear-gradient(135deg,#7B5CFA,#5A3FD0);
-  border-color:rgba(123,92,250,.45); color:#fff;
-  box-shadow:0 4px 16px rgba(123,92,250,.38);
+  border-color:rgba(123,92,250,.5); color:#fff;
+  box-shadow:0 4px 18px rgba(123,92,250,.4);
 }
-.spk-t3-btn.prim:hover { box-shadow:0 6px 22px rgba(123,92,250,.55); transform:translateY(-1px); }
-.spk-t3-btn.skip { background:transparent; border-color:transparent; color:rgba(255,255,255,.28); font-size:11px; }
-.spk-t3-btn.skip:hover { color:rgba(255,255,255,.6); }
+.spk-t3-btn.prim:hover { box-shadow:0 6px 26px rgba(123,92,250,.6); transform:translateY(-1px); }
+.spk-t3-btn.prim:active { transform:translateY(0) scale(0.97); }
+.spk-t3-btn.skip { background:transparent; border-color:transparent; color:rgba(255,255,255,.25); font-size:11.5px; }
+.spk-t3-btn.skip:hover { color:rgba(255,255,255,.55); }
 
-/* lang switcher inside tip */
+/* lang switcher */
 .spk-t3-lang {
   position:absolute; top:14px; right:15px;
   display:flex; gap:3px; align-items:center;
-  background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07);
   border-radius:7px; padding:2px;
 }
 .spk-t3-lang-btn {
@@ -903,43 +931,55 @@ var SparkTour = (function () {
   background:rgba(123,92,250,.25); border:1px solid rgba(123,92,250,.35);
   color:#C4ADFF;
 }
+
+/* highlight spans */
 .spk-t3-hl {
   color:#C4ADFF;
   font-weight:600;
-  text-shadow:0 0 8px rgba(196,173,255,.2);
+  background:rgba(155,95,255,0.1);
+  border-radius:3px;
+  padding:0 3px;
+  text-shadow:none;
 }
 
 /* ════ Mobile bottom-sheet ════ */
 .spk-t3-sheet {
   position:fixed; bottom:0; left:0; right:0; z-index:99986;
-  background:linear-gradient(180deg,rgba(12,16,36,.96),rgba(8,11,26,.99));
-  border-top:1px solid rgba(123,92,250,.28);
-  border-radius:22px 22px 0 0;
-  padding:0 20px 28px;
-  box-shadow:0 -20px 60px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.04) inset;
+  background:linear-gradient(180deg,rgba(10,13,32,.97),rgba(6,9,22,.99));
+  border-top:1px solid rgba(123,92,250,.25);
+  border-radius:24px 24px 0 0;
+  overflow:hidden;
+  box-shadow:0 -24px 70px rgba(0,0,0,.85), 0 0 0 1px rgba(255,255,255,.04) inset;
   pointer-events:all;
   transform:translateY(100%);
   will-change:transform;
   transition:transform .38s cubic-bezier(.4,0,.2,1);
   max-height:72svh; overflow-y:auto;
 }
+/* Gradient accent top bar on sheet */
+.spk-t3-sheet::before {
+  content:'';
+  display:block;
+  height:2.5px;
+  background:linear-gradient(90deg,#7B5CFA,#E85AA0,#E8C55A,#5AE8C5);
+  opacity:0.75;
+}
 .spk-t3-sheet.open { transform:translateY(0); }
 .spk-t3-sheet-handle {
-  width:42px; height:5px; border-radius:3px;
-  background:rgba(255,255,255,.15); margin:14px auto 18px;
+  width:40px; height:4px; border-radius:2px;
+  background:rgba(255,255,255,.13); margin:16px auto 20px;
   flex-shrink:0;
 }
-.spk-t3-sheet-inner { padding-bottom:8px; }
+.spk-t3-sheet-inner { padding:0 20px 12px; }
 
-/* mobile tip uses same typography classes */
 .spk-t3-sheet .spk-t3-counter,
 .spk-t3-sheet .spk-t3-title,
 .spk-t3-sheet .spk-t3-body { text-align:left; }
-.spk-t3-sheet .spk-t3-nav  { padding-top:4px; }
+.spk-t3-sheet .spk-t3-nav  { padding:4px 0 0; }
 
-/* ── Mobile responsiveness ── */
+/* mobile */
 @media(max-width:480px){
-  .spk-t3-tip { width:calc(100vw - 28px); }
+  .spk-t3-tip { width:calc(100vw - 24px); }
 }
     `;
     document.head.appendChild(s);
@@ -1062,10 +1102,12 @@ var SparkTour = (function () {
         + '</div>'
       : '';
 
-    tip.innerHTML = langHtml
+    tip.innerHTML = '<div class="spk-t3-tip-inner">'
+      + langHtml
       + '<div class="spk-t3-counter">' + (idx+1) + ' / ' + total + '</div>'
       + '<div class="spk-t3-title">'   + step.t  + '</div>'
       + '<div class="spk-t3-body">'    + step.b  + '</div>'
+      + '</div>'
       + '<div class="spk-t3-nav">'
       + (idx > 0
         ? '<button class="spk-t3-btn" id="t3-back">' + _T('← Back','← Назад') + '</button>'
@@ -1084,8 +1126,8 @@ var SparkTour = (function () {
     tip.classList.remove('arrow-top','arrow-bottom','arrow-left','arrow-right','arrow-none');
     var vw = window.innerWidth;
     var vh = window.innerHeight;
-    var tw = 340;
-    var th = 210; /* approx */
+    var tw = 348;
+    var th = 220; /* approx */
     var gap = 18;
 
     if (!rect) {

@@ -2422,18 +2422,22 @@ async function bootApp() {
       return;
     }
   }
-  // No session - route through onboarding (first-visit detection handled inside).
+  // No session - new OnboardingEngine v1 (spark-onboarding.js) handles pre-reg guide
+  // It fires via its own setTimeout after the intro animation.
+  // SparkOnboarding (old Phase1) is superseded — we just open auth here if already seen.
   document.documentElement.classList.remove('spark-presession');
   var launchOverlay = document.getElementById('launchOverlay');
   if (launchOverlay) launchOverlay.classList.add('gone');
   applyLang();
-  if (window.SparkOnboarding) {
-    window.SparkOnboarding.init();
-  } else {
+  var _obSeen = false;
+  try { _obSeen = !!localStorage.getItem('spark_ob3_seen'); } catch(e) {}
+  if (_obSeen) {
+    /* User already saw the onboarding guide — open auth directly */
     document.documentElement.classList.add('auth-active');
     var authScreen = document.getElementById('authScreen');
     if (authScreen) authScreen.classList.remove('gone');
   }
+  /* else: spark-onboarding.js will boot after intro delay and show the 9-slide guide */
 }
 
 window.addEventListener('error', function (event) {
