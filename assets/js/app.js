@@ -118,6 +118,12 @@ document.addEventListener('DOMContentLoaded', function () {
       if (reactBtn) {
         // Reactions use idea id directly (string UUID)
         react(reactBtn.dataset.id, reactBtn.dataset.e, reactBtn);
+        return;
+      }
+      var reportBtn = event.target.closest('.brep[data-report-id]');
+      if (reportBtn && !reportBtn.disabled) {
+        doReportIdea(reportBtn.dataset.reportId, reportBtn);
+        return;
       }
     });
   }
@@ -726,7 +732,8 @@ async function loadIdeasFromDB() {
 
   var r = await safeSupabaseCall('database', function () {
     return supa.from('ideas')
-      .select('id, title, description, min_bet, total_invested, investment_history, expires_at, created_at, author_id, reactions')
+      .select('id, title, description, min_bet, total_invested, investment_history, expires_at, created_at, author_id, reactions, status')
+      .or('status.eq.active,status.eq.immune,status.is.null')
       .order('created_at', { ascending: false })
       .limit(50);
   }, { silent: true, timeout: 25000 });
@@ -828,7 +835,8 @@ function dbRowToLiveIdea(row, profilesMap) {
     cd: cdH,
     pct: pct,
     investment_history: history,
-    expires_at: row.expires_at
+    expires_at: row.expires_at,
+    status: row.status || 'active'
   };
 }
 
@@ -1480,7 +1488,7 @@ async function getUserIdeas() {
   if (supa && ME) {
     try {
       var r = await supa.from('ideas')
-        .select('id, title, description, min_bet, total_invested, investment_history, expires_at, created_at, author_id, reactions')
+        .select('id, title, description, min_bet, total_invested, investment_history, expires_at, created_at, author_id, reactions, status')
         .eq('author_id', ME.id)
         .order('created_at', { ascending: false });
       if (r.data) {
@@ -1715,7 +1723,11 @@ function cardHTML(x) {
     + '<div class="cmen"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></div></div>'
     + '<div class="ctitle">' + safeTitle + '</div><div class="cbody">' + safeBody + '</div>'
     + investGraphHTML(x)
-    + '<div class="cact"><button class="binv" data-invest-id="' + x.id + '"' + disabledAttr + '>' + btnText + '</button><button class="bcrit">' + T('bcrit') + '</button></div>'
+    + '<div class="cact"><button class="binv" data-invest-id="' + x.id + '"' + disabledAttr + '>' + btnText + '</button><button class="bcrit">' + T('bcrit') + '</button>'
+    + (x.status === 'immune'
+        ? '<button class="brep brep--immune" disabled title="' + (LANG === 'ru' ? 'Пост защищён иммунитетом' : 'Post has immunity') + '">🛡</button>'
+        : '<button class="brep" data-report-id="' + x.id + '" title="' + (LANG === 'ru' ? 'Пожаловаться' : 'Report') + '">⚠</button>')
+    + '</div>'
     + '<div class="creact" id="rc-' + x.id + '">' + reactHTML(x.id) + '</div></div>';
 }
 
@@ -2014,11 +2026,25 @@ async function doPublish() {
   var desc = ciDesc ? ciDesc.value.trim() : '';
   var min = ciMin ? clampAmount(ciMin.value, 1, 1000000) : 10;
   if (!title) { toast('❌ Add a title', 'var(--red)'); return; }
+  var _linkRe = /(https?:\/\/|www\.|t\.me\/)/i;
+  if (_linkRe.test(title) || _linkRe.test(desc)) {
+    toast('[SYSTEM ERROR]: Публикация отклонена. Контент нарушает протокол безопасности сети SPARK', 'var(--red)');
+    return;
+  }
   var secs = { '24h': 86400, '7d': 604800 }[selDur] || 86400;
   var exp = new Date(Date.now() + secs * 1000).toISOString();
   var uname = PROFILE.username;
   var letter = uname.replace('@', '').charAt(0).toUpperCase();
   if (supa) {
+    try {
+      var modR = await callEdgeFunction('moderate-content', { text: title + ' ' + desc });
+      if (modR.ok && modR.data && modR.data.allowed === false) {
+        toast('[SYSTEM ERROR]: Публикация отклонена. Контент нарушает протокол безопасности сети SPARK', 'var(--red)');
+        return;
+      }
+    } catch (modErr) {
+      console.warn('[moderation] check failed, continuing:', modErr);
+    }
     try {
       var r = await supa.from('ideas').insert({
         title: title,
@@ -2041,6 +2067,39 @@ async function doPublish() {
   }
   closeMo('moCreate');
   toast('рџљЂ Idea published!', 'var(--ac)');
+}
+
+var _reportLastMs = 0; // rate limit: 1 report per 10s per client session
+
+async function doReportIdea(ideaId, btn) {
+  if (!supa || !ME) {
+    toast('❌ ' + (LANG === 'ru' ? 'Войдите, чтобы пожаловаться' : 'Sign in to report'), 'var(--red)');
+    return;
+  }
+  var now = Date.now();
+  var wait = Math.ceil((10000 - (now - _reportLastMs)) / 1000);
+  if (now - _reportLastMs < 10000) {
+    toast('⏳ ' + (LANG === 'ru' ? 'Подождите ' + wait + ' сек.' : 'Wait ' + wait + 's'), 'var(--mu)');
+    return;
+  }
+  _reportLastMs = now;
+  btn.disabled = true;
+  var r = await callEdgeFunction('submit-report', { idea_id: ideaId });
+  if (r.ok && r.data && r.data.ok) {
+    toast('⚠ ' + (LANG === 'ru' ? 'Жалоба принята. Спасибо за бдительность.' : 'Report submitted. Thanks for keeping SPARK safe.'), 'var(--ac)');
+    btn.textContent = '✓';
+    btn.classList.add('brep--done');
+  } else {
+    btn.disabled = false;
+    var errCode = (r.data && r.data.message) || 'error';
+    var errMsg = {
+      already_reported:       LANG === 'ru' ? 'Вы уже жаловались на этот пост.' : 'You already reported this post.',
+      post_is_immune:         LANG === 'ru' ? 'Этот пост защищён иммунитетом.' : 'This post has immunity.',
+      post_already_moderated: LANG === 'ru' ? 'Пост уже рассматривается.' : 'Post is already under review.',
+      idea_not_found:         LANG === 'ru' ? 'Пост не найден.' : 'Post not found.',
+    }[errCode] || (LANG === 'ru' ? 'Ошибка. Попробуйте позже.' : 'Error. Try again later.');
+    toast('⚠ ' + errMsg, errCode === 'already_reported' || errCode === 'post_is_immune' ? 'var(--mu)' : 'var(--red)');
+  }
 }
 
 function insertLive(row, uname, letter) {

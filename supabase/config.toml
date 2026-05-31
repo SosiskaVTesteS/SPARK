@@ -14,3 +14,12 @@ verify_jwt = false
 
 [functions.privacy-delete-account]
 verify_jwt = false
+
+[functions.moderate-content]
+verify_jwt = true
+
+[functions.submit-report]
+verify_jwt = true
+
+[functions.cyber-judge]
+verify_jwt = false

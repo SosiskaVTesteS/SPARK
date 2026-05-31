@@ -876,6 +876,23 @@ header {
 .bcrit:hover { background:rgba(232,90,122,0.15); transform:translateY(-1px); box-shadow:0 4px 16px rgba(232,90,122,0.2); }
 .bcrit:active{ transform:translateY(0) scale(0.97); }
 
+/* REPORT button */
+.brep {
+  padding: 11px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(232,160,40,0.3);
+  background: transparent;
+  color: rgba(232,160,40,0.75);
+  font-size: 13px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.18s ease, transform 0.22s var(--ease-spring);
+}
+.brep:hover  { background:rgba(232,160,40,0.1); transform:translateY(-1px); }
+.brep:active { transform:translateY(0) scale(0.97); }
+.brep:disabled, .brep--immune { opacity:0.35; cursor:not-allowed; transform:none !important; }
+.brep--done  { color:rgba(90,200,90,0.7); border-color:rgba(90,200,90,0.3); cursor:default; }
+
 /* ════════════════════════════════════════════════
    INVESTMENT GRAPH
    ════════════════════════════════════════════════ */
