@@ -101,8 +101,12 @@ document.addEventListener('DOMContentLoaded', function () {
     selDur = b.dataset.dur;
   });
 
-  document.addEventListener('click', function () {
+  document.addEventListener('click', function (e) {
     document.querySelectorAll('.lang-dd').forEach(function (d) { d.classList.remove('open'); });
+    // Close any open card dropdown unless the click originated inside one
+    if (!e.target.closest('.cmen') && !e.target.closest('.cmen-dropdown')) {
+      document.querySelectorAll('.cmen-dropdown').forEach(function (d) { d.remove(); });
+    }
   });
   var cardsList = document.getElementById('cardsList');
   if (cardsList) {
@@ -130,9 +134,21 @@ document.addEventListener('DOMContentLoaded', function () {
         react(reactBtn.dataset.id, reactBtn.dataset.e, reactBtn);
         return;
       }
-      var reportBtn = event.target.closest('.brep[data-report-id]');
-      if (reportBtn && !reportBtn.disabled) {
-        doReportIdea(reportBtn.dataset.reportId, reportBtn);
+      var shareBtn = event.target.closest('.bshare[data-share-id]');
+      if (shareBtn) {
+        doShareIdea(shareBtn.dataset.shareId);
+        return;
+      }
+      var cmenBtn = event.target.closest('.cmen[data-idea-id]');
+      if (cmenBtn) {
+        event.stopPropagation();
+        openCmenDropdown(cmenBtn);
+        return;
+      }
+      var dropReportBtn = event.target.closest('.cmen-report-btn[data-report-id]');
+      if (dropReportBtn && !dropReportBtn.disabled) {
+        document.querySelectorAll('.cmen-dropdown').forEach(function (d) { d.remove(); });
+        doReportIdea(dropReportBtn.dataset.reportId, dropReportBtn);
         return;
       }
     });
@@ -1026,6 +1042,18 @@ function enterApp() {
   applyLang();
   // Load real ideas from DB, then render trends and leaders
   loadIdeasFromDB();
+
+  // Pre-fill search from ?search= URL param (used by share links)
+  var urlSearchParam = new URLSearchParams(window.location.search).get('search');
+  if (urlSearchParam) {
+    var srchEl2 = document.getElementById('srchIn');
+    if (srchEl2) {
+      srchEl2.value = urlSearchParam;
+      q = urlSearchParam.toLowerCase().trim();
+    }
+    window.history.replaceState(null, '', window.location.pathname);
+  }
+
   if (window.ChatsEngine) {
     ChatsEngine.init();
   }
@@ -1246,6 +1274,8 @@ function applyStaticI18n() {
   setText('#notifSub', T('notifSub'));
   setText('#notifVibTitle', T('notifVibTitle'));
   setText('#notifVibSub', T('notifVibSub'));
+  setText('#notifNewPostsTitle', T('notifNewPostsTitle'));
+  setText('#notifNewPostsSub', T('notifNewPostsSub'));
   setText('#notifEmailTitle', T('notifEmailTitle'));
   setText('#notifEmailSub', T('notifEmailSub'));
 
@@ -1727,17 +1757,14 @@ function cardHTML(x) {
   var triggerId = x.author_id || (x.u === '@future_founder' ? 1 : '');
   var triggerAttr = triggerId ? ' class="cav mp-trigger" data-user-id="' + triggerId + '"' : ' class="cav"';
   var nameTriggerAttr = triggerId ? ' class="cu mp-trigger" data-user-id="' + triggerId + '"' : ' class="cu"';
+  var isImmune = x.status === 'immune';
   return '<div class="card' + (fire ? ' fire' : '') + '" data-cid="' + x.id + '">'
     + '<div class="ch"><div' + triggerAttr + ' style="background:' + safeBg + '">' + safeAv + '</div>'
     + '<div class="cm"><div' + nameTriggerAttr + '>' + safeUser + '</div><div class="ct">' + safeTime + ' · #' + safeTag + '</div></div>'
-    + '<div class="cmen"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></div></div>'
+    + '<div class="cmen" data-idea-id="' + x.id + '" data-immune="' + (isImmune ? '1' : '0') + '"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></div></div>'
     + '<div class="ctitle">' + safeTitle + '</div><div class="cbody">' + safeBody + '</div>'
     + investGraphHTML(x)
-    + '<div class="cact"><button class="binv" data-invest-id="' + x.id + '"' + disabledAttr + '>' + btnText + '</button><button class="bcrit">' + T('bcrit') + '</button>'
-    + (x.status === 'immune'
-        ? '<button class="brep brep--immune" disabled title="' + (LANG === 'ru' ? 'Пост защищён иммунитетом' : 'Post has immunity') + '">🛡</button>'
-        : '<button class="brep" data-report-id="' + x.id + '" title="' + (LANG === 'ru' ? 'Пожаловаться' : 'Report') + '">⚠</button>')
-    + '</div>'
+    + '<div class="cact"><button class="binv" data-invest-id="' + x.id + '"' + disabledAttr + '>' + btnText + '</button><button class="bcrit">' + T('bcrit') + '</button><button class="bshare" data-share-id="' + x.id + '" title="' + T('shareIdea') + '"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button></div>'
     + '<div class="creact" id="rc-' + x.id + '">' + reactHTML(x.id) + '</div></div>';
 }
 
@@ -2079,6 +2106,59 @@ async function doPublish() {
   toast('🚀 ' + (LANG === 'ru' ? 'Идея опубликована!' : 'Idea published!'), 'var(--ac)');
 }
 
+function openCmenDropdown(cmenEl) {
+  // Remove any existing dropdowns
+  document.querySelectorAll('.cmen-dropdown').forEach(function (d) { d.remove(); });
+
+  var ideaId = cmenEl.dataset.ideaId;
+  var isImmune = cmenEl.dataset.immune === '1';
+  var ru = LANG === 'ru';
+
+  var dd = document.createElement('div');
+  dd.className = 'cmen-dropdown';
+
+  if (isImmune) {
+    dd.innerHTML = '<button class="cmen-dropdown-item cmen-dropdown-item--disabled" disabled>'
+      + '🛡 ' + (ru ? 'Защищено иммунитетом' : 'Protected by immunity') + '</button>';
+  } else {
+    dd.innerHTML = '<button class="cmen-dropdown-item cmen-report-btn" data-report-id="' + ideaId + '">'
+      + '⚠ ' + (ru ? 'Пожаловаться' : 'Report') + '</button>';
+  }
+
+  cmenEl.style.position = 'relative';
+  cmenEl.appendChild(dd);
+}
+
+function doShareIdea(ideaId) {
+  var idea = LIVE.filter(function(x) { return x.id === ideaId; })[0];
+  if (!idea) return;
+
+  var shareUrl = window.location.origin + window.location.pathname + '?search=' + encodeURIComponent(idea.title);
+  var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=9b5fff&bgcolor=080c1c&qzone=1&data=' + encodeURIComponent(shareUrl);
+
+  var mo = document.getElementById('moShare');
+  if (!mo) return;
+
+  var el = function(id) { return document.getElementById(id); };
+  var shareCardTitle = el('shareCardTitle');
+  var shareCardBody = el('shareCardBody');
+  var shareCardAuthor = el('shareCardAuthor');
+  var shareQR = el('shareQR');
+  var shareUrlInput = el('shareUrlInput');
+  var shareModalTitle = el('shareModalTitle');
+  var shareCopyBtn = el('shareCopyBtn');
+
+  if (shareModalTitle) shareModalTitle.textContent = T('shareTitle');
+  if (shareCopyBtn) shareCopyBtn.textContent = T('shareCopyLink');
+  if (shareCardTitle) shareCardTitle.textContent = idea.title || '';
+  if (shareCardBody) shareCardBody.textContent = (idea.body || '').slice(0, 100) + ((idea.body || '').length > 100 ? '…' : '');
+  if (shareCardAuthor) shareCardAuthor.textContent = idea.u || '';
+  if (shareQR) { shareQR.src = qrUrl; shareQR.alt = 'QR'; }
+  if (shareUrlInput) shareUrlInput.value = shareUrl;
+
+  openMo('moShare');
+}
+
 var _reportLastMs = 0; // rate limit: 1 report per 10s per client session
 var _pendingReport = { ideaId: null, btn: null };
 
@@ -2213,10 +2293,15 @@ function initRealtime() {
         // Fetch new ideas check
         if (LIVE.length > 0) {
           var latestId = LIVE[0].id;
-          var latest = await supa.from('ideas').select('id, title').order('created_at', {ascending: false}).limit(1).single();
+          var latest = await supa.from('ideas').select('id, title')
+            .or('status.eq.active,status.eq.immune,status.is.null')
+            .order('created_at', {ascending: false}).limit(1).single();
           if (latest.data && latest.data.id && latest.data.id !== latestId) {
             if (!LIVE.filter(function(x) { return x.id === latest.data.id; }).length) {
-              toast('✨ New: ' + (latest.data.title || '').slice(0, 26), 'var(--ac2)');
+              var prefs = ME && ME.user_metadata ? ME.user_metadata : {};
+              if (prefs.prefs_new_posts !== false) {
+                toast('✨ New: ' + (latest.data.title || '').slice(0, 26), 'var(--ac2)');
+              }
             }
           }
         }
@@ -2274,7 +2359,10 @@ function initRealtime() {
           var rtUsername = r.author_username || '@anon';
           insertLive(r, rtUsername, rtUsername.replace('@', '').charAt(0).toUpperCase() || 'A');
         }
-        toast('✨ New: ' + (r.title || '').slice(0, 26), 'var(--ac2)');
+        var rtPrefs = ME && ME.user_metadata ? ME.user_metadata : {};
+        if (rtPrefs.prefs_new_posts !== false) {
+          toast('✨ New: ' + (r.title || '').slice(0, 26), 'var(--ac2)');
+        }
       }).on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'ideas' }, function (p2) {
         // Update existing idea in LIVE with fresh investment data
         var updated = p2.new;
@@ -2570,6 +2658,12 @@ document.addEventListener('DOMContentLoaded', function() {
       if (event.target === moNotif) closeMo('moNotifications');
     });
   }
+  var moShareEl = document.getElementById('moShare');
+  if (moShareEl) {
+    moShareEl.addEventListener('click', function (event) {
+      if (event.target === moShareEl) closeMo('moShare');
+    });
+  }
   var moPriv = document.getElementById('moPrivacy');
   if (moPriv) {
     moPriv.addEventListener('click', function (event) {
@@ -2607,6 +2701,21 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
   
+  var togNP = document.getElementById('toggle-new-posts');
+  if (togNP) {
+    togNP.addEventListener('change', async function() {
+      if (!ME) return;
+      var val = togNP.checked;
+      if (!ME.user_metadata) ME.user_metadata = {};
+      ME.user_metadata.prefs_new_posts = val;
+      try {
+        await supa.auth.updateUser({ data: { prefs_new_posts: val } });
+        var { data: { user: npUser } } = await supa.auth.getUser();
+        if (npUser) ME = npUser;
+      } catch (e) {}
+    });
+  }
+
   var togEm = document.getElementById('toggle-email');
   if (togEm) {
     togEm.addEventListener('change', async function() {
@@ -2747,6 +2856,8 @@ window.showNotifications = function() {
   var prefs = ME && ME.user_metadata ? ME.user_metadata : {};
   var togVib = document.getElementById('toggle-vibration');
   if (togVib) togVib.checked = prefs.prefs_vibration !== false;
+  var togNP = document.getElementById('toggle-new-posts');
+  if (togNP) togNP.checked = prefs.prefs_new_posts !== false;
   var togEm = document.getElementById('toggle-email');
   if (togEm) togEm.checked = prefs.prefs_email === true;
   openMo('moNotifications');

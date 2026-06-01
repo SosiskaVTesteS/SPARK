@@ -31,6 +31,31 @@ function logDecision(
   });
 }
 
+const SYSTEM_PROMPT = `You are a strict content moderation system for a social platform. Your task is to analyze the provided text and determine if it violates the platform's content policies.
+
+PROHIBITED CONTENT (return allowed: false):
+- Pornography, explicit sexual content, erotica, or sexual solicitation
+- Extremism, terrorism, calls for violence, or promotion of illegal organizations
+- Content related to illegal weapons, drugs, or other controlled substances
+- Spam, mass advertising, or promotion of external Telegram channels/bots/services
+- Hate speech targeting race, ethnicity, religion, gender, or sexual orientation
+- Content that facilitates illegal activity
+
+ALLOWED CONTENT (return allowed: true):
+- Business ideas, startup concepts, and entrepreneurial discussions
+- Technology, science, and educational content
+- Social and political commentary (without incitement to violence)
+- Creative writing, art, and entertainment ideas
+- Any neutral, constructive, or productive content
+
+Respond ONLY with a JSON object in this exact format:
+{"allowed": boolean, "reason": "краткое описание причины на русском (1 sentence, or 'ok' if allowed)"}
+
+Examples:
+{"allowed": true, "reason": "ok"}
+{"allowed": false, "reason": "Текст содержит явные сексуальные материалы"}
+{"allowed": false, "reason": "Реклама стороннего Telegram-канала"}`;
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   if (req.method !== 'POST') return json({ message: 'Method not allowed' }, 405);
@@ -75,18 +100,27 @@ Deno.serve(async (req) => {
     return json({ allowed: false, reason: 'links_not_allowed' });
   }
 
-  // ── OpenAI Moderation API ───────────────────────────────────────────────
+  // ── GPT-4o-mini moderation ──────────────────────────────────────────────
   const controller = new AbortController();
-  const timeoutId  = setTimeout(() => controller.abort(), 10000);
+  const timeoutId  = setTimeout(() => controller.abort(), 15000);
 
   try {
-    const res = await fetch('https://api.openai.com/v1/moderations', {
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openAiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ input: text }),
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: text },
+        ],
+        temperature: 0,
+        max_tokens: 100,
+        response_format: { type: 'json_object' },
+      }),
       signal: controller.signal,
     });
     clearTimeout(timeoutId);
@@ -97,15 +131,20 @@ Deno.serve(async (req) => {
       return json({ allowed: true }); // fail open
     }
 
-    const data   = await res.json();
-    const result = data?.results?.[0];
-    if (!result) return json({ allowed: true });
+    const data = await res.json();
+    const raw  = data?.choices?.[0]?.message?.content || '';
 
-    if (result.flagged) {
-      const categories: Record<string, boolean> = result.categories || {};
-      const flaggedCats = Object.keys(categories).filter((k) => categories[k]);
-      const reason = flaggedCats.join(', ') || 'content_policy_violation';
-      console.log('[moderate-content] flagged:', reason);
+    let verdict: { allowed: boolean; reason?: string };
+    try {
+      verdict = JSON.parse(raw);
+    } catch {
+      console.warn('[moderate-content] JSON parse failed:', raw);
+      return json({ allowed: true }); // fail open on parse error
+    }
+
+    if (verdict.allowed === false) {
+      const reason = verdict.reason || 'content_policy_violation';
+      console.log('[moderate-content] blocked by GPT:', reason);
       logDecision(admin, 'blocked', reason);
       return json({ allowed: false, reason });
     }

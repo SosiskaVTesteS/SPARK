@@ -517,6 +517,18 @@
       </div>
       <div class="settings-item">
         <div class="item-info">
+          <h3 class="item-label" id="notifNewPostsTitle">Уведомления о новых постах</h3>
+          <p class="item-description" id="notifNewPostsSub">Показывать уведомление при появлении новой идеи в ленте.</p>
+        </div>
+        <div class="item-action">
+          <label class="spark-toggle">
+            <input type="checkbox" id="toggle-new-posts" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+      <div class="settings-item">
+        <div class="item-info">
           <h3 class="item-label" id="notifEmailTitle">Важные анонсы</h3>
           <p class="item-description" id="notifEmailSub">Письма о ключевых обновлениях платформы на привязанный email.</p>
         </div>
@@ -527,6 +539,32 @@
           </label>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- МОДАЛКА ШАРИНГА -->
+<div class="mo" id="moShare">
+  <div class="mo-box" style="padding:28px 20px 24px; box-sizing:border-box; max-width:380px;">
+    <div class="mo-handle"></div>
+    <h2 class="share-modal-title" id="shareModalTitle">Поделиться идеей</h2>
+    <div class="share-card">
+      <div class="share-card-glow"></div>
+      <div class="share-card-inner">
+        <div class="share-card-logo">⚡ SPARK</div>
+        <div class="share-card-content">
+          <div class="share-card-title" id="shareCardTitle"></div>
+          <div class="share-card-body" id="shareCardBody"></div>
+          <div class="share-card-author" id="shareCardAuthor"></div>
+        </div>
+        <div class="share-card-qr">
+          <img id="shareQR" src="" alt="QR" width="100" height="100" loading="lazy">
+        </div>
+      </div>
+    </div>
+    <div class="share-url-row">
+      <input type="text" class="share-url-input" id="shareUrlInput" readonly>
+      <button class="share-copy-btn" id="shareCopyBtn" onclick="(function(){var inp=document.getElementById('shareUrlInput');if(!inp)return;navigator.clipboard.writeText(inp.value).then(function(){window.toast&&toast('✓ '+(window.LANG==='ru'?'Ссылка скопирована!':'Link copied!'),'var(--ac2)');}).catch(function(){inp.select();document.execCommand('copy');window.toast&&toast('✓ '+(window.LANG==='ru'?'Ссылка скопирована!':'Link copied!'),'var(--ac2)');})})()">Скопировать ссылку</button>
     </div>
   </div>
 </div>
