@@ -137,7 +137,7 @@ Deno.serve(async (req) => {
     admin.from('profiles').upsert({
       id: userId,
       username: pending.username,
-      spk_balance: 4520,
+      spk_balance: 500,
     }),
     admin.from('pending_registrations').delete().eq('email', email),
     admin.auth.admin.generateLink({ type: 'magiclink', email }),
