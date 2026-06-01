@@ -36,6 +36,16 @@ document.addEventListener('DOMContentLoaded', function () {
       if (event.target === moInvest) closeMo('moInvest');
     });
   }
+  var reportConfirmModal = document.getElementById('reportConfirmModal');
+  if (reportConfirmModal) {
+    reportConfirmModal.addEventListener('click', function (event) {
+      if (event.target === reportConfirmModal) { _cancelPendingReport(); }
+    });
+  }
+  var rcmCancel = document.getElementById('rcmCancel');
+  if (rcmCancel) rcmCancel.addEventListener('click', _cancelPendingReport);
+  var rcmConfirm = document.getElementById('rcmConfirm');
+  if (rcmConfirm) rcmConfirm.addEventListener('click', _doSubmitReport);
   document.querySelectorAll('.mob-tab[data-panel]').forEach(function (tabBtn) {
     tabBtn.addEventListener('click', function () {
       openPanel(tabBtn.dataset.panel);
@@ -2070,19 +2080,42 @@ async function doPublish() {
 }
 
 var _reportLastMs = 0; // rate limit: 1 report per 10s per client session
+var _pendingReport = { ideaId: null, btn: null };
 
-async function doReportIdea(ideaId, btn) {
+// Step 1: validate + open confirmation modal
+function doReportIdea(ideaId, btn) {
   if (!supa || !ME) {
     toast('❌ ' + (LANG === 'ru' ? 'Войдите, чтобы пожаловаться' : 'Sign in to report'), 'var(--red)');
     return;
   }
   var now = Date.now();
-  var wait = Math.ceil((10000 - (now - _reportLastMs)) / 1000);
   if (now - _reportLastMs < 10000) {
+    var wait = Math.ceil((10000 - (now - _reportLastMs)) / 1000);
     toast('⏳ ' + (LANG === 'ru' ? 'Подождите ' + wait + ' сек.' : 'Wait ' + wait + 's'), 'var(--mu)');
     return;
   }
-  _reportLastMs = now;
+  _pendingReport.ideaId = ideaId;
+  _pendingReport.btn    = btn;
+  var ru = LANG === 'ru';
+  var el = function(id) { return document.getElementById(id); };
+  var t  = el('rcmTitle');   if (t)  t.textContent  = ru ? 'Пожаловаться на пост?' : 'Report this post?';
+  var tx = el('rcmText');    if (tx) tx.textContent  = ru
+    ? 'Репорт отправляется за нарушения: неуважение к собеседникам, оскорбления, спам, нарушение этикета сообщества.'
+    : 'Reports are sent for violations: harassment, spam, offensive content, or community guideline breaches.';
+  var cc = el('rcmCancel');  if (cc) cc.textContent  = ru ? 'Отмена'       : 'Cancel';
+  var cf = el('rcmConfirm'); if (cf) cf.textContent  = ru ? 'Пожаловаться' : 'Report';
+  openMo('reportConfirmModal');
+}
+
+// Step 2: user confirmed — run the actual API call
+async function _doSubmitReport() {
+  var ideaId = _pendingReport.ideaId;
+  var btn    = _pendingReport.btn;
+  _pendingReport.ideaId = null;
+  _pendingReport.btn    = null;
+  closeMo('reportConfirmModal');
+  if (!ideaId || !btn) return;
+  _reportLastMs = Date.now();
   btn.disabled = true;
   var r = await callEdgeFunction('submit-report', { idea_id: ideaId });
   if (r.ok && r.data && r.data.ok) {
@@ -2100,6 +2133,13 @@ async function doReportIdea(ideaId, btn) {
     }[errCode] || (LANG === 'ru' ? 'Ошибка. Попробуйте позже.' : 'Error. Try again later.');
     toast('⚠ ' + errMsg, errCode === 'already_reported' || errCode === 'post_is_immune' ? 'var(--mu)' : 'var(--red)');
   }
+}
+
+// Cancel: close modal, clear pending state
+function _cancelPendingReport() {
+  _pendingReport.ideaId = null;
+  _pendingReport.btn    = null;
+  closeMo('reportConfirmModal');
 }
 
 function insertLive(row, uname, letter) {
