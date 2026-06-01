@@ -7,6 +7,11 @@
 
 var ChatsEngine = (function () {
 
+  // In-memory set of currently online user IDs.
+  // Updated directly from the 'sync' event payload — the only reliable source.
+  // Avoids re-calling presenceChannel.presenceState() which can return stale {} mid-lifecycle.
+  var _onlineUserIds = new Set();
+
   // State Model
   var state = {
     activeChannelId: null,      // e.g. '@maria_builds' or 'defi-prophets'
@@ -152,8 +157,20 @@ var ChatsEngine = (function () {
     }
   }
 
-  // Update online indicators — no localStorage writes, status is read live from presenceChannel
+  // Rebuild _onlineUserIds from the presence sync payload, then re-render.
+  // Uses the 'presenceState' parameter directly — it is the reliable snapshot
+  // from Supabase's 'sync' event and avoids re-calling presenceChannel.presenceState()
+  // which can return {} mid-lifecycle.
   function updateOnlineStatusFromPresence(presenceState) {
+    _onlineUserIds.clear();
+    if (presenceState) {
+      Object.keys(presenceState).forEach(function (uid) {
+        var entry = presenceState[uid];
+        if (entry && entry.length > 0) {
+          _onlineUserIds.add(uid);
+        }
+      });
+    }
     renderChatList();
     _updateActiveHeaderStatus();
     if (window.MiniProfile && typeof window.MiniProfile.onPresenceUpdate === 'function') {
@@ -161,12 +178,14 @@ var ChatsEngine = (function () {
     }
   }
 
-  // Read live presence directly from Supabase channel — single source of truth
+  // Single source of truth: check the in-memory Set populated by the last sync event.
+  // Falls back to a live presenceChannel query if the Set is empty and the channel is ready.
   function isUserOnline(userId) {
+    if (_onlineUserIds.has(userId)) return true;
     if (!state.presenceChannel) return false;
     try {
       var ps = state.presenceChannel.presenceState();
-      return !!(ps[userId] && ps[userId].length > 0);
+      return !!(ps && ps[userId] && ps[userId].length > 0);
     } catch (e) {
       return false;
     }
