@@ -123,7 +123,7 @@ Deno.serve(async (req) => {
   // ── 4. Call Gemini 1.5 Flash ────────────────────────────────────────────
   const prompt     = buildPrompt(idea.title || '', idea.description || '');
   const geminiUrl  =
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`;
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`;
 
   const controller = new AbortController();
   const timeoutId  = setTimeout(() => controller.abort(), 20000);
@@ -137,7 +137,11 @@ Deno.serve(async (req) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.1, maxOutputTokens: 256 },
+        generationConfig: {
+          temperature: 0.1,
+          maxOutputTokens: 2048,
+          responseMimeType: 'application/json',
+        },
       }),
       signal: controller.signal,
     });
