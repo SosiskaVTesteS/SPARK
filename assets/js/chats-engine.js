@@ -152,25 +152,40 @@ var ChatsEngine = (function () {
     }
   }
 
-  // Update online indicators of cached DM contacts using real-time presence data
+  // Update online indicators — no localStorage writes, status is read live from presenceChannel
   function updateOnlineStatusFromPresence(presenceState) {
-    var contacts = getContactsList();
-    var updated = false;
-
-    contacts.forEach(function (c) {
-      // In Supabase, the presence key matches the user's UUID (which is c.id for validated real users)
-      var isOnline = !!presenceState[c.id];
-      if (c.online !== isOnline) {
-        c.online = isOnline;
-        updated = true;
-      }
-    });
-
-    if (updated) {
-      saveContactsList(contacts);
-      renderChatList();
-      renderActiveConversation();
+    renderChatList();
+    _updateActiveHeaderStatus();
+    if (window.MiniProfile && typeof window.MiniProfile.onPresenceUpdate === 'function') {
+      window.MiniProfile.onPresenceUpdate(presenceState);
     }
+  }
+
+  // Read live presence directly from Supabase channel — single source of truth
+  function isUserOnline(userId) {
+    if (!state.presenceChannel) return false;
+    try {
+      var ps = state.presenceChannel.presenceState();
+      return !!(ps[userId] && ps[userId].length > 0);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Surgically update the status indicator in the active chat header
+  // Called on every presence sync — avoids triggering the full renderActiveConversation
+  // (which has an early-return optimisation that skips header re-render when messages unchanged)
+  function _updateActiveHeaderStatus() {
+    if (!state.activeChannelId) return;
+    var statusEl = document.querySelector('.chat-header-status');
+    if (!statusEl) return;
+    var contacts = getContactsList();
+    var contact  = contacts.find(function (c) { return c.id === state.activeChannelId; });
+    if (!contact) return;
+    var online = isUserOnline(contact.id);
+    statusEl.className = 'chat-header-status' + (online ? '' : ' offline');
+    var spans = statusEl.querySelectorAll('span');
+    if (spans[1]) spans[1].textContent = online ? 'Active now' : 'Offline';
   }
 
   // Render Left Chats/Teams List
@@ -225,7 +240,7 @@ var ChatsEngine = (function () {
           var timeText = lastMsg ? _formatTime(lastMsg.created_at) : '10m';
           
           var isActive = state.activeChannelId === c.id ? ' active' : '';
-          var statusClass = c.online ? '' : ' offline';
+          var statusClass = isUserOnline(c.id) ? '' : ' offline';
           var grad = ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(c.avColor) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
           var pinBadge = c.pinned ? '<span class="chat-row-pin-badge" style="color:var(--ac);font-size:10px;margin-left:5px" title="Pinned chat">📌</span>' : '';
           
@@ -703,8 +718,9 @@ var ChatsEngine = (function () {
     var contact = contacts.find(function (c) { return c.id === id; });
     var team    = teams.find(function (t) { return t.id === id; });
     var titleName = contact ? contact.name : (team ? team.name : id);
-    var statusText = contact ? (contact.online ? 'Active now' : 'Offline') : (team ? (team.activeCount + ' members online') : 'Connected');
-    var isOffline = contact && !contact.online;
+    var _contactOnline = contact ? isUserOnline(contact.id) : false;
+    var statusText = contact ? (_contactOnline ? 'Active now' : 'Offline') : (team ? (team.activeCount + ' members online') : 'Connected');
+    var isOffline = contact && !_contactOnline;
     
     var avIndex = contact ? contact.avColor : (team ? team.avColor : 0);
     var avText = contact ? contact.username.replace('@', '').charAt(0).toUpperCase() : (team ? team.name.charAt(0) + team.name.charAt(1) : '?');
@@ -1908,21 +1924,8 @@ var ChatsEngine = (function () {
 
   // Initialize Chats Engine
   function init() {
-    // Start all cached contacts as offline by default on startup
-    // We will only mark them as online once the Realtime presence syncs
-    try {
-      var contacts = getContactsList();
-      var changed = false;
-      contacts.forEach(function (c) {
-        if (c.online) {
-          c.online = false;
-          changed = true;
-        }
-      });
-      if (changed) {
-        saveContactsList(contacts);
-      }
-    } catch (e) {}
+    // Online status is now read live from presenceChannel via isUserOnline(),
+    // so no localStorage seed needed here.
 
     if (state.initialized) {
       // Re-setup realtime subscription if session loaded
@@ -2900,7 +2903,8 @@ var ChatsEngine = (function () {
     showCreateChatModal:      showCreateChatModal,
     renderChatList:           renderChatList,
     renderActiveConversation: renderActiveConversation,
-    updateUnreadBadge:        updateUnreadBadge
+    updateUnreadBadge:        updateUnreadBadge,
+    isUserOnline:             isUserOnline
   };
 })();
 
