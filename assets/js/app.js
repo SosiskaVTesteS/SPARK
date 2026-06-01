@@ -139,16 +139,17 @@ document.addEventListener('DOMContentLoaded', function () {
         doShareIdea(shareBtn.dataset.shareId);
         return;
       }
-      var cmenBtn = event.target.closest('.cmen[data-idea-id]');
-      if (cmenBtn) {
-        event.stopPropagation();
-        openCmenDropdown(cmenBtn);
-        return;
-      }
+      // Must be checked BEFORE .cmen — report btn lives inside .cmen
       var dropReportBtn = event.target.closest('.cmen-report-btn[data-report-id]');
       if (dropReportBtn && !dropReportBtn.disabled) {
         document.querySelectorAll('.cmen-dropdown').forEach(function (d) { d.remove(); });
         doReportIdea(dropReportBtn.dataset.reportId, dropReportBtn);
+        return;
+      }
+      var cmenBtn = event.target.closest('.cmen[data-idea-id]');
+      if (cmenBtn) {
+        event.stopPropagation();
+        openCmenDropdown(cmenBtn);
         return;
       }
     });
