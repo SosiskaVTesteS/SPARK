@@ -2076,7 +2076,7 @@ async function doPublish() {
     insertLive({ id: Date.now(), title: title, desc: desc, min_bet: min, expires_at: exp }, uname, letter);
   }
   closeMo('moCreate');
-  toast('рџљЂ Idea published!', 'var(--ac)');
+  toast('🚀 ' + (LANG === 'ru' ? 'Идея опубликована!' : 'Idea published!'), 'var(--ac)');
 }
 
 var _reportLastMs = 0; // rate limit: 1 report per 10s per client session
