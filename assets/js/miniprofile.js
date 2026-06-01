@@ -287,6 +287,12 @@ const MiniProfile = (() => {
   function close(restoreFocus = true) {
     if (!isOpen) return;
 
+    /* Убираем фокус из карточки ДО выставления aria-hidden,
+       иначе браузер выдаёт "Blocked aria-hidden on focused element" */
+    if (card && card.contains(document.activeElement)) {
+      document.activeElement.blur();
+    }
+
     portal.classList.remove('is-open');
     portal.setAttribute('aria-hidden', 'true');
     isOpen      = false;
@@ -295,9 +301,14 @@ const MiniProfile = (() => {
     /* Восстановить скролл */
     document.body.style.overflow = '';
 
-    /* Вернуть фокус на триггер */
+    /* Вернуть фокус на триггер-элемент.
+       Захватываем ссылку в локальную переменную ДО обнуления triggerEl —
+       иначе замыкание setTimeout прочитает уже null. */
     if (restoreFocus && triggerEl) {
-      setTimeout(() => triggerEl.focus(), 280);
+      var elToFocus = triggerEl;
+      triggerEl = null;
+      setTimeout(function () { if (elToFocus) elToFocus.focus(); }, 280);
+    } else {
       triggerEl = null;
     }
   }
