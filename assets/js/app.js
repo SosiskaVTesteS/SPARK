@@ -1759,10 +1759,13 @@ function cardHTML(x) {
   var triggerAttr = triggerId ? ' class="cav mp-trigger" data-user-id="' + triggerId + '"' : ' class="cav"';
   var nameTriggerAttr = triggerId ? ' class="cu mp-trigger" data-user-id="' + triggerId + '"' : ' class="cu"';
   var isImmune = x.status === 'immune';
+  var wasReported = MY_REPORTED_IDEAS.indexOf(x.id) !== -1;
+  var cmenClass = 'cmen' + (wasReported ? ' cmen--reported' : '');
+  var cmenTitle = wasReported ? (LANG === 'ru' ? 'Вы пожаловались на этот пост' : 'You reported this post') : '';
   return '<div class="card' + (fire ? ' fire' : '') + '" data-cid="' + x.id + '">'
     + '<div class="ch"><div' + triggerAttr + ' style="background:' + safeBg + '">' + safeAv + '</div>'
     + '<div class="cm"><div' + nameTriggerAttr + '>' + safeUser + '</div><div class="ct">' + safeTime + ' · #' + safeTag + '</div></div>'
-    + '<div class="cmen" data-idea-id="' + x.id + '" data-immune="' + (isImmune ? '1' : '0') + '"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></div></div>'
+    + '<div class="' + cmenClass + '" data-idea-id="' + x.id + '" data-immune="' + (isImmune ? '1' : '0') + '"' + (cmenTitle ? ' title="' + cmenTitle + '"' : '') + '><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></div></div>'
     + '<div class="ctitle">' + safeTitle + '</div><div class="cbody">' + safeBody + '</div>'
     + investGraphHTML(x)
     + '<div class="cact"><button class="binv" data-invest-id="' + x.id + '"' + disabledAttr + '>' + btnText + '</button><button class="bcrit">' + T('bcrit') + '</button><button class="bshare" data-share-id="' + x.id + '" title="' + T('shareIdea') + '"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button></div>'
@@ -2113,6 +2116,7 @@ function openCmenDropdown(cmenEl) {
 
   var ideaId = cmenEl.dataset.ideaId;
   var isImmune = cmenEl.dataset.immune === '1';
+  var isReported = MY_REPORTED_IDEAS.indexOf(ideaId) !== -1;
   var ru = LANG === 'ru';
 
   var dd = document.createElement('div');
@@ -2121,6 +2125,9 @@ function openCmenDropdown(cmenEl) {
   if (isImmune) {
     dd.innerHTML = '<button class="cmen-dropdown-item cmen-dropdown-item--disabled" disabled>'
       + '🛡 ' + (ru ? 'Защищено иммунитетом' : 'Protected by immunity') + '</button>';
+  } else if (isReported) {
+    dd.innerHTML = '<button class="cmen-dropdown-item cmen-dropdown-item--disabled" disabled>'
+      + '✓ ' + (ru ? 'Вы пожаловались' : 'Reported') + '</button>';
   } else {
     dd.innerHTML = '<button class="cmen-dropdown-item cmen-report-btn" data-report-id="' + ideaId + '">'
       + '⚠ ' + (ru ? 'Пожаловаться' : 'Report') + '</button>';
@@ -2160,6 +2167,7 @@ function doShareIdea(ideaId) {
   openMo('moShare');
 }
 
+var MY_REPORTED_IDEAS = []; // session-local set of idea IDs the user has reported
 var _reportLastMs = 0; // rate limit: 1 report per 10s per client session
 var _pendingReport = { ideaId: null, btn: null };
 
@@ -2189,22 +2197,28 @@ function doReportIdea(ideaId, btn) {
 }
 
 // Step 2: user confirmed — run the actual API call
+function _markIdeaReported(ideaId) {
+  if (!ideaId) return;
+  if (MY_REPORTED_IDEAS.indexOf(ideaId) === -1) MY_REPORTED_IDEAS.push(ideaId);
+  var cmenEl = document.querySelector('.cmen[data-idea-id="' + ideaId + '"]');
+  if (cmenEl) {
+    cmenEl.classList.add('cmen--reported');
+    cmenEl.title = LANG === 'ru' ? 'Вы пожаловались на этот пост' : 'You reported this post';
+  }
+}
+
 async function _doSubmitReport() {
   var ideaId = _pendingReport.ideaId;
-  var btn    = _pendingReport.btn;
   _pendingReport.ideaId = null;
   _pendingReport.btn    = null;
   closeMo('reportConfirmModal');
-  if (!ideaId || !btn) return;
+  if (!ideaId) return;
   _reportLastMs = Date.now();
-  btn.disabled = true;
   var r = await callEdgeFunction('submit-report', { idea_id: ideaId });
   if (r.ok && r.data && r.data.ok) {
     toast('⚠ ' + (LANG === 'ru' ? 'Жалоба принята. Спасибо за бдительность.' : 'Report submitted. Thanks for keeping SPARK safe.'), 'var(--ac)');
-    btn.textContent = '✓';
-    btn.classList.add('brep--done');
+    _markIdeaReported(ideaId);
   } else {
-    btn.disabled = false;
     var errCode = (r.data && r.data.message) || 'error';
     var errMsg = {
       already_reported:       LANG === 'ru' ? 'Вы уже жаловались на этот пост.' : 'You already reported this post.',
@@ -2213,6 +2227,7 @@ async function _doSubmitReport() {
       idea_not_found:         LANG === 'ru' ? 'Пост не найден.' : 'Post not found.',
     }[errCode] || (LANG === 'ru' ? 'Ошибка. Попробуйте позже.' : 'Error. Try again later.');
     toast('⚠ ' + errMsg, errCode === 'already_reported' || errCode === 'post_is_immune' ? 'var(--mu)' : 'var(--red)');
+    if (errCode === 'already_reported') _markIdeaReported(ideaId);
   }
 }
 

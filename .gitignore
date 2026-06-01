@@ -16,6 +16,8 @@ docs/
 # Скрипты локальной разработки и CI (содержат тестовые credentials)
 scripts/full-test.ps1
 scripts/logs/
+scratch/
+taster_temp/
 
 # Личная документация — не для репо
 *.txt

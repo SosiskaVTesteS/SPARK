@@ -15,6 +15,8 @@ function json(body: unknown, status = 200) {
 // Server-side link check (same pattern as frontend — defence in depth)
 const LINK_PATTERN = /(https?:\/\/|www\.|t\.me\/)/i;
 
+const CF_WORKER_URL = Deno.env.get('CF_FILTER_URL') || 'https://spark-ai-filter.mtsoppe1.workers.dev';
+
 // Write to moderation_log (fire-and-forget, non-blocking)
 function logDecision(
   admin: ReturnType<typeof createClient>,
@@ -22,39 +24,14 @@ function logDecision(
   reason: string,
 ) {
   admin.from('moderation_log').insert({
-    idea_id:    null,   // idea doesn't exist yet at this stage
-    stage:      'openai_filter',
+    idea_id: null,
+    stage:   'cf_llama_filter',
     verdict,
     reason,
   }).then(() => {}).catch((e: unknown) => {
     console.warn('[moderate-content] log write failed:', e);
   });
 }
-
-const SYSTEM_PROMPT = `You are a strict content moderation system for a social platform. Your task is to analyze the provided text and determine if it violates the platform's content policies.
-
-PROHIBITED CONTENT (return allowed: false):
-- Pornography, explicit sexual content, erotica, or sexual solicitation
-- Extremism, terrorism, calls for violence, or promotion of illegal organizations
-- Content related to illegal weapons, drugs, or other controlled substances
-- Spam, mass advertising, or promotion of external Telegram channels/bots/services
-- Hate speech targeting race, ethnicity, religion, gender, or sexual orientation
-- Content that facilitates illegal activity
-
-ALLOWED CONTENT (return allowed: true):
-- Business ideas, startup concepts, and entrepreneurial discussions
-- Technology, science, and educational content
-- Social and political commentary (without incitement to violence)
-- Creative writing, art, and entertainment ideas
-- Any neutral, constructive, or productive content
-
-Respond ONLY with a JSON object in this exact format:
-{"allowed": boolean, "reason": "краткое описание причины на русском (1 sentence, or 'ok' if allowed)"}
-
-Examples:
-{"allowed": true, "reason": "ok"}
-{"allowed": false, "reason": "Текст содержит явные сексуальные материалы"}
-{"allowed": false, "reason": "Реклама стороннего Telegram-канала"}`;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
@@ -77,9 +54,9 @@ Deno.serve(async (req) => {
   const { data: { user }, error: authError } = await admin.auth.getUser(token);
   if (authError || !user) return json({ message: 'Unauthorized' }, 401);
 
-  const openAiKey = Deno.env.get('OPENAI_API_KEY');
-  if (!openAiKey) {
-    console.error('[moderate-content] OPENAI_API_KEY not set');
+  const filterToken = Deno.env.get('CF_FILTER_TOKEN');
+  if (!filterToken) {
+    console.error('[moderate-content] CF_FILTER_TOKEN not set');
     return json({ allowed: true }); // fail open
   }
 
@@ -100,51 +77,32 @@ Deno.serve(async (req) => {
     return json({ allowed: false, reason: 'links_not_allowed' });
   }
 
-  // ── GPT-4o-mini moderation ──────────────────────────────────────────────
+  // ── AI moderation via Cloudflare Worker (bypasses Supabase IP rate limits) ──
   const controller = new AbortController();
   const timeoutId  = setTimeout(() => controller.abort(), 15000);
 
   try {
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    const res = await fetch(CF_WORKER_URL, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAiKey}`,
         'Content-Type': 'application/json',
+        'x-filter-token': filterToken,
       },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: text },
-        ],
-        temperature: 0,
-        max_tokens: 100,
-        response_format: { type: 'json_object' },
-      }),
+      body: JSON.stringify({ text }),
       signal: controller.signal,
     });
     clearTimeout(timeoutId);
 
     if (!res.ok) {
-      const errText = await res.text();
-      console.error('[moderate-content] OpenAI error', res.status, errText);
+      console.error('[moderate-content] CF Worker error', res.status);
       return json({ allowed: true }); // fail open
     }
 
-    const data = await res.json();
-    const raw  = data?.choices?.[0]?.message?.content || '';
-
-    let verdict: { allowed: boolean; reason?: string };
-    try {
-      verdict = JSON.parse(raw);
-    } catch {
-      console.warn('[moderate-content] JSON parse failed:', raw);
-      return json({ allowed: true }); // fail open on parse error
-    }
+    const verdict = await res.json() as { allowed: boolean; reason?: string };
 
     if (verdict.allowed === false) {
       const reason = verdict.reason || 'content_policy_violation';
-      console.log('[moderate-content] blocked by GPT:', reason);
+      console.log('[moderate-content] blocked by CF+Gemini:', reason);
       logDecision(admin, 'blocked', reason);
       return json({ allowed: false, reason });
     }
@@ -152,7 +110,7 @@ Deno.serve(async (req) => {
     return json({ allowed: true });
   } catch (e) {
     clearTimeout(timeoutId);
-    console.error('[moderate-content] fetch error:', e);
+    console.error('[moderate-content] CF Worker fetch error:', e);
     return json({ allowed: true }); // fail open
   }
 });

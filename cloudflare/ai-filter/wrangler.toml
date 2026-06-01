@@ -1,0 +1,6 @@
+name       = "spark-ai-filter"
+main       = "index.js"
+compatibility_date = "2024-01-01"
+
+[ai]
+binding = "AI"
