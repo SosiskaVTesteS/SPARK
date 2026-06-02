@@ -2414,6 +2414,43 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
 .ach-btn-claimed:disabled { opacity: 0.8; }
 
 /* ── Repost form ── */
+.ach-repost-instruction {
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ach-repost-step {
+  font-size: 11.5px;
+  color: var(--mu2);
+  line-height: 1.5;
+}
+.ach-repost-step strong { color: var(--ac2); }
+
+.ach-repost-code {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 4px;
+  padding: 7px 12px;
+  background: rgba(232,197,90,0.08);
+  border: 1px solid rgba(232,197,90,0.35);
+  border-radius: 8px;
+  font-family: var(--fh);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--ac);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  align-self: flex-start;
+}
+.ach-repost-code:hover {
+  background: rgba(232,197,90,0.15);
+  border-color: var(--ac);
+}
+.ach-repost-code svg { opacity: 0.6; flex-shrink: 0; }
+
 .ach-repost-form {
   margin-top: 11px;
 }

@@ -204,6 +204,16 @@ document.addEventListener('DOMContentLoaded', function () {
         if (pulseBtn.dataset.settings === 'privacy') showPrivacy();
         return;
       }
+      var copyCodeEl = event.target.closest('[id^="achCode-"]');
+      if (copyCodeEl) {
+        var codeText = copyCodeEl.querySelector('span') ? copyCodeEl.querySelector('span').textContent : '';
+        if (codeText && navigator.clipboard) {
+          navigator.clipboard.writeText(codeText).then(function () {
+            toast('Код скопирован: ' + codeText, 'var(--ac2)');
+          });
+        }
+        return;
+      }
       var claimAchBtn = event.target.closest('[data-claim-ach]');
       if (claimAchBtn && !claimAchBtn.disabled) {
         doClaimAchievement(claimAchBtn.dataset.claimAch);
@@ -1615,9 +1625,19 @@ function achCardHTML(ach, state, sfx, extra) {
 
   var repostFormHtml = '';
   if (ach.id === 'adv_repost' && state === 'locked') {
+    var userCode = ME ? ('SPARK-' + ME.id.replace(/-/g, '').slice(0, 6).toUpperCase()) : 'SPARK-??????';
     repostFormHtml = '<div class="ach-repost-form">'
+      + '<div class="ach-repost-instruction">'
+      + '<div class="ach-repost-step">1. Опубликуйте пост в VK, Telegram, X или Reddit</div>'
+      + '<div class="ach-repost-step">2. Упомяните <strong>sparksie.vercel.app</strong></div>'
+      + '<div class="ach-repost-step">3. Вставьте в текст поста ваш личный код:</div>'
+      + '<div class="ach-repost-code" id="achCode-' + sfx + '" title="Нажмите чтобы скопировать">'
+      + '<span>' + userCode + '</span>'
+      + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'
+      + '</div>'
+      + '</div>'
       + '<div class="ach-repost-row">'
-      + '<input type="url" class="ach-repost-input" id="achRepostInput-' + sfx + '" placeholder="https://x.com/user/status/123…" autocomplete="off" spellcheck="false">'
+      + '<input type="url" class="ach-repost-input" id="achRepostInput-' + sfx + '" placeholder="https://t.me/channel/123 или vk.com/wall…" autocomplete="off" spellcheck="false">'
       + '<button class="ach-repost-check-btn" data-verify-repost="' + sfx + '">Проверить</button>'
       + '</div>'
       + '<div class="ach-repost-verdict" id="achRepostVerdict-' + sfx + '"></div>'

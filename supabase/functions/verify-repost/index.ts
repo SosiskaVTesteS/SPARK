@@ -12,97 +12,115 @@ function json(body: unknown, status = 200) {
   });
 }
 
-// Rate limit: одна заявка в 5 минут
 const RATE_LIMIT_MS = 5 * 60 * 1000;
 
-// Gemini: модель
-const GEMINI_MODEL = 'gemini-1.5-flash';
+// ── Генерируем уникальный код из user_id (детерминированный, без БД) ────────
+function getUserCode(userId: string): string {
+  const clean = userId.replace(/-/g, '').toUpperCase();
+  return 'SPARK-' + clean.slice(0, 6);
+}
 
-// ── Извлечение JSON из ответа Gemini (терпит markdown-обёртки) ──────────────
-function extractJson(raw: string): { is_valid: boolean; reason: string } | null {
-  const cleaned = raw
-    .replace(/^```json\s*/i, '')
-    .replace(/^```\s*/i, '')
-    .replace(/```\s*$/i, '')
-    .trim();
-  try {
-    const parsed = JSON.parse(cleaned);
-    if (typeof parsed.is_valid === 'boolean' && typeof parsed.reason === 'string') {
-      return { is_valid: parsed.is_valid, reason: parsed.reason };
+// ── Шаблоны постов в соцсетях ──────────────────────────────────────────────
+const SOCIAL_POST_PATTERNS = [
+  /(?:twitter\.com|x\.com)\/\w[\w_]+\/status\/\d+/i,
+  /t\.me\/[^/?#\s]+\/\d+/i,
+  /vk\.com\/wall-?\d+_\d+/i,
+  /vk\.com\/[^/?#\s]+\?w=wall-?\d+_\d+/i,
+  /reddit\.com\/r\/\w+\/comments\//i,
+  /linkedin\.com\/posts?\//i,
+  /instagram\.com\/p\//i,
+  /facebook\.com\/[^/?#\s]+\/posts?\//i,
+];
+
+function looksLikeSocialPost(url: string): boolean {
+  return SOCIAL_POST_PATTERNS.some((re) => re.test(url));
+}
+
+// ── Извлекает весь доступный текст из HTML ─────────────────────────────────
+function extractText(html: string): string {
+  // og:description и twitter:description
+  const metas: string[] = [];
+  // Ищем все meta-теги и вытаскиваем content=
+  const metaTagRe  = /<meta[^>]+>/gi;
+  const contentRe  = /content="([^"]{2,600})"/i;
+  const descRe     = /(?:property|name)="[^"]*description[^"]*"/i;
+  let tag: RegExpExecArray | null;
+  while ((tag = metaTagRe.exec(html)) !== null) {
+    if (descRe.test(tag[0])) {
+      const cm = contentRe.exec(tag[0]);
+      if (cm) metas.push(cm[1]);
     }
-    return null;
-  } catch {
-    return null;
   }
-}
 
-// ── Промпт для Gemini ──────────────────────────────────────────────────────
-function buildPrompt(link: string, pageText: string): string {
-  return (
-    `Ты — ИИ-модератор платформы SPARK. Твоя задача — проверить, опубликовал ли пользователь рекламный пост со ссылкой на наш сайт.\n` +
-    `Ссылка на пост: ${link}\n\n` +
-    `Полученный текст/мета-данные страницы:\n${pageText}\n\n` +
-    `Проверь условия:\n` +
-    `1. Ссылка ведёт на публичный пост в соцсети (X/Twitter, Telegram, VK, Reddit и т.д.) ИЛИ выглядит как настоящая ссылка на пост в соцсети.\n` +
-    `2. В тексте поста или мета-данных упоминается SPARK, spark.app или похожий домен в положительном/нейтральном контексте.\n` +
-    `3. Пост не выглядит как спам-бот, оскорбление или накрутка.\n\n` +
-    `Если страница недоступна (Cloudflare, стена авторизации), оцени саму структуру ссылки — похожа ли она на реальный пост в соцсети (например, twitter.com/user/status/..., t.me/channel/..., vk.com/wall...).\n\n` +
-    `Верни СТРОГО JSON-объект без разметки markdown:\n` +
-    `{"is_valid": true | false, "reason": "краткое объяснение вердикта на русском языке"}`
-  );
-}
+  const titleM = /<title[^>]*>([^<]{1,300})<\/title>/i.exec(html);
+  const title  = titleM ? titleM[1] : '';
 
-// ── Извлечение текста из HTML ──────────────────────────────────────────────
-function extractTextFromHtml(html: string): string {
-  // Метатеги og:description и twitter:description
-  const metaMatches: string[] = [];
-  const metaRe = /<meta[^>]+(?:property|name)="(?:og:|twitter:)?description"[^>]+content="([^"]{0,500})"/gi;
-  let m: RegExpExecArray | null;
-  while ((m = metaRe.exec(html)) !== null) metaMatches.push(m[1]);
-
-  const titleRe = /<title[^>]*>([^<]{0,200})<\/title>/i;
-  const titleM  = titleRe.exec(html);
-  const title   = titleM ? titleM[1] : '';
-
-  // Убираем скрипты, стили, теги — оставляем видимый текст
-  const stripped = html
+  // Весь видимый текст (стрипаем теги)
+  const body = html
     .replace(/<script[\s\S]*?<\/script>/gi, '')
     .replace(/<style[\s\S]*?<\/style>/gi, '')
     .replace(/<[^>]+>/g, ' ')
+    .replace(/&[a-z#0-9]+;/gi, ' ')
     .replace(/\s{2,}/g, ' ')
-    .trim();
+    .trim()
+    .slice(0, 2000);
 
-  const combined = [title, ...metaMatches, stripped].join('\n').slice(0, 3000);
-  return combined || '(текст страницы недоступен)';
+  return [title, ...metas, body].join(' ');
 }
 
-// ── Социальные сети: ссылка выглядит как пост? ────────────────────────────
-function looksLikeSocialPost(url: string): boolean {
-  return /(?:twitter\.com|x\.com)\/\w+\/status\/\d+/i.test(url)
-    || /t\.me\/[^/]+\/\d+/i.test(url)
-    || /vk\.com\/wall[-\d_]+/i.test(url)
-    || /reddit\.com\/r\/\w+\/comments\//i.test(url)
-    || /linkedin\.com\/posts?\//i.test(url);
+// ── Пробуем получить страницу (несколько User-Agent'ов) ───────────────────
+async function fetchPage(url: string): Promise<{ text: string; ok: boolean }> {
+  const userAgents = [
+    // Googlebot — многие соцсети дают контент
+    'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+    // WhatsApp превью — t.me отдаёт og: теги
+    'WhatsApp/2.23.24.76 A',
+    // Обычный браузер
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  ];
+
+  for (const ua of userAgents) {
+    try {
+      const ctrl  = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 6000);
+
+      const res = await fetch(url, {
+        headers: {
+          'User-Agent':      ua,
+          'Accept':          'text/html,application/xhtml+xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'ru-RU,ru;q=0.9,en;q=0.8',
+        },
+        signal: ctrl.signal,
+        redirect: 'follow',
+      });
+      clearTimeout(timer);
+
+      if (!res.ok) continue;
+      const ct = res.headers.get('content-type') ?? '';
+      if (!ct.includes('text/html') && !ct.includes('text/plain')) continue;
+
+      const text = extractText(await res.text());
+      // Считаем успешным если нашли реальный контент (не форма входа)
+      const tl = text.toLowerCase();
+      const isLoginPage = tl.includes('sign in') || tl.includes('войти') || tl.includes('log in');
+      const hasContent  = text.length > 100 && !isLoginPage;
+      if (hasContent) return { text, ok: true };
+    } catch { /* пробуем следующий UA */ }
+  }
+  return { text: '', ok: false };
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   if (req.method !== 'POST') return json({ message: 'Method not allowed' }, 405);
 
-  // ── Переменные окружения ─────────────────────────────────────────────────
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const serviceKey  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  const geminiKey   = Deno.env.get('GEMINI_API_KEY');
-
   if (!supabaseUrl || !serviceKey) return json({ message: 'Server configuration error' }, 500);
-  if (!geminiKey) {
-    console.error('[verify-repost] GEMINI_API_KEY not set');
-    return json({ message: 'AI service not configured' }, 500);
-  }
 
-  // ── Авторизация пользователя ─────────────────────────────────────────────
-  const authHeader = req.headers.get('Authorization') || '';
-  const token      = authHeader.replace('Bearer ', '').trim();
+  // ── Auth ──────────────────────────────────────────────────────────────────
+  const token = (req.headers.get('Authorization') ?? '').replace('Bearer ', '').trim();
   if (!token) return json({ message: 'Unauthorized' }, 401);
 
   const admin = createClient(supabaseUrl, serviceKey, {
@@ -112,185 +130,92 @@ Deno.serve(async (req) => {
   const { data: { user }, error: authErr } = await admin.auth.getUser(token);
   if (authErr || !user) return json({ message: 'Unauthorized' }, 401);
 
-  const userId = user.id;
+  const userId   = user.id;
+  const userCode = getUserCode(userId); // e.g. "SPARK-A3F2B1"
 
-  // ── Тело запроса ─────────────────────────────────────────────────────────
+  // ── Body ─────────────────────────────────────────────────────────────────
   let payload: { repost_link?: string };
-  try {
-    payload = await req.json();
-  } catch {
-    return json({ message: 'Invalid request body' }, 400);
-  }
+  try { payload = await req.json(); } catch { return json({ message: 'Invalid body' }, 400); }
 
-  const repostLink = (payload.repost_link || '').trim();
+  const repostLink = (payload.repost_link ?? '').trim();
   if (!repostLink) return json({ message: 'repost_link is required' }, 400);
 
-  // Базовая валидация URL
-  let parsedUrl: URL;
-  try {
-    parsedUrl = new URL(repostLink);
-    if (!['http:', 'https:'].includes(parsedUrl.protocol)) throw new Error('bad protocol');
-  } catch {
-    return json({ message: 'invalid_url' }, 400);
+  // Если клиент просто спрашивает код — отдаём его
+  if (repostLink === '__get_code__') {
+    return json({ code: userCode });
   }
 
-  // ── Rate limit: не чаще 1 раза в 5 минут ─────────────────────────────────
+  try {
+    const u = new URL(repostLink);
+    if (!['http:', 'https:'].includes(u.protocol)) throw new Error('bad protocol');
+  } catch { return json({ message: 'invalid_url' }, 400); }
+
+  // ── Rate limit ────────────────────────────────────────────────────────────
   const rateCutoff = new Date(Date.now() - RATE_LIMIT_MS).toISOString();
   const { data: recentClaim } = await admin
-    .from('repost_claims')
-    .select('id, created_at')
-    .eq('user_id', userId)
+    .from('repost_claims').select('id, created_at')
+    .eq('user_id', userId).in('status', ['pending', 'approved'])
     .gte('created_at', rateCutoff)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .order('created_at', { ascending: false }).limit(1).maybeSingle();
 
   if (recentClaim) {
     const waitSec = Math.ceil(
-      (new Date(recentClaim.created_at).getTime() + RATE_LIMIT_MS - Date.now()) / 1000
+      (new Date(recentClaim.created_at).getTime() + RATE_LIMIT_MS - Date.now()) / 1000,
     );
     return json({ message: 'rate_limited', wait_seconds: waitSec }, 429);
   }
 
-  // ── Проверяем: не было ли уже одобренной заявки (ачивка одноразовая) ──────
+  // ── Уже одобрено? ─────────────────────────────────────────────────────────
   const { data: alreadyApproved } = await admin
-    .from('repost_claims')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('status', 'approved')
-    .limit(1)
-    .maybeSingle();
+    .from('repost_claims').select('id').eq('user_id', userId).eq('status', 'approved')
+    .limit(1).maybeSingle();
+  if (alreadyApproved) return json({ message: 'already_approved', status: 'approved' });
 
-  if (alreadyApproved) {
-    return json({ message: 'already_approved', status: 'approved' });
+  // ── Скрапим страницу (несколько UA) ───────────────────────────────────────
+  const { text: pageText, ok: pageAccessible } = await fetchPage(repostLink);
+
+  // ── Проверка ──────────────────────────────────────────────────────────────
+  let verdict: 'VALID' | 'INVALID';
+  let reason:  string;
+
+  // 1. Обязательно: URL должен быть постом в соцсети
+  if (!looksLikeSocialPost(repostLink)) {
+    verdict = 'INVALID';
+    reason  = 'Ссылка не соответствует формату поста в соцсети (VK, Telegram, X/Twitter и др.).';
   }
-
-  // ── Создаём запись в pending-состоянии (фиксируем заявку до результата) ──
-  const { data: claimRow, error: insertErr } = await admin
-    .from('repost_claims')
-    .insert({ user_id: userId, repost_link: repostLink, status: 'pending' })
-    .select('id')
-    .single();
-
-  if (insertErr || !claimRow) {
-    console.error('[verify-repost] insert claim error:', insertErr?.message);
-    return json({ message: 'Database error' }, 500);
-  }
-
-  const claimId = claimRow.id;
-
-  // ── Скрапинг страницы по ссылке ──────────────────────────────────────────
-  let pageText = '(страница недоступна для скрапинга)';
-  const isSocialLink = looksLikeSocialPost(repostLink);
-
-  try {
-    const fetchCtrl = new AbortController();
-    const fetchTimeout = setTimeout(() => fetchCtrl.abort(), 7000);
-
-    const pageRes = await fetch(repostLink, {
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
-          '(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'ru-RU,ru;q=0.9,en;q=0.8',
-      },
-      signal: fetchCtrl.signal,
-      redirect: 'follow',
-    });
-    clearTimeout(fetchTimeout);
-
-    if (pageRes.ok) {
-      const contentType = pageRes.headers.get('content-type') || '';
-      if (contentType.includes('text/html') || contentType.includes('text/plain')) {
-        const html = await pageRes.text();
-        pageText = extractTextFromHtml(html);
-      } else {
-        pageText = `(нетекстовый ответ: ${contentType})`;
-      }
+  // 2. Страница доступна — ищем код верификации
+  else if (pageAccessible) {
+    const codeFound = pageText.toUpperCase().includes(userCode);
+    if (!codeFound) {
+      verdict = 'INVALID';
+      reason  = `В тексте поста не найден ваш код верификации ${userCode}. Добавьте его в пост.`;
     } else {
-      pageText = `(HTTP ${pageRes.status} при загрузке страницы)`;
+      verdict = 'VALID';
+      reason  = `Код верификации ${userCode} найден в посте.`;
     }
-  } catch (e) {
-    const errMsg = e instanceof Error ? e.message : String(e);
-    console.warn('[verify-repost] page fetch failed:', errMsg);
-    pageText = isSocialLink
-      ? `(страница недоступна — возможно, требует авторизации; ссылка похожа на пост в соцсети)`
-      : `(страница недоступна: ${errMsg})`;
+  }
+  // 3. Страница недоступна — сообщаем что нужно сделать
+  else {
+    verdict = 'INVALID';
+    reason  = `Не удалось прочитать пост. Убедитесь что канал/профиль публичный, или сделайте пост общедоступным. Код верификации ${userCode} должен быть в тексте.`;
   }
 
-  // ── Вызов Gemini 1.5 Flash ────────────────────────────────────────────────
-  const prompt     = buildPrompt(repostLink, pageText);
-  const geminiUrl  =
-    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${geminiKey}`;
-
-  const geminiCtrl = new AbortController();
-  const geminiTimeout = setTimeout(() => geminiCtrl.abort(), 20000);
-
-  let verdict: { is_valid: boolean; reason: string };
-
-  try {
-    const gRes = await fetch(geminiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.1,
-          maxOutputTokens: 512,
-        },
-      }),
-      signal: geminiCtrl.signal,
-    });
-    clearTimeout(geminiTimeout);
-
-    if (!gRes.ok) {
-      const errText = await gRes.text();
-      console.error('[verify-repost] Gemini HTTP error', gRes.status, errText);
-      await admin.from('repost_claims').update({ status: 'rejected', processed_at: new Date().toISOString(),
-        ai_verdict: { error: 'gemini_api_error', status: gRes.status } }).eq('id', claimId);
-      return json({ message: 'AI service error' }, 502);
-    }
-
-    const gData   = await gRes.json();
-    const rawText: string = gData?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-    const parsed  = extractJson(rawText);
-
-    if (!parsed) {
-      console.error('[verify-repost] unparseable Gemini response:', rawText);
-      await admin.from('repost_claims').update({ status: 'rejected', processed_at: new Date().toISOString(),
-        ai_verdict: { error: 'parse_error', raw: rawText.slice(0, 500) } }).eq('id', claimId);
-      return json({ message: 'AI response parse error' }, 502);
-    }
-
-    verdict = parsed;
-  } catch (e) {
-    clearTimeout(geminiTimeout);
-    const errMsg = e instanceof Error ? e.message : String(e);
-    console.error('[verify-repost] Gemini fetch error:', errMsg);
-    await admin.from('repost_claims').update({ status: 'rejected', processed_at: new Date().toISOString(),
-      ai_verdict: { error: 'gemini_unreachable' } }).eq('id', claimId);
-    return json({ message: 'AI service unreachable' }, 502);
-  }
-
-  // ── Записываем результат в repost_claims ──────────────────────────────────
-  const finalStatus = verdict.is_valid ? 'approved' : 'rejected';
-
-  await admin
-    .from('repost_claims')
-    .update({
-      status:       finalStatus,
-      ai_verdict:   { is_valid: verdict.is_valid, reason: verdict.reason },
-      processed_at: new Date().toISOString(),
-    })
-    .eq('id', claimId);
-
-  console.log(`[verify-repost] user=${userId} link=${repostLink} → ${finalStatus}: ${verdict.reason}`);
-
-  // ── Ответ клиенту ─────────────────────────────────────────────────────────
-  return json({
-    success: verdict.is_valid,
-    status:  finalStatus,
-    reason:  verdict.reason,
+  // ── Запись в БД ───────────────────────────────────────────────────────────
+  const finalStatus = verdict === 'VALID' ? 'approved' : 'rejected';
+  await admin.from('repost_claims').insert({
+    user_id:      userId,
+    repost_link:  repostLink,
+    status:       finalStatus,
+    ai_verdict:   {
+      verdict,
+      reason,
+      page_accessible: pageAccessible,
+      code_expected:   userCode,
+    },
+    processed_at: new Date().toISOString(),
   });
+
+  console.log(`[verify-repost] user=${userId} code=${userCode} → ${finalStatus}: ${reason}`);
+
+  return json({ success: verdict === 'VALID', status: finalStatus, reason, code: userCode });
 });
