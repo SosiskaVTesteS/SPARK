@@ -54,7 +54,7 @@
 
     /* 2. IDEA FEED */
     {
-      kicker : 'Функция 1 из 7',
+      kicker : 'Функция 1 из 8',
       title  : 'Живая лента идей',
       desc   : 'Открывайте стартап-концепции. Сортируйте по <b>Новым</b>, <b>Популярным</b>, <b>Выгодным</b> или <b>Дедлайну</b>. Фильтруйте по тегам: <b>#AI</b>, <b>#DeFi</b>, <b>#Web3</b>.',
       visual : buildFeedVisual()
@@ -62,7 +62,7 @@
 
     /* 3. INVEST */
     {
-      kicker : 'Функция 2 из 7',
+      kicker : 'Функция 2 из 8',
       title  : 'Инвестируйте SPK-токены',
       desc   : 'Поддержите идею, в которую верите. Удержите кнопку <b>2 секунды</b> для безопасного подтверждения. Ваш <b>SPK-баланс</b> всегда в шапке.',
       visual : buildInvestVisual()
@@ -70,7 +70,7 @@
 
     /* 4. POST IDEA */
     {
-      kicker : 'Функция 3 из 7',
+      kicker : 'Функция 3 из 8',
       title  : 'Опубликуйте свою идею',
       desc   : 'Опишите концепцию, установите минимальную ставку и <b>срок</b>. Сообщество проголосует токенами — чем больше <b>SPK</b> в пуле, тем выше рыночный сигнал.',
       visual : buildPostVisual()
@@ -78,7 +78,7 @@
 
     /* 5. LEADERBOARD */
     {
-      kicker : 'Функция 4 из 7',
+      kicker : 'Функция 4 из 8',
       title  : 'Топ Пророков',
       desc   : '<b>Рейтинг</b> лучших инвесторов обновляется в реальном времени. Вкладывайтесь в идеи раньше рынка, зарабатывайте прибыль и попадайте в <b>топ</b>.',
       visual : buildLeaderVisual()
@@ -86,7 +86,7 @@
 
     /* 6. OBSERVATORY */
     {
-      kicker : 'Функция 5 из 7',
+      kicker : 'Функция 5 из 8',
       title  : 'Обсерватория рынка',
       desc   : 'Интерактивная орбитальная карта: <b>Технологии</b> (AI, SaaS, Web3), <b>Экология</b> (Solar, Energy) и Общество. Следите, куда движется рынок идей.',
       visual : buildObsVisual()
@@ -94,7 +94,7 @@
 
     /* 7. CHATS */
     {
-      kicker : 'Функция 6 из 7',
+      kicker : 'Функция 6 из 8',
       title  : 'SPARK Чаты',
       desc   : 'Личные сообщения авторам идей. Командные каналы: <b>DeFi Prophets</b>, <b>AI Signals</b>, <b>SPARK Devs</b>. Онлайн-статус в реальном времени.',
       visual : buildChatsVisual()
@@ -102,10 +102,18 @@
 
     /* 8. THEMES */
     {
-      kicker : 'Функция 7 из 7',
+      kicker : 'Функция 7 из 8',
       title  : '16 Тем оформления',
       desc   : '<b>Cosmos</b>, <b>Cyberpunk</b>, <b>Neon</b>, <b>Aurora</b> и 12 других пресетов. Или создайте собственную палитру в <b>Студии Тем</b> — SPARK будет вашим.',
       visual : buildThemeVisual()
+    },
+
+    /* 8.5 ACHIEVEMENTS */
+    {
+      kicker : 'Функция 8 из 8',
+      title  : '🏆 Достижения и бонусы',
+      desc   : 'Выполняйте задания и зарабатывайте <b>бонусный SPK</b>: заполните профиль <b>+100</b>, опубликуйте 5 идей <b>+100</b>, поделитесь ссылкой в соцсетях <b>+50</b>. Всего до <b>+250 SPK</b> бесплатно.',
+      visual : buildAchievementsVisual()
     },
 
     /* 9. CTA */
@@ -343,6 +351,72 @@
         circles +
         '<path d="M174 86C174 100 170 114 164 124" fill="none" stroke="rgba(155,95,255,0.3)" stroke-width="12" stroke-linecap="round"/>' +
         '<text x="185" y="95" fill="rgba(155,95,255,0.5)" font-size="20" font-family="Syne,sans-serif">🎨</text>' +
+      '</svg>' +
+    '</div>';
+  }
+
+  function buildAchievementsVisual() {
+    return '<div class="ob-vis ob-vis-ach">' +
+      '<svg viewBox="0 0 220 190" xmlns="http://www.w3.org/2000/svg">' +
+        '<defs>' +
+          '<linearGradient id="obGAch1" x1="0%" y1="0%" x2="100%" y2="100%">' +
+            '<stop offset="0%" stop-color="#E8C55A"/>' +
+            '<stop offset="100%" stop-color="#FF8C00"/>' +
+          '</linearGradient>' +
+          '<linearGradient id="obGAch2" x1="0%" y1="0%" x2="100%" y2="100%">' +
+            '<stop offset="0%" stop-color="#7B5CFA"/>' +
+            '<stop offset="100%" stop-color="#5AE8C5"/>' +
+          '</linearGradient>' +
+          '<filter id="obGlow">' +
+            '<feGaussianBlur stdDeviation="2.5" result="blur"/>' +
+            '<feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>' +
+          '</filter>' +
+        '</defs>' +
+
+        /* Card 1 — fill_profile (+100) */
+        '<g class="ob-ach-card ob-ach-c1">' +
+          '<rect x="12" y="10" width="196" height="44" rx="10" fill="rgba(232,197,90,0.07)" stroke="rgba(232,197,90,0.3)" stroke-width="1"/>' +
+          '<text x="28" y="30" fill="rgba(238,240,255,0.85)" font-size="10" font-family="Syne,sans-serif" font-weight="700">👤 Заполненный профиль</text>' +
+          '<text x="28" y="44" fill="rgba(110,112,153,0.8)" font-size="8" font-family="DM Sans,sans-serif">Укажите ник и заполните Bio</text>' +
+          '<rect x="163" y="17" width="36" height="18" rx="6" fill="rgba(232,197,90,0.15)" stroke="rgba(232,197,90,0.4)" stroke-width="1"/>' +
+          '<text x="181" y="30" fill="#E8C55A" font-size="9" font-family="Syne,sans-serif" font-weight="800" text-anchor="middle">+100</text>' +
+          /* Checkmark появляется */
+          '<circle class="ob-ach-check ob-ach-chk1" cx="148" cy="26" r="8" fill="rgba(90,232,197,0.15)" stroke="rgba(90,232,197,0.5)" stroke-width="1"/>' +
+          '<path class="ob-ach-check ob-ach-chk1" d="M144 26 l3 3 l5-5" stroke="#5AE8C5" stroke-width="1.5" fill="none" stroke-linecap="round"/>' +
+        '</g>' +
+
+        /* Card 2 — create_5_ideas (+100) */
+        '<g class="ob-ach-card ob-ach-c2">' +
+          '<rect x="12" y="63" width="196" height="44" rx="10" fill="rgba(123,92,250,0.07)" stroke="rgba(123,92,250,0.25)" stroke-width="1"/>' +
+          '<text x="28" y="83" fill="rgba(238,240,255,0.85)" font-size="10" font-family="Syne,sans-serif" font-weight="700">💡 Генератор стартапов</text>' +
+          '<text x="28" y="97" fill="rgba(110,112,153,0.8)" font-size="8" font-family="DM Sans,sans-serif">Опубликуйте 5 идей на платформе</text>' +
+          /* Progress bar */
+          '<rect x="28" y="102" width="100" height="3" rx="2" fill="rgba(255,255,255,0.07)"/>' +
+          '<rect class="ob-ach-prog" x="28" y="102" width="0" height="3" rx="2" fill="url(#obGAch2)"/>' +
+          '<rect x="163" y="70" width="36" height="18" rx="6" fill="rgba(123,92,250,0.12)" stroke="rgba(123,92,250,0.35)" stroke-width="1"/>' +
+          '<text x="181" y="83" fill="#9B7CFF" font-size="9" font-family="Syne,sans-serif" font-weight="800" text-anchor="middle">+100</text>' +
+        '</g>' +
+
+        /* Card 3 — adv_repost (+50) */
+        '<g class="ob-ach-card ob-ach-c3">' +
+          '<rect x="12" y="116" width="196" height="44" rx="10" fill="rgba(90,232,197,0.06)" stroke="rgba(90,232,197,0.2)" stroke-width="1"/>' +
+          '<text x="28" y="136" fill="rgba(238,240,255,0.85)" font-size="10" font-family="Syne,sans-serif" font-weight="700">📢 Амбассадор SPARK</text>' +
+          '<text x="28" y="150" fill="rgba(110,112,153,0.8)" font-size="8" font-family="DM Sans,sans-serif">Поделитесь ссылкой в соцсетях</text>' +
+          '<rect x="163" y="123" width="36" height="18" rx="6" fill="rgba(90,232,197,0.08)" stroke="rgba(90,232,197,0.3)" stroke-width="1"/>' +
+          '<text x="181" y="136" fill="#5AE8C5" font-size="9" font-family="Syne,sans-serif" font-weight="800" text-anchor="middle">+50</text>' +
+        '</g>' +
+
+        /* Итоговый бейдж внизу */
+        '<g class="ob-ach-total">' +
+          '<rect x="55" y="170" width="110" height="14" rx="7" fill="rgba(232,197,90,0.12)" stroke="rgba(232,197,90,0.4)" stroke-width="1" filter="url(#obGlow)"/>' +
+          '<text x="110" y="181" fill="#E8C55A" font-size="9" font-family="Syne,sans-serif" font-weight="800" text-anchor="middle">Итого до +250 SPK 🏆</text>' +
+        '</g>' +
+
+        /* Частицы */
+        '<circle class="ob-ach-p1" cx="198" cy="58"  r="2.5" fill="#E8C55A" opacity="0"/>' +
+        '<circle class="ob-ach-p2" cx="15"  cy="115" r="2"   fill="#9B7CFF" opacity="0"/>' +
+        '<circle class="ob-ach-p3" cx="205" cy="140" r="2"   fill="#5AE8C5" opacity="0"/>' +
+        '<circle class="ob-ach-p4" cx="8"   cy="62"  r="1.5" fill="#E8C55A" opacity="0"/>' +
       '</svg>' +
     '</div>';
   }

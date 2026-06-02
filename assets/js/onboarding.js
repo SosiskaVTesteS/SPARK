@@ -732,16 +732,16 @@ var SparkTour = (function () {
         id:'welcome', el:null, elMob:null,
         t:_T('🎉 Welcome aboard!','🎉 Добро пожаловать!'),
         b:_T(
-          'Your account is live and <span class="spk-t3-hl">4,520 SPK</span> are already in your wallet. This quick tour will have you investing like a <span class="spk-t3-hl">Prophet</span> in under 60 seconds.',
-          'Аккаунт создан, и <span class="spk-t3-hl">4 520 SPK</span> уже на вашем балансе. Этот тур научит вас инвестировать как <span class="spk-t3-hl">Пророк</span> менее чем за 60 секунд.'
+          'Your account is live and <span class="spk-t3-hl">500 SPK</span> are already in your wallet — plus up to <span class="spk-t3-hl">+250 SPK</span> in achievement rewards await you. This quick tour covers everything in under 60 seconds.',
+          'Аккаунт создан, и <span class="spk-t3-hl">500 SPK</span> уже на вашем балансе — плюс до <span class="spk-t3-hl">+250 SPK</span> за выполнение достижений. Этот тур расскажет обо всём за 60 секунд.'
         )
       },
       {
         id:'wallet', el:'.wallet-badge', elMob:'.wallet-badge',
         t:_T('💰 SPK Wallet','💰 SPK-кошелёк'),
         b:_T(
-          'Your balance lives here. You received <span class="spk-t3-hl">4,520 SPK</span> as a welcome gift — that\'s real investing power. Every idea you back increases this number.',
-          'Здесь ваш баланс. Вы получили <span class="spk-t3-hl">4 520 SPK</span> в подарок — это реальные инвестиционные ресурсы. Каждая поддержанная идея увеличивает эту цифру.'
+          'Your starting balance is <span class="spk-t3-hl">500 SPK</span>. Earn up to <span class="spk-t3-hl">+250 more</span> by completing Achievements — fill your profile, post ideas, and share SPARK. Every idea you back grows this number.',
+          'Ваш стартовый баланс — <span class="spk-t3-hl">500 SPK</span>. Заработайте ещё до <span class="spk-t3-hl">+250</span> за выполнение достижений — заполните профиль, публикуйте идеи и делитесь SPARK. Каждая поддержанная идея увеличивает баланс.'
         )
       },
       {
@@ -806,6 +806,22 @@ var SparkTour = (function () {
         b:_T(
           'Edit <span class="spk-t3-hl">Username</span>, <span class="spk-t3-hl">Bio</span>, avatar colour, and theme. The <span class="spk-t3-hl">Theme Studio</span> packs 16 presets — Cosmos, Cyberpunk, Aurora, and more — plus custom colour pickers.',
           'Измените <span class="spk-t3-hl">Никнейм</span> (<span class="spk-t3-hl">Username</span>), <span class="spk-t3-hl">Bio</span>, <span class="spk-t3-hl">цвет аватара</span> и <span class="spk-t3-hl">тему</span>. В <span class="spk-t3-hl">Студии тем</span> доступно <span class="spk-t3-hl">16 пресетов</span> (Космос, Киберпанк, Аврора и др.) и ручная настройка.'
+        )
+      },
+      {
+        id:'achievements', el:'#dpPanel', elMob:'#mobProfInner',
+        t:_T('🏆 Achievements — Earn Bonus SPK','🏆 Достижения — бонусный SPK'),
+        b:_T(
+          'Complete missions to earn <span class="spk-t3-hl">bonus SPK</span> right away:<br>'
+          + '<span class="spk-t3-hl">👤 Fill your profile</span> → <span class="spk-t3-hl">+100 SPK</span><br>'
+          + '<span class="spk-t3-hl">💡 Post 5 ideas</span> → <span class="spk-t3-hl">+100 SPK</span><br>'
+          + '<span class="spk-t3-hl">📢 Share SPARK on social media</span> → <span class="spk-t3-hl">+50 SPK</span><br>'
+          + 'Open your profile and scroll to <span class="spk-t3-hl">Achievements</span> to track your progress and claim rewards.',
+          'Выполняйте задания и сразу получайте <span class="spk-t3-hl">бонусный SPK</span>:<br>'
+          + '<span class="spk-t3-hl">👤 Заполните профиль</span> → <span class="spk-t3-hl">+100 SPK</span><br>'
+          + '<span class="spk-t3-hl">💡 Опубликуйте 5 идей</span> → <span class="spk-t3-hl">+100 SPK</span><br>'
+          + '<span class="spk-t3-hl">📢 Поделитесь SPARK в соцсетях</span> → <span class="spk-t3-hl">+50 SPK</span><br>'
+          + 'Откройте профиль и прокрутите до раздела <span class="spk-t3-hl">Достижения</span>, чтобы отслеживать прогресс и забрать награды.'
         )
       },
       {

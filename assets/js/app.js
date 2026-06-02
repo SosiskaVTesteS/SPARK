@@ -583,7 +583,7 @@ async function doVerifyRegistration() {
     toast(T('regComplete'), 'var(--ac2)');
 
     PROFILE.username = '@' + PENDING_NICK;
-    PROFILE.spk_balance = 4520;
+    PROFILE.spk_balance = 500;
 
     var tempUser = {
       email: PENDING_EMAIL,
@@ -1502,7 +1502,7 @@ function profileHTML(sfx) {
     + '<div class="ach-section" id="achSec-' + sfx + '">'
     + '<button type="button" class="ach-toggle" id="achToggle-' + sfx + '">'
     + '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--ac)"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'
-    + '<span>Достижения</span>'
+    + '<span>' + T('achTitle') + '</span>'
     + '<svg class="ach-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>'
     + '</button>'
     + '<div class="ach-body" id="achBody-' + sfx + '">'
@@ -1585,29 +1585,16 @@ function initAchievementsToggle(sfx) {
   }
 }
 
-var ACH_DEFS = [
-  {
-    id:      'fill_profile',
-    title:   'Заполненный профиль',
-    desc:    'Укажите уникальный никнейм и заполните Bio',
-    reward:  100,
-    icon:    '👤',
-  },
-  {
-    id:      'create_5_ideas',
-    title:   'Генератор стартапов',
-    desc:    'Опубликуйте минимум 5 идей на SPARK',
-    reward:  100,
-    icon:    '💡',
-  },
-  {
-    id:      'adv_repost',
-    title:   'Амбассадор SPARK',
-    desc:    'Поделитесь ссылкой на SPARK в соцсетях и пройдите AI-проверку',
-    reward:  50,
-    icon:    '📢',
-  },
-];
+function getAchDefs() {
+  return [
+    { id:'fill_profile',   title:T('achFillProfileTitle'),  desc:T('achFillProfileDesc'),  reward:100, icon:'👤' },
+    { id:'create_5_ideas', title:T('achCreate5IdeasTitle'), desc:T('achCreate5IdeasDesc'), reward:100, icon:'💡' },
+    { id:'adv_repost',     title:T('achAdvRepostTitle'),    desc:T('achAdvRepostDesc'),    reward:50,  icon:'📢' },
+  ];
+}
+var ACH_DEFS = [];
+window.addEventListener('spark:langready', function () { ACH_DEFS = getAchDefs(); });
+setTimeout(function () { if (!ACH_DEFS.length) ACH_DEFS = getAchDefs(); }, 0);
 
 function achCardHTML(ach, state, sfx, extra) {
   extra = extra || {};
@@ -1617,11 +1604,11 @@ function achCardHTML(ach, state, sfx, extra) {
 
   var btn = '';
   if (state === 'claimed') {
-    btn = '<button class="ach-btn ach-btn-claimed" disabled>' + checkSvg + ' Получено</button>';
+    btn = '<button class="ach-btn ach-btn-claimed" disabled>' + checkSvg + ' ' + T('achClaimed') + '</button>';
   } else if (state === 'ready') {
-    btn = '<button class="ach-btn ach-btn-ready" data-claim-ach="' + ach.id + '">' + starSvg + ' Забрать ' + ach.reward + ' SPK</button>';
+    btn = '<button class="ach-btn ach-btn-ready" data-claim-ach="' + ach.id + '">' + starSvg + ' +' + ach.reward + ' SPK</button>';
   } else {
-    btn = '<button class="ach-btn ach-btn-locked" disabled>' + lockSvg + ' Выполните условия</button>';
+    btn = '<button class="ach-btn ach-btn-locked" disabled>' + lockSvg + ' ' + T('achLocked') + '</button>';
   }
 
   var progressHtml = '';
@@ -1640,51 +1627,43 @@ function achCardHTML(ach, state, sfx, extra) {
       /* ── Раскрывающаяся инструкция ── */
       + '<button type="button" class="ach-how-toggle" data-ach-how="' + sfx + '">'
       + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>'
-      + ' Инструкция'
+      + ' ' + T('achHowTitle')
       + '<svg class="ach-how-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>'
       + '</button>'
 
       + '<div class="ach-how-body" id="achHow-' + sfx + '">'
       + '<div class="ach-how-steps">'
 
-      + '<div class="ach-how-step">'
-      + '<div class="ach-how-num">1</div>'
-      + '<div class="ach-how-text">Скопируйте ваш личный код верификации — он уникален и нужен для подтверждения что пост написан именно вами:</div>'
-      + '</div>'
-      + '<div class="ach-repost-code" id="achCode-' + sfx + '" title="Нажмите чтобы скопировать">'
+      + '<div class="ach-how-step"><div class="ach-how-num">1</div>'
+      + '<div class="ach-how-text">' + T('achHowStep1') + '</div></div>'
+      + '<div class="ach-repost-code" id="achCode-' + sfx + '" title="' + T('achCodeCopied') + '">'
       + '<span>' + userCode + '</span>'
       + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'
       + '</div>'
 
-      + '<div class="ach-how-step">'
-      + '<div class="ach-how-num">2</div>'
-      + '<div class="ach-how-text">Создайте <strong>публичный</strong> пост в любой соцсети (ВКонтакте, Telegram-канал, X/Twitter, Reddit). Пост должен содержать:<br>'
-      + '<span class="ach-how-req">• Ссылку на сайт: <strong>sparksie.vercel.app</strong></span>'
-      + '<span class="ach-how-req">• Ваш код: <strong>' + userCode + '</strong></span>'
-      + '</div>'
-      + '</div>'
+      + '<div class="ach-how-step"><div class="ach-how-num">2</div>'
+      + '<div class="ach-how-text">' + T('achHowStep2Intro') + '<br>'
+      + '<span class="ach-how-req">' + T('achHowStep2Link') + '</span>'
+      + '<span class="ach-how-req">' + T('achHowStep2Code').replace('{code}', '<strong>' + userCode + '</strong>') + '</span>'
+      + '</div></div>'
 
-      + '<div class="ach-how-step">'
-      + '<div class="ach-how-num">3</div>'
-      + '<div class="ach-how-text">Скопируйте прямую ссылку на пост (не на канал, а именно на конкретное сообщение). Примеры:<br>'
-      + '<span class="ach-how-example">t.me/ваш_канал/<strong>123</strong></span>'
+      + '<div class="ach-how-step"><div class="ach-how-num">3</div>'
+      + '<div class="ach-how-text">' + T('achHowStep3Intro') + '<br>'
+      + '<span class="ach-how-example">t.me/channel/<strong>123</strong></span>'
       + '<span class="ach-how-example">vk.com/wall-<strong>12345678_99</strong></span>'
       + '<span class="ach-how-example">x.com/username/status/<strong>123...</strong></span>'
-      + '</div>'
-      + '</div>'
+      + '</div></div>'
 
-      + '<div class="ach-how-step">'
-      + '<div class="ach-how-num">4</div>'
-      + '<div class="ach-how-text">Вставьте эту ссылку в поле ниже и нажмите <strong>Проверить</strong>.</div>'
-      + '</div>'
+      + '<div class="ach-how-step"><div class="ach-how-num">4</div>'
+      + '<div class="ach-how-text">' + T('achHowStep4') + '</div></div>'
 
       + '</div>'
       + '</div>'
 
       /* ── Форма ── */
       + '<div class="ach-repost-row">'
-      + '<input type="url" class="ach-repost-input" id="achRepostInput-' + sfx + '" placeholder="https://t.me/канал/123" autocomplete="off" spellcheck="false">'
-      + '<button class="ach-repost-check-btn" data-verify-repost="' + sfx + '">Проверить</button>'
+      + '<input type="url" class="ach-repost-input" id="achRepostInput-' + sfx + '" placeholder="' + T('achInputPlaceholder') + '" autocomplete="off" spellcheck="false">'
+      + '<button class="ach-repost-check-btn" data-verify-repost="' + sfx + '">' + T('achCheckBtn') + '</button>'
       + '</div>'
       + '<div class="ach-repost-verdict" id="achRepostVerdict-' + sfx + '"></div>'
       + '</div>';
@@ -1709,8 +1688,10 @@ async function renderAchievements(sfx) {
   var container = document.getElementById('achList-' + sfx);
   if (!container) return;
 
+  if (!ACH_DEFS.length) ACH_DEFS = getAchDefs();
+
   if (!supa || !ME) {
-    container.innerHTML = '<div class="ach-empty">Войдите в аккаунт, чтобы получать достижения</div>';
+    container.innerHTML = '<div class="ach-empty">' + T('achEmpty') + '</div>';
     return;
   }
 
@@ -1719,7 +1700,7 @@ async function renderAchievements(sfx) {
   }, { silent: true });
 
   if (!r.ok || !r.data || !r.data.data || !r.data.data.success) {
-    container.innerHTML = '<div class="ach-empty">Не удалось загрузить достижения</div>';
+    container.innerHTML = '<div class="ach-empty">' + T('achEmptyFail') + '</div>';
     return;
   }
 
@@ -1758,17 +1739,17 @@ async function doClaimAchievement(achId) {
     PROFILE.spk_balance = Number(result.new_balance) || PROFILE.spk_balance;
     updateHeader();
     achSparkEffect();
-    toast('🏆 Достижение разблокировано! +' + result.reward + ' SPK!', 'var(--ac)');
+    toast(T('achUnlocked').replace('{reward}', result.reward), 'var(--ac)');
     renderAchievements('D');
     renderAchievements('M');
   } else {
     var msg = result && result.message;
-    var text = msg === 'already_claimed'          ? 'Ачивка уже получена'
-             : msg === 'condition_not_met_bio'     ? 'Заполните Bio в профиле'
-             : msg === 'condition_not_met_username' ? 'Задайте уникальный никнейм'
-             : msg === 'condition_not_met_ideas'   ? ('Нужно ' + (5 - (result && result.current_count || 0)) + ' больше идей')
-             : msg === 'condition_not_met_repost'  ? 'Сначала пройдите AI-проверку репоста'
-             : 'Не удалось получить достижение';
+    var text = msg === 'already_claimed'           ? T('achErrClaimed')
+             : msg === 'condition_not_met_bio'      ? T('achErrBio')
+             : msg === 'condition_not_met_username' ? T('achErrUsername')
+             : msg === 'condition_not_met_ideas'    ? T('achErrIdeas').replace('{n}', 5 - (result && result.current_count || 0))
+             : msg === 'condition_not_met_repost'   ? T('achErrRepost')
+             : T('achErrGeneric');
     toast(text, 'var(--red)');
     // Re-enable buttons
     renderAchievements('D');
@@ -1784,13 +1765,13 @@ async function doVerifyRepost(sfx) {
 
   var link = input.value.trim();
   if (!link) {
-    verdict.innerHTML = '<span class="ach-verdict-fail">Вставьте ссылку на пост</span>';
+    verdict.innerHTML = '<span class="ach-verdict-fail">' + T('repostErrEmpty') + '</span>';
     return;
   }
 
   // Basic URL check on client side
   try { new URL(link); } catch (_) {
-    verdict.innerHTML = '<span class="ach-verdict-fail">Некорректная ссылка</span>';
+    verdict.innerHTML = '<span class="ach-verdict-fail">' + T('repostErrUrl') + '</span>';
     return;
   }
 
@@ -1805,8 +1786,8 @@ async function doVerifyRepost(sfx) {
 
   if (!r.ok) {
     var errMsg = r.status === 429
-      ? 'Подождите ' + (r.data && r.data.wait_seconds || 300) + ' сек. перед следующей попыткой'
-      : (r.status === 401 ? 'Необходимо войти в аккаунт' : 'Ошибка сервера, попробуйте позже');
+      ? T('repostErrRate').replace('{n}', (r.data && r.data.wait_seconds) || 300)
+      : T('repostErrServer');
     verdict.innerHTML = '<span class="ach-verdict-fail">' + escapeHTML(errMsg) + '</span>';
     return;
   }
@@ -1814,18 +1795,18 @@ async function doVerifyRepost(sfx) {
   var data = r.data || {};
 
   if (data.message === 'already_approved' || data.status === 'approved') {
-    verdict.innerHTML = '<span class="ach-verdict-ok">✓ Репост подтверждён! Теперь заберите награду.</span>';
+    verdict.innerHTML = '<span class="ach-verdict-ok">' + T('repostOkApproved') + '</span>';
     renderAchievements('D');
     renderAchievements('M');
     return;
   }
 
   if (data.success) {
-    verdict.innerHTML = '<span class="ach-verdict-ok">✓ ' + escapeHTML(data.reason || 'Репост подтверждён!') + '</span>';
+    verdict.innerHTML = '<span class="ach-verdict-ok">✓ ' + escapeHTML(data.reason || '') + '</span>';
     renderAchievements('D');
     renderAchievements('M');
   } else {
-    verdict.innerHTML = '<span class="ach-verdict-fail">✗ ' + escapeHTML(data.reason || 'Репост не прошёл проверку') + '</span>';
+    verdict.innerHTML = '<span class="ach-verdict-fail">✗ ' + escapeHTML(data.reason || '') + '</span>';
   }
 }
 
