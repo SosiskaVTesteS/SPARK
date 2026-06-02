@@ -13,6 +13,15 @@
 (function () {
   'use strict';
 
+  /* ─── Bilingual support ─── */
+  var _lang = (function() { try { return localStorage.getItem('spark_lang') || 'ru'; } catch(e) { return 'ru'; } })();
+  function _L(en, ru) { return _lang === 'en' ? en : ru; }
+  function _setLang(l) {
+    _lang = l;
+    try { localStorage.setItem('spark_lang', l); } catch(e) {}
+    if (window.LANG !== undefined) window.LANG = l;
+  }
+
   /* ─── Ключи хранилища ─── */
   var OB_KEY    = 'spark_ob3_seen';  /* совместимо с onboarding.js Phase1 */
   var INTRO_KEY = 'spark_intro_v1';
@@ -42,89 +51,92 @@
   /* ══════════════════════════════════════
      ДАННЫЕ СЛАЙДОВ
   ══════════════════════════════════════ */
-  var SLIDES = [
+  function buildSlides() {
+    return [
 
-    /* 1. WELCOME */
-    {
-      kicker : 'Добро пожаловать',
-      title  : 'SPARK — Биржа Идей',
-      desc   : 'Место, где инноваторы публикуют стартап-идеи, а инвесторы поддерживают лучшие из них SPK-токенами в реальном времени.',
-      visual : buildWelcomeVisual()
-    },
+      /* 1. WELCOME */
+      {
+        kicker : _L('Welcome','Добро пожаловать'),
+        title  : _L('SPARK — Idea Exchange','SPARK — Биржа Идей'),
+        desc   : _L('A place where innovators post startup ideas and investors back the best ones with SPK tokens in real time.','Место, где инноваторы публикуют стартап-идеи, а инвесторы поддерживают лучшие из них SPK-токенами в реальном времени.'),
+        visual : buildWelcomeVisual()
+      },
 
-    /* 2. IDEA FEED */
-    {
-      kicker : 'Функция 1 из 8',
-      title  : 'Живая лента идей',
-      desc   : 'Открывайте стартап-концепции. Сортируйте по <b>Новым</b>, <b>Популярным</b>, <b>Выгодным</b> или <b>Дедлайну</b>. Фильтруйте по тегам: <b>#AI</b>, <b>#DeFi</b>, <b>#Web3</b>.',
-      visual : buildFeedVisual()
-    },
+      /* 2. IDEA FEED */
+      {
+        kicker : _L('Feature 1 of 8','Функция 1 из 8'),
+        title  : _L('Live Idea Feed','Живая лента идей'),
+        desc   : _L('Explore startup concepts. Sort by <b>New</b>, <b>Popular</b>, <b>Profitable</b> or <b>Deadline</b>. Filter by tags: <b>#AI</b>, <b>#DeFi</b>, <b>#Web3</b>.','Открывайте стартап-концепции. Сортируйте по <b>Новым</b>, <b>Популярным</b>, <b>Выгодным</b> или <b>Дедлайну</b>. Фильтруйте по тегам: <b>#AI</b>, <b>#DeFi</b>, <b>#Web3</b>.'),
+        visual : buildFeedVisual()
+      },
 
-    /* 3. INVEST */
-    {
-      kicker : 'Функция 2 из 8',
-      title  : 'Инвестируйте SPK-токены',
-      desc   : 'Поддержите идею, в которую верите. Удержите кнопку <b>2 секунды</b> для безопасного подтверждения. Ваш <b>SPK-баланс</b> всегда в шапке.',
-      visual : buildInvestVisual()
-    },
+      /* 3. INVEST */
+      {
+        kicker : _L('Feature 2 of 8','Функция 2 из 8'),
+        title  : _L('Invest SPK Tokens','Инвестируйте SPK-токены'),
+        desc   : _L('Back ideas you believe in. Hold the button for <b>2 seconds</b> to confirm securely. Your <b>SPK balance</b> is always in the header.','Поддержите идею, в которую верите. Удержите кнопку <b>2 секунды</b> для безопасного подтверждения. Ваш <b>SPK-баланс</b> всегда в шапке.'),
+        visual : buildInvestVisual()
+      },
 
-    /* 4. POST IDEA */
-    {
-      kicker : 'Функция 3 из 8',
-      title  : 'Опубликуйте свою идею',
-      desc   : 'Опишите концепцию, установите минимальную ставку и <b>срок</b>. Сообщество проголосует токенами — чем больше <b>SPK</b> в пуле, тем выше рыночный сигнал.',
-      visual : buildPostVisual()
-    },
+      /* 4. POST IDEA */
+      {
+        kicker : _L('Feature 3 of 8','Функция 3 из 8'),
+        title  : _L('Post Your Idea','Опубликуйте свою идею'),
+        desc   : _L('Describe your concept, set a minimum bet and <b>duration</b>. The community votes with tokens — the more <b>SPK</b> in the pool, the stronger the market signal.','Опишите концепцию, установите минимальную ставку и <b>срок</b>. Сообщество проголосует токенами — чем больше <b>SPK</b> в пуле, тем выше рыночный сигнал.'),
+        visual : buildPostVisual()
+      },
 
-    /* 5. LEADERBOARD */
-    {
-      kicker : 'Функция 4 из 8',
-      title  : 'Топ Пророков',
-      desc   : '<b>Рейтинг</b> лучших инвесторов обновляется в реальном времени. Вкладывайтесь в идеи раньше рынка, зарабатывайте прибыль и попадайте в <b>топ</b>.',
-      visual : buildLeaderVisual()
-    },
+      /* 5. LEADERBOARD */
+      {
+        kicker : _L('Feature 4 of 8','Функция 4 из 8'),
+        title  : _L('Prophet Leaderboard','Топ Пророков'),
+        desc   : _L('<b>Ranking</b> of top investors updated in real time. Back ideas early, earn profit, and <b>climb the top</b>.','<b>Рейтинг</b> лучших инвесторов обновляется в реальном времени. Вкладывайтесь в идеи раньше рынка, зарабатывайте прибыль и попадайте в <b>топ</b>.'),
+        visual : buildLeaderVisual()
+      },
 
-    /* 6. OBSERVATORY */
-    {
-      kicker : 'Функция 5 из 8',
-      title  : 'Обсерватория рынка',
-      desc   : 'Интерактивная орбитальная карта: <b>Технологии</b> (AI, SaaS, Web3), <b>Экология</b> (Solar, Energy) и Общество. Следите, куда движется рынок идей.',
-      visual : buildObsVisual()
-    },
+      /* 6. OBSERVATORY */
+      {
+        kicker : _L('Feature 5 of 8','Функция 5 из 8'),
+        title  : _L('Market Observatory','Обсерватория рынка'),
+        desc   : _L('Interactive orbital map: <b>Technology</b> (AI, SaaS, Web3), <b>Ecology</b> (Solar, Energy) and Society. Track where the idea market is heading.','Интерактивная орбитальная карта: <b>Технологии</b> (AI, SaaS, Web3), <b>Экология</b> (Solar, Energy) и Общество. Следите, куда движется рынок идей.'),
+        visual : buildObsVisual()
+      },
 
-    /* 7. CHATS */
-    {
-      kicker : 'Функция 6 из 8',
-      title  : 'SPARK Чаты',
-      desc   : 'Личные сообщения авторам идей. Командные каналы: <b>DeFi Prophets</b>, <b>AI Signals</b>, <b>SPARK Devs</b>. Онлайн-статус в реальном времени.',
-      visual : buildChatsVisual()
-    },
+      /* 7. CHATS */
+      {
+        kicker : _L('Feature 6 of 8','Функция 6 из 8'),
+        title  : _L('SPARK Chats','SPARK Чаты'),
+        desc   : _L('Direct messages to idea authors. Team channels: <b>DeFi Prophets</b>, <b>AI Signals</b>, <b>SPARK Devs</b>. Real-time online status.','Личные сообщения авторам идей. Командные каналы: <b>DeFi Prophets</b>, <b>AI Signals</b>, <b>SPARK Devs</b>. Онлайн-статус в реальном времени.'),
+        visual : buildChatsVisual()
+      },
 
-    /* 8. THEMES */
-    {
-      kicker : 'Функция 7 из 8',
-      title  : '16 Тем оформления',
-      desc   : '<b>Cosmos</b>, <b>Cyberpunk</b>, <b>Neon</b>, <b>Aurora</b> и 12 других пресетов. Или создайте собственную палитру в <b>Студии Тем</b> — SPARK будет вашим.',
-      visual : buildThemeVisual()
-    },
+      /* 8. THEMES */
+      {
+        kicker : _L('Feature 7 of 8','Функция 7 из 8'),
+        title  : _L('16 Themes','16 Тем оформления'),
+        desc   : _L('<b>Cosmos</b>, <b>Cyberpunk</b>, <b>Neon</b>, <b>Aurora</b> and 12 more presets. Or create your own palette in the <b>Theme Studio</b> — make SPARK yours.','<b>Cosmos</b>, <b>Cyberpunk</b>, <b>Neon</b>, <b>Aurora</b> и 12 других пресетов. Или создайте собственную палитру в <b>Студии Тем</b> — SPARK будет вашим.'),
+        visual : buildThemeVisual()
+      },
 
-    /* 8.5 ACHIEVEMENTS */
-    {
-      kicker : 'Функция 8 из 8',
-      title  : '🏆 Достижения и бонусы',
-      desc   : 'Выполняйте задания и зарабатывайте <b>бонусный SPK</b>: заполните профиль <b>+100</b>, опубликуйте 5 идей <b>+100</b>, поделитесь ссылкой в соцсетях <b>+50</b>. Всего до <b>+250 SPK</b> бесплатно.',
-      visual : buildAchievementsVisual()
-    },
+      /* 8.5 ACHIEVEMENTS */
+      {
+        kicker : _L('Feature 8 of 8','Функция 8 из 8'),
+        title  : _L('🏆 Achievements & Bonuses','🏆 Достижения и бонусы'),
+        desc   : _L('Complete missions to earn <b>bonus SPK</b>: fill your profile <b>+100</b>, post 5 ideas <b>+100</b>, share a link on social media <b>+50</b>. Up to <b>+250 SPK</b> for free.','Выполняйте задания и зарабатывайте <b>бонусный SPK</b>: заполните профиль <b>+100</b>, опубликуйте 5 идей <b>+100</b>, поделитесь ссылкой в соцсетях <b>+50</b>. Всего до <b>+250 SPK</b> бесплатно.'),
+        visual : buildAchievementsVisual()
+      },
 
-    /* 9. CTA */
-    {
-      kicker : 'Всё готово',
-      title  : 'Готов разжечь искру?',
-      desc   : 'Регистрация занимает <b>30 секунд</b>. Публикуйте идеи, инвестируйте <b>SPK</b> и становитесь частью биржи идей будущего.',
-      visual : buildCtaVisual(),
-      isCta  : true
-    }
-  ];
+      /* 9. CTA */
+      {
+        kicker : _L('Ready','Всё готово'),
+        title  : _L('Ready to spark an idea?','Готов разжечь искру?'),
+        desc   : _L('Registration takes <b>30 seconds</b>. Post ideas, invest <b>SPK</b> and join the idea exchange of the future.','Регистрация занимает <b>30 секунд</b>. Публикуйте идеи, инвестируйте <b>SPK</b> и становитесь частью биржи идей будущего.'),
+        visual : buildCtaVisual(),
+        isCta  : true
+      }
+    ];
+  }
+  var SLIDES = buildSlides();
 
   /* ══════════════════════════════════════
      ВИЗУАЛЫ (SVG)
@@ -196,12 +208,12 @@
         '<text x="100" y="55" text-anchor="middle" fill="#05060F" font-size="8" font-family="Syne,sans-serif" font-weight="800" letter-spacing="1">SPK</text>' +
         '<text x="100" y="66" text-anchor="middle" fill="rgba(5,6,15,0.6)" font-size="7" font-family="Syne,sans-serif">TOKEN</text>' +
         '<text x="100" y="108" text-anchor="middle" fill="#E8C55A" font-size="13" font-family="Syne,sans-serif" font-weight="700">4 520 SPK</text>' +
-        '<text x="100" y="120" text-anchor="middle" fill="rgba(110,112,153,0.8)" font-size="8" font-family="DM Sans,sans-serif">Ваш баланс</text>' +
+        '<text x="100" y="120" text-anchor="middle" fill="rgba(110,112,153,0.8)" font-size="8" font-family="DM Sans,sans-serif">' + _L('Your balance','Ваш баланс') + '</text>' +
         '<rect x="20" y="136" width="160" height="6" rx="3" fill="rgba(255,255,255,0.06)"/>' +
         '<rect class="ob-slider-fill" x="20" y="136" width="96" height="6" rx="3" fill="url(#obGCoin)" opacity="0.75"/>' +
         '<circle class="ob-slider-knob" cx="116" cy="139" r="9" fill="#E8C55A" stroke="rgba(5,6,15,0.9)" stroke-width="2"/>' +
         '<rect x="50" y="152" width="100" height="16" rx="8" fill="rgba(232,197,90,0.15)" stroke="rgba(232,197,90,0.4)" stroke-width="1"/>' +
-        '<text x="100" y="163" text-anchor="middle" fill="#E8C55A" font-size="7" font-family="Syne,sans-serif" font-weight="700">Удерживайте для вложения</text>' +
+        '<text x="100" y="163" text-anchor="middle" fill="#E8C55A" font-size="7" font-family="Syne,sans-serif" font-weight="700">' + _L('Hold to invest','Удерживайте для вложения') + '</text>' +
       '</svg>' +
     '</div>';
   }
@@ -218,17 +230,17 @@
         '<rect x="15" y="6" width="180" height="158" rx="14" fill="rgba(5,6,15,0.95)" stroke="rgba(123,92,250,0.35)" stroke-width="1"/>' +
         '<rect x="15" y="6" width="180" height="32" rx="14" fill="rgba(123,92,250,0.08)"/>' +
         '<rect x="15" y="30" width="180" height="8" fill="rgba(123,92,250,0.08)"/>' +
-        '<text x="105" y="26" text-anchor="middle" fill="rgba(238,240,255,0.9)" font-size="10" font-family="Syne,sans-serif" font-weight="700">Новая идея 💡</text>' +
+        '<text x="105" y="26" text-anchor="middle" fill="rgba(238,240,255,0.9)" font-size="10" font-family="Syne,sans-serif" font-weight="700">' + _L('New Idea 💡','Новая идея 💡') + '</text>' +
         '<rect x="28" y="46" width="154" height="22" rx="6" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8"/>' +
-        '<text x="36" y="56" fill="rgba(110,112,153,0.7)" font-size="7" font-family="DM Sans,sans-serif">Заголовок</text>' +
+        '<text x="36" y="56" fill="rgba(110,112,153,0.7)" font-size="7" font-family="DM Sans,sans-serif">' + _L('Title','Заголовок') + '</text>' +
         '<rect class="ob-cursor" x="36" y="60" width="1" height="8" rx="1" fill="rgba(155,95,255,0.8)"/>' +
         '<rect x="28" y="74" width="154" height="36" rx="6" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8"/>' +
-        '<text x="36" y="85" fill="rgba(110,112,153,0.5)" font-size="7" font-family="DM Sans,sans-serif">Опишите вашу идею...</text>' +
-        '<text x="28" y="122" fill="rgba(110,112,153,0.7)" font-size="7" font-family="DM Sans,sans-serif">Срок</text>' +
+        '<text x="36" y="85" fill="rgba(110,112,153,0.5)" font-size="7" font-family="DM Sans,sans-serif">' + _L('Describe your idea...','Опишите вашу идею...') + '</text>' +
+        '<text x="28" y="122" fill="rgba(110,112,153,0.7)" font-size="7" font-family="DM Sans,sans-serif">' + _L('Duration','Срок') + '</text>' +
         '<rect x="28" y="128" width="34" height="14" rx="5" fill="rgba(123,92,250,0.25)" stroke="rgba(123,92,250,0.6)" stroke-width="0.8"/>' +
-        '<text x="45" y="138" text-anchor="middle" fill="#9B7CFF" font-size="7" font-family="Syne,sans-serif" font-weight="700">24ч</text>' +
+        '<text x="45" y="138" text-anchor="middle" fill="#9B7CFF" font-size="7" font-family="Syne,sans-serif" font-weight="700">' + _L('24h','24ч') + '</text>' +
         '<rect x="68" y="128" width="34" height="14" rx="5" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8"/>' +
-        '<text x="85" y="138" text-anchor="middle" fill="rgba(110,112,153,0.7)" font-size="7" font-family="Syne,sans-serif">7д</text>' +
+        '<text x="85" y="138" text-anchor="middle" fill="rgba(110,112,153,0.7)" font-size="7" font-family="Syne,sans-serif">' + _L('7d','7д') + '</text>' +
         '<rect x="108" y="128" width="34" height="14" rx="5" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.06)" stroke-width="0.8"/>' +
         '<text x="125" y="138" text-anchor="middle" fill="rgba(110,112,153,0.5)" font-size="7" font-family="Syne,sans-serif">30д 👑</text>' +
         '<rect x="28" y="150" width="154" height="8" rx="4" fill="url(#obGPost)" opacity="0.85"/>' +
@@ -283,8 +295,8 @@
         '<text   class="ob-planet2"  x="184" y="86" fill="rgba(232,197,90,0.8)" font-size="6" font-family="Syne,sans-serif">DeFi</text>' +
         '<circle class="ob-planet2b" cx="28"  cy="90" r="5" fill="#E85AA0" opacity="0.85"/>' +
         '<text   class="ob-planet2b" x="3"   y="86" fill="rgba(232,90,160,0.8)" font-size="6" font-family="Syne,sans-serif">Solar</text>' +
-        '<text x="100" y="16"  text-anchor="middle" fill="rgba(155,95,255,0.7)"  font-size="7" font-family="Syne,sans-serif" font-weight="700" letter-spacing="2">ТЕХНОЛОГИИ</text>' +
-        '<text x="100" y="170" text-anchor="middle" fill="rgba(90,232,197,0.7)"  font-size="7" font-family="Syne,sans-serif" font-weight="700" letter-spacing="2">ЭКОЛОГИЯ</text>' +
+        '<text x="100" y="16"  text-anchor="middle" fill="rgba(155,95,255,0.7)"  font-size="7" font-family="Syne,sans-serif" font-weight="700" letter-spacing="2">' + _L('TECHNOLOGY','ТЕХНОЛОГИИ') + '</text>' +
+        '<text x="100" y="170" text-anchor="middle" fill="rgba(90,232,197,0.7)"  font-size="7" font-family="Syne,sans-serif" font-weight="700" letter-spacing="2">' + _L('ECOLOGY','ЭКОЛОГИЯ') + '</text>' +
         '<text x="180" y="96"  text-anchor="middle" fill="rgba(232,197,90,0.7)"  font-size="7" font-family="Syne,sans-serif" font-weight="700" letter-spacing="1">WEB3</text>' +
       '</svg>' +
     '</div>';
@@ -294,7 +306,7 @@
     return '<div class="ob-vis ob-vis-chats">' +
       '<svg viewBox="0 0 220 170" xmlns="http://www.w3.org/2000/svg">' +
         '<rect x="8" y="8" width="60" height="154" rx="10" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.06)" stroke-width="0.8"/>' +
-        '<text x="38" y="24" text-anchor="middle" fill="rgba(238,240,255,0.5)" font-size="7" font-family="Syne,sans-serif" font-weight="700">SPARK Чаты</text>' +
+        '<text x="38" y="24" text-anchor="middle" fill="rgba(238,240,255,0.5)" font-size="7" font-family="Syne,sans-serif" font-weight="700">' + _L('SPARK Chats','SPARK Чаты') + '</text>' +
         '<rect x="14" y="32" width="48" height="16" rx="5" fill="rgba(123,92,250,0.2)" stroke="rgba(123,92,250,0.4)" stroke-width="0.5"/>' +
         '<circle cx="22" cy="40" r="4" fill="rgba(155,95,255,0.6)"/>' +
         '<rect x="28" y="38" width="24" height="3" rx="1.5" fill="rgba(238,240,255,0.5)"/>' +
@@ -305,7 +317,7 @@
         '<rect x="14" y="72" width="48" height="16" rx="5" fill="rgba(255,255,255,0.02)"/>' +
         '<circle cx="22" cy="80" r="4" fill="rgba(90,232,197,0.4)"/>' +
         '<rect x="28" y="78" width="22" height="3" rx="1.5" fill="rgba(110,112,153,0.4)"/>' +
-        '<text x="14" y="102" fill="rgba(110,112,153,0.6)" font-size="6" font-family="Syne,sans-serif" font-weight="700" letter-spacing="1">КАНАЛЫ</text>' +
+        '<text x="14" y="102" fill="rgba(110,112,153,0.6)" font-size="6" font-family="Syne,sans-serif" font-weight="700" letter-spacing="1">' + _L('CHANNELS','КАНАЛЫ') + '</text>' +
         '<rect x="14" y="106" width="48" height="12" rx="4" fill="rgba(255,255,255,0.02)"/>' +
         '<text x="20" y="115" fill="rgba(110,112,153,0.5)" font-size="6" font-family="DM Sans,sans-serif"># defi-prophets</text>' +
         '<rect x="14" y="121" width="48" height="12" rx="4" fill="rgba(255,255,255,0.02)"/>' +
@@ -376,8 +388,8 @@
         /* Card 1 — fill_profile (+100) */
         '<g class="ob-ach-card ob-ach-c1">' +
           '<rect x="12" y="10" width="196" height="44" rx="10" fill="rgba(232,197,90,0.07)" stroke="rgba(232,197,90,0.3)" stroke-width="1"/>' +
-          '<text x="28" y="30" fill="rgba(238,240,255,0.85)" font-size="10" font-family="Syne,sans-serif" font-weight="700">👤 Заполненный профиль</text>' +
-          '<text x="28" y="44" fill="rgba(110,112,153,0.8)" font-size="8" font-family="DM Sans,sans-serif">Укажите ник и заполните Bio</text>' +
+          '<text x="28" y="30" fill="rgba(238,240,255,0.85)" font-size="10" font-family="Syne,sans-serif" font-weight="700">👤 ' + _L('Complete Profile','Заполненный профиль') + '</text>' +
+          '<text x="28" y="44" fill="rgba(110,112,153,0.8)" font-size="8" font-family="DM Sans,sans-serif">' + _L('Set nickname & fill Bio','Укажите ник и заполните Bio') + '</text>' +
           '<rect x="163" y="17" width="36" height="18" rx="6" fill="rgba(232,197,90,0.15)" stroke="rgba(232,197,90,0.4)" stroke-width="1"/>' +
           '<text x="181" y="30" fill="#E8C55A" font-size="9" font-family="Syne,sans-serif" font-weight="800" text-anchor="middle">+100</text>' +
           /* Checkmark появляется */
@@ -388,8 +400,8 @@
         /* Card 2 — create_5_ideas (+100) */
         '<g class="ob-ach-card ob-ach-c2">' +
           '<rect x="12" y="63" width="196" height="44" rx="10" fill="rgba(123,92,250,0.07)" stroke="rgba(123,92,250,0.25)" stroke-width="1"/>' +
-          '<text x="28" y="83" fill="rgba(238,240,255,0.85)" font-size="10" font-family="Syne,sans-serif" font-weight="700">💡 Генератор стартапов</text>' +
-          '<text x="28" y="97" fill="rgba(110,112,153,0.8)" font-size="8" font-family="DM Sans,sans-serif">Опубликуйте 5 идей на платформе</text>' +
+          '<text x="28" y="83" fill="rgba(238,240,255,0.85)" font-size="10" font-family="Syne,sans-serif" font-weight="700">💡 ' + _L('Startup Generator','Генератор стартапов') + '</text>' +
+          '<text x="28" y="97" fill="rgba(110,112,153,0.8)" font-size="8" font-family="DM Sans,sans-serif">' + _L('Post 5 ideas on the platform','Опубликуйте 5 идей на платформе') + '</text>' +
           /* Progress bar */
           '<rect x="28" y="102" width="100" height="3" rx="2" fill="rgba(255,255,255,0.07)"/>' +
           '<rect class="ob-ach-prog" x="28" y="102" width="0" height="3" rx="2" fill="url(#obGAch2)"/>' +
@@ -400,8 +412,8 @@
         /* Card 3 — adv_repost (+50) */
         '<g class="ob-ach-card ob-ach-c3">' +
           '<rect x="12" y="116" width="196" height="44" rx="10" fill="rgba(90,232,197,0.06)" stroke="rgba(90,232,197,0.2)" stroke-width="1"/>' +
-          '<text x="28" y="136" fill="rgba(238,240,255,0.85)" font-size="10" font-family="Syne,sans-serif" font-weight="700">📢 Амбассадор SPARK</text>' +
-          '<text x="28" y="150" fill="rgba(110,112,153,0.8)" font-size="8" font-family="DM Sans,sans-serif">Поделитесь ссылкой в соцсетях</text>' +
+          '<text x="28" y="136" fill="rgba(238,240,255,0.85)" font-size="10" font-family="Syne,sans-serif" font-weight="700">📢 ' + _L('SPARK Ambassador','Амбассадор SPARK') + '</text>' +
+          '<text x="28" y="150" fill="rgba(110,112,153,0.8)" font-size="8" font-family="DM Sans,sans-serif">' + _L('Share a link on social media','Поделитесь ссылкой в соцсетях') + '</text>' +
           '<rect x="163" y="123" width="36" height="18" rx="6" fill="rgba(90,232,197,0.08)" stroke="rgba(90,232,197,0.3)" stroke-width="1"/>' +
           '<text x="181" y="136" fill="#5AE8C5" font-size="9" font-family="Syne,sans-serif" font-weight="800" text-anchor="middle">+50</text>' +
         '</g>' +
@@ -409,7 +421,7 @@
         /* Итоговый бейдж внизу */
         '<g class="ob-ach-total">' +
           '<rect x="55" y="170" width="110" height="14" rx="7" fill="rgba(232,197,90,0.12)" stroke="rgba(232,197,90,0.4)" stroke-width="1" filter="url(#obGlow)"/>' +
-          '<text x="110" y="181" fill="#E8C55A" font-size="9" font-family="Syne,sans-serif" font-weight="800" text-anchor="middle">Итого до +250 SPK 🏆</text>' +
+          '<text x="110" y="181" fill="#E8C55A" font-size="9" font-family="Syne,sans-serif" font-weight="800" text-anchor="middle">' + _L('Up to +250 SPK total 🏆','Итого до +250 SPK 🏆') + '</text>' +
         '</g>' +
 
         /* Частицы */
@@ -483,7 +495,7 @@
     overlay.className = 'ob-overlay';
     overlay.setAttribute('role', 'dialog');
     overlay.setAttribute('aria-modal', 'true');
-    overlay.setAttribute('aria-label', 'SPARK — приветственный гид');
+    overlay.setAttribute('aria-label', _L('SPARK — welcome guide','SPARK — приветственный гид'));
 
     /* Stars background */
     overlay.appendChild(buildStars());
@@ -503,10 +515,44 @@
     /* Skip */
     var skip = document.createElement('button');
     skip.className = 'ob-skip';
-    skip.textContent = 'Пропустить';
-    skip.setAttribute('aria-label', 'Пропустить приветственный гид');
+    skip.textContent = _L('Skip','Пропустить');
+    skip.setAttribute('aria-label', _L('Skip welcome guide','Пропустить приветственный гид'));
     skip.addEventListener('click', finish);
     card.appendChild(skip);
+
+    /* Language switcher */
+    var langSwitch = document.createElement('div');
+    langSwitch.className = 'ob-lang-switch';
+    langSwitch.id = 'obLangSwitch';
+    langSwitch.innerHTML = '<button class="ob-lang-btn' + (_lang === 'ru' ? ' ob-lang-active' : '') + '" data-lang="ru">RU</button>' +
+      '<span class="ob-lang-sep">|</span>' +
+      '<button class="ob-lang-btn' + (_lang === 'en' ? ' ob-lang-active' : '') + '" data-lang="en">EN</button>';
+    langSwitch.addEventListener('click', function(e) {
+      var btn = e.target.closest('[data-lang]');
+      if (!btn) return;
+      var l = btn.dataset.lang;
+      if (l === _lang) return;
+      _setLang(l);
+      SLIDES = buildSlides();
+      /* Re-render current slide */
+      var wrap = document.getElementById('obSlidesWrap');
+      if (wrap) { wrap.innerHTML = ''; renderSlide(state.current, null); }
+      /* Update lang buttons */
+      document.querySelectorAll('.ob-lang-btn').forEach(function(b) {
+        b.classList.toggle('ob-lang-active', b.dataset.lang === l);
+      });
+      /* Update skip/nav text */
+      var skipBtn = document.querySelector('.ob-skip');
+      if (skipBtn) skipBtn.textContent = _L('Skip','Пропустить');
+      var backBtn = document.getElementById('obBtnBack');
+      if (backBtn) backBtn.textContent = _L('← Back','← Назад');
+      var nextBtn = document.getElementById('obBtnNext');
+      if (nextBtn && nextBtn.style.display !== 'none') {
+        var isSecondToLast = state.current === SLIDES.length - 2;
+        nextBtn.textContent = isSecondToLast ? _L('To finale 🎉','К финалу 🎉') : _L('Next →','Далее →');
+      }
+    });
+    card.appendChild(langSwitch);
 
     /* Progress dots */
     var prog = document.createElement('div');
@@ -578,13 +624,13 @@
     var back = document.createElement('button');
     back.className = 'ob-btn-back hidden';
     back.id = 'obBtnBack';
-    back.textContent = '← Назад';
+    back.textContent = _L('← Back','← Назад');
     back.addEventListener('click', function() { goTo(state.current - 1); });
 
     var next = document.createElement('button');
     next.className = 'ob-btn-next';
     next.id = 'obBtnNext';
-    next.textContent = 'Далее →';
+    next.textContent = _L('Next →','Далее →');
     next.addEventListener('click', function() { goTo(state.current + 1); });
 
     nav.appendChild(back);
@@ -623,13 +669,13 @@
 
       var ctaBtn = document.createElement('button');
       ctaBtn.className = 'ob-btn-cta';
-      ctaBtn.textContent = 'Создать аккаунт →';
+      ctaBtn.textContent = _L('Create Account →','Создать аккаунт →');
       ctaBtn.addEventListener('click', function() { finish(); openAuth('signup'); });
       ctaWrap.appendChild(ctaBtn);
 
       var signInHint = document.createElement('div');
       signInHint.className = 'ob-signin-link';
-      signInHint.innerHTML = 'Уже есть аккаунт? <span id="obSignIn">Войти</span>';
+      signInHint.innerHTML = _L('Already have an account? <span id="obSignIn">Sign In</span>','Уже есть аккаунт? <span id="obSignIn">Войти</span>');
       ctaWrap.appendChild(signInHint);
 
       el.appendChild(ctaWrap);
@@ -676,7 +722,7 @@
         next.style.display = 'none';
       } else {
         next.style.display = '';
-        next.textContent = idx === SLIDES.length - 2 ? 'К финалу 🎉' : 'Далее →';
+        next.textContent = idx === SLIDES.length - 2 ? _L('To finale 🎉','К финалу 🎉') : _L('Next →','Далее →');
       }
     }
 

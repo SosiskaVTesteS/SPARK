@@ -650,3 +650,37 @@
   .ob-ach-p1, .ob-ach-p2, .ob-ach-p3, .ob-ach-p4 { animation: none !important; opacity: 1; }
   .ob-ach-prog { width: 60px; }
 }
+
+/* ── Language switcher ── */
+.ob-lang-switch {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  z-index: 10;
+}
+.ob-lang-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Syne', sans-serif;
+  color: rgba(110,112,153,0.7);
+  padding: 3px 5px;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+  letter-spacing: 0.05em;
+}
+.ob-lang-btn:hover { color: rgba(238,240,255,0.8); }
+.ob-lang-btn.ob-lang-active {
+  color: #E8C55A;
+  background: rgba(232,197,90,0.1);
+}
+.ob-lang-sep {
+  color: rgba(110,112,153,0.35);
+  font-size: 10px;
+  user-select: none;
+}
