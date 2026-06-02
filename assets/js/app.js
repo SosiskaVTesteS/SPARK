@@ -1592,9 +1592,8 @@ function getAchDefs() {
     { id:'adv_repost',     title:T('achAdvRepostTitle'),    desc:T('achAdvRepostDesc'),    reward:50,  icon:'📢' },
   ];
 }
+// ACH_DEFS не кешируем — вызываем getAchDefs() при каждом рендере чтобы язык всегда был актуальным
 var ACH_DEFS = [];
-window.addEventListener('spark:langready', function () { ACH_DEFS = getAchDefs(); });
-setTimeout(function () { if (!ACH_DEFS.length) ACH_DEFS = getAchDefs(); }, 0);
 
 function achCardHTML(ach, state, sfx, extra) {
   extra = extra || {};
@@ -1688,7 +1687,8 @@ async function renderAchievements(sfx) {
   var container = document.getElementById('achList-' + sfx);
   if (!container) return;
 
-  if (!ACH_DEFS.length) ACH_DEFS = getAchDefs();
+  // Всегда пересобираем с актуальным языком
+  var ACH_DEFS = getAchDefs();
 
   if (!supa || !ME) {
     container.innerHTML = '<div class="ach-empty">' + T('achEmpty') + '</div>';
