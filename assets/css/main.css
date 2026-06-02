@@ -2154,4 +2154,385 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
   100% { background-position: 0% 50%; }
 }
 
+/* ════════════════════════════════════════════════════════════
+   ДОСТИЖЕНИЯ — achievements system
+   ════════════════════════════════════════════════════════════ */
+
+/* ── Keyframes ── */
+@keyframes achGoldPulse {
+  0%, 100% { box-shadow: 0 0 10px rgba(232,197,90,0.25), 0 0 24px rgba(232,197,90,0.10); }
+  50%       { box-shadow: 0 0 18px rgba(232,197,90,0.55), 0 0 42px rgba(232,197,90,0.22); }
+}
+@keyframes achBtnPulse {
+  0%, 100% { box-shadow: 0 3px 14px rgba(232,197,90,0.35); transform: scale(1); }
+  50%       { box-shadow: 0 4px 22px rgba(232,197,90,0.65); transform: scale(1.025); }
+}
+@keyframes achSpin {
+  to { transform: rotate(360deg); }
+}
+@keyframes achFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes achParticle {
+  0%   { opacity: 1; transform: rotate(var(--angle)) translateY(0) scale(1); }
+  80%  { opacity: 0.7; }
+  100% { opacity: 0; transform: rotate(var(--angle)) translateY(calc(-1 * var(--dist))) scale(0.3); }
+}
+@keyframes achBarFill {
+  from { width: 0; }
+}
+
+/* ── Collapsible section (mirrors .myideas-section) ── */
+.ach-section {
+  border-top: 1px solid rgba(255,255,255,0.05);
+  margin-top: 12px;
+  padding-top: 10px;
+}
+
+.ach-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--tx);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--fb);
+  padding: 7px 10px;
+  border-radius: 9px;
+  transition: background 0.15s, color 0.15s;
+  text-align: left;
+}
+.ach-toggle:hover,
+.ach-toggle.open {
+  background: rgba(232,197,90,0.07);
+  color: var(--ac);
+}
+
+.ach-chevron {
+  margin-left: auto;
+  transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1);
+}
+.ach-toggle.open .ach-chevron { transform: rotate(180deg); }
+
+.ach-body {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.42s cubic-bezier(0.4,0,0.2,1), opacity 0.3s ease;
+}
+.ach-body.open {
+  max-height: 2400px;
+  opacity: 1;
+}
+
+/* ── Card list ── */
+.ach-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 2px 6px;
+}
+
+/* ── Base card (glassmorphism) ── */
+.ach-card {
+  border-radius: 14px;
+  padding: 14px;
+  border: 1px solid rgba(255,255,255,0.07);
+  background: rgba(12,17,40,0.65);
+  backdrop-filter: blur(10px);
+  transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.22s ease;
+  animation: achFadeIn 0.32s cubic-bezier(0.4,0,0.2,1) both;
+}
+.ach-card:hover {
+  transform: scale(1.012);
+}
+
+/* ── Locked state ── */
+.ach-card-locked {
+  opacity: 0.72;
+  border-color: rgba(255,255,255,0.05);
+}
+.ach-card-locked .ach-icon { filter: grayscale(0.6); opacity: 0.7; }
+.ach-card-locked .ach-title { color: var(--mu2); }
+.ach-card-locked .ach-reward { color: var(--mu2); border-color: rgba(255,255,255,0.07); }
+
+/* ── Ready state (gold glow) ── */
+.ach-card-ready {
+  border-color: rgba(232,197,90,0.35);
+  background:
+    linear-gradient(160deg, rgba(14,18,42,0.85), rgba(10,12,28,0.9)) padding-box,
+    linear-gradient(135deg, rgba(232,197,90,0.45), rgba(123,92,250,0.2)) border-box;
+  animation: achFadeIn 0.32s cubic-bezier(0.4,0,0.2,1) both,
+             achGoldPulse 2.8s ease-in-out infinite;
+}
+.ach-card-ready .ach-title { color: var(--ac); }
+
+/* ── Claimed state ── */
+.ach-card-claimed {
+  opacity: 0.52;
+  border-color: rgba(90,232,197,0.12);
+  background: rgba(8,12,24,0.55);
+}
+.ach-card-claimed .ach-icon { filter: saturate(0.4); }
+.ach-card-claimed .ach-reward { color: var(--ac2); border-color: rgba(90,232,197,0.2); }
+
+/* ── Card top row ── */
+.ach-card-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+}
+
+.ach-icon {
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.ach-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.ach-title {
+  font-family: var(--fh);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--tx);
+  margin-bottom: 2px;
+  line-height: 1.3;
+}
+
+.ach-desc {
+  font-size: 11px;
+  color: var(--mu2);
+  line-height: 1.45;
+}
+
+.ach-reward {
+  flex-shrink: 0;
+  font-family: var(--fh);
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ac);
+  border: 1px solid rgba(232,197,90,0.28);
+  border-radius: 7px;
+  padding: 3px 8px;
+  white-space: nowrap;
+  background: rgba(232,197,90,0.07);
+  letter-spacing: 0.01em;
+}
+.ach-spk-lbl {
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.8;
+  margin-left: 1px;
+}
+
+/* ── Progress bar ── */
+.ach-progress {
+  height: 4px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.07);
+  margin: 10px 0 4px;
+  overflow: hidden;
+}
+.ach-progress-bar {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--vl), var(--ac));
+  animation: achBarFill 0.7s cubic-bezier(0.4,0,0.2,1) both;
+  min-width: 4px;
+}
+.ach-progress-label {
+  font-size: 10px;
+  color: var(--mu2);
+  text-align: right;
+  margin-bottom: 8px;
+}
+
+/* ── Buttons ── */
+.ach-btn-row {
+  margin-top: 12px;
+}
+
+.ach-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 9px 14px;
+  border-radius: 10px;
+  border: none;
+  font-family: var(--fb);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.18s ease, opacity 0.15s;
+  letter-spacing: 0.02em;
+}
+
+.ach-btn-locked {
+  background: rgba(255,255,255,0.05);
+  color: var(--mu);
+  cursor: not-allowed;
+}
+.ach-btn-locked:disabled { opacity: 0.6; }
+
+.ach-btn-ready {
+  background: linear-gradient(135deg, #E8C55A 0%, #ff9a3c 55%, #E8C55A 100%);
+  background-size: 200% auto;
+  color: #0a0a14;
+  animation: achBtnPulse 2s ease-in-out infinite,
+             premiumBtnGradient 4s ease infinite;
+  box-shadow: 0 3px 14px rgba(232,197,90,0.4);
+}
+.ach-btn-ready:hover:not(:disabled) {
+  transform: scale(1.04);
+  box-shadow: 0 5px 22px rgba(232,197,90,0.65);
+}
+.ach-btn-ready:active:not(:disabled) { transform: scale(0.97); }
+.ach-btn-ready:disabled {
+  animation: none;
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.ach-btn-claimed {
+  background: rgba(90,232,197,0.09);
+  color: var(--ac2);
+  border: 1px solid rgba(90,232,197,0.22);
+  cursor: default;
+}
+.ach-btn-claimed:disabled { opacity: 0.8; }
+
+/* ── Repost form ── */
+.ach-repost-form {
+  margin-top: 11px;
+}
+
+.ach-repost-row {
+  display: flex;
+  gap: 7px;
+  align-items: stretch;
+}
+
+.ach-repost-input {
+  flex: 1;
+  min-width: 0;
+  background: rgba(8,12,28,0.7);
+  border: 1px solid rgba(90,232,197,0.18);
+  border-radius: 9px;
+  padding: 8px 11px;
+  font-size: 11.5px;
+  font-family: var(--fb);
+  color: var(--tx);
+  outline: none;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.ach-repost-input::placeholder { color: var(--mu); }
+.ach-repost-input:focus {
+  border-color: var(--ac2);
+  box-shadow: 0 0 0 2px rgba(90,232,197,0.14);
+}
+
+.ach-repost-check-btn {
+  flex-shrink: 0;
+  padding: 8px 13px;
+  border-radius: 9px;
+  border: 1px solid rgba(90,232,197,0.35);
+  background: rgba(90,232,197,0.1);
+  color: var(--ac2);
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--fb);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.15s, border-color 0.15s, transform 0.18s cubic-bezier(0.34,1.56,0.64,1);
+  white-space: nowrap;
+}
+.ach-repost-check-btn:hover:not(:disabled) {
+  background: rgba(90,232,197,0.18);
+  border-color: var(--ac2);
+  transform: scale(1.03);
+}
+.ach-repost-check-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.ach-repost-verdict {
+  margin-top: 7px;
+  min-height: 16px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  animation: achFadeIn 0.25s ease both;
+}
+.ach-verdict-ok   { color: var(--ac2); }
+.ach-verdict-fail { color: var(--red); }
+
+/* ── Spinner ── */
+.ach-spin {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(90,232,197,0.25);
+  border-top-color: var(--ac2);
+  border-radius: 50%;
+  animation: achSpin 0.7s linear infinite;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.ach-skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 10px;
+  font-size: 12px;
+  color: var(--mu2);
+}
+
+.ach-empty {
+  padding: 14px 10px;
+  font-size: 12px;
+  color: var(--mu2);
+  text-align: center;
+}
+
+/* ── Spark particle overlay (claim animation) ── */
+.ach-spark-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ach-spark-particle {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--ac);
+  animation: achParticle 0.9s cubic-bezier(0.2,0.8,0.4,1) both;
+  top: 50%;
+  left: 50%;
+  margin-top: -3px;
+  margin-left: -3px;
+  box-shadow: 0 0 6px var(--ac);
+}
+.ach-spark-particle:nth-child(odd)  { background: var(--vl2); box-shadow: 0 0 6px var(--vl2); }
+.ach-spark-particle:nth-child(3n)   { background: var(--ac2); box-shadow: 0 0 6px var(--ac2); }
+
 

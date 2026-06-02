@@ -204,6 +204,16 @@ document.addEventListener('DOMContentLoaded', function () {
         if (pulseBtn.dataset.settings === 'privacy') showPrivacy();
         return;
       }
+      var claimAchBtn = event.target.closest('[data-claim-ach]');
+      if (claimAchBtn && !claimAchBtn.disabled) {
+        doClaimAchievement(claimAchBtn.dataset.claimAch);
+        return;
+      }
+      var verifyRepostBtn = event.target.closest('[data-verify-repost]');
+      if (verifyRepostBtn && !verifyRepostBtn.disabled) {
+        doVerifyRepost(verifyRepostBtn.dataset.verifyRepost);
+        return;
+      }
       var logoutBtn = event.target.closest('[data-logout]');
       if (logoutBtn) doLogout();
     });
@@ -1470,6 +1480,17 @@ function profileHTML(sfx) {
     + '<div class="wcrd"><div><div class="wamt">' + (Number(PROFILE.spk_balance) || 0).toLocaleString() + ' <small>SPK</small></div><div class="wsub">' + T('availableBalance') + '</div></div>'
     + '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--ac);opacity:.55"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8L2 7h20l-6-4z"/></svg></div>'
     + '<div class="divider"></div>'
+    + '<div class="ach-section" id="achSec-' + sfx + '">'
+    + '<button type="button" class="ach-toggle" id="achToggle-' + sfx + '">'
+    + '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--ac)"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'
+    + '<span>Достижения</span>'
+    + '<svg class="ach-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>'
+    + '</button>'
+    + '<div class="ach-body" id="achBody-' + sfx + '">'
+    + '<div class="ach-list" id="achList-' + sfx + '"><div class="ach-skeleton-row"><span class="ach-spin"></span> Загрузка...</div></div>'
+    + '</div>'
+    + '</div>'
+    + '<div class="divider"></div>'
     + '<div class="stitle" style="margin-top:14px">' + T('settings') + '</div>'
     + '<div style="display:flex;flex-direction:column;gap:2px">'
     /* Theme Studio row */
@@ -1503,14 +1524,18 @@ function renderProfile() {
     dp.innerHTML = profileHTML('D');
     if (window.ProfileEditEngine) ProfileEditEngine.initSection('D');
     initMyIdeasToggle('D');
+    initAchievementsToggle('D');
   }
   var mb = document.getElementById('mobProfInner');
   if (mb) {
     mb.innerHTML = profileHTML('M');
     if (window.ProfileEditEngine) ProfileEditEngine.initSection('M');
     initMyIdeasToggle('M');
+    initAchievementsToggle('M');
   }
   renderMyIdeas();
+  renderAchievements('D');
+  renderAchievements('M');
 }
 
 function initMyIdeasToggle(sfx) {
@@ -1523,6 +1548,238 @@ function initMyIdeasToggle(sfx) {
       toggle.classList.toggle('open', !open);
     };
   }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ДОСТИЖЕНИЯ — toggle, render, claim, repost verify
+   ═══════════════════════════════════════════════════════════ */
+
+function initAchievementsToggle(sfx) {
+  var toggle = document.getElementById('achToggle-' + sfx);
+  var body   = document.getElementById('achBody-' + sfx);
+  if (toggle && body) {
+    toggle.onclick = function () {
+      var open = body.classList.contains('open');
+      body.classList.toggle('open', !open);
+      toggle.classList.toggle('open', !open);
+    };
+  }
+}
+
+var ACH_DEFS = [
+  {
+    id:      'fill_profile',
+    title:   'Заполненный профиль',
+    desc:    'Укажите уникальный никнейм и заполните Bio',
+    reward:  100,
+    icon:    '👤',
+  },
+  {
+    id:      'create_5_ideas',
+    title:   'Генератор стартапов',
+    desc:    'Опубликуйте минимум 5 идей на SPARK',
+    reward:  100,
+    icon:    '💡',
+  },
+  {
+    id:      'adv_repost',
+    title:   'Амбассадор SPARK',
+    desc:    'Поделитесь ссылкой на SPARK в соцсетях и пройдите AI-проверку',
+    reward:  50,
+    icon:    '📢',
+  },
+];
+
+function achCardHTML(ach, state, sfx, extra) {
+  extra = extra || {};
+  var lockSvg  = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+  var checkSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
+  var starSvg  = '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
+
+  var btn = '';
+  if (state === 'claimed') {
+    btn = '<button class="ach-btn ach-btn-claimed" disabled>' + checkSvg + ' Получено</button>';
+  } else if (state === 'ready') {
+    btn = '<button class="ach-btn ach-btn-ready" data-claim-ach="' + ach.id + '">' + starSvg + ' Забрать ' + ach.reward + ' SPK</button>';
+  } else {
+    btn = '<button class="ach-btn ach-btn-locked" disabled>' + lockSvg + ' Выполните условия</button>';
+  }
+
+  var progressHtml = '';
+  if (ach.id === 'create_5_ideas' && state !== 'claimed') {
+    var cnt = Math.min(extra.ideas_count || 0, 5);
+    var pct = Math.round(cnt / 5 * 100);
+    progressHtml = '<div class="ach-progress"><div class="ach-progress-bar" style="width:' + pct + '%"></div></div>'
+      + '<div class="ach-progress-label">' + cnt + ' / 5 идей</div>';
+  }
+
+  var repostFormHtml = '';
+  if (ach.id === 'adv_repost' && state === 'locked') {
+    repostFormHtml = '<div class="ach-repost-form">'
+      + '<div class="ach-repost-row">'
+      + '<input type="url" class="ach-repost-input" id="achRepostInput-' + sfx + '" placeholder="https://x.com/user/status/123…" autocomplete="off" spellcheck="false">'
+      + '<button class="ach-repost-check-btn" data-verify-repost="' + sfx + '">Проверить</button>'
+      + '</div>'
+      + '<div class="ach-repost-verdict" id="achRepostVerdict-' + sfx + '"></div>'
+      + '</div>';
+  }
+
+  return '<div class="ach-card ach-card-' + state + '">'
+    + '<div class="ach-card-top">'
+    + '<div class="ach-icon">' + ach.icon + '</div>'
+    + '<div class="ach-info">'
+    + '<div class="ach-title">' + ach.title + '</div>'
+    + '<div class="ach-desc">' + ach.desc + '</div>'
+    + '</div>'
+    + '<div class="ach-reward">+' + ach.reward + '<span class="ach-spk-lbl"> SPK</span></div>'
+    + '</div>'
+    + progressHtml
+    + repostFormHtml
+    + '<div class="ach-btn-row">' + btn + '</div>'
+    + '</div>';
+}
+
+async function renderAchievements(sfx) {
+  var container = document.getElementById('achList-' + sfx);
+  if (!container) return;
+
+  if (!supa || !ME) {
+    container.innerHTML = '<div class="ach-empty">Войдите в аккаунт, чтобы получать достижения</div>';
+    return;
+  }
+
+  var r = await safeSupabaseCall('database', function () {
+    return supa.rpc('get_achievements_status');
+  }, { silent: true });
+
+  if (!r.ok || !r.data || !r.data.data || !r.data.data.success) {
+    container.innerHTML = '<div class="ach-empty">Не удалось загрузить достижения</div>';
+    return;
+  }
+
+  var st = r.data.data.data;
+  var claimedIds = Array.isArray(st.claimed_ids) ? st.claimed_ids : [];
+
+  var html = ACH_DEFS.map(function (ach) {
+    var claimed = claimedIds.indexOf(ach.id) !== -1;
+    var ready   = false;
+    if      (ach.id === 'fill_profile')   ready = !!st.profile_filled;
+    else if (ach.id === 'create_5_ideas') ready = (st.ideas_count || 0) >= 5;
+    else if (ach.id === 'adv_repost')     ready = !!st.has_approved_repost;
+    var state = claimed ? 'claimed' : (ready ? 'ready' : 'locked');
+    return achCardHTML(ach, state, sfx, { ideas_count: st.ideas_count || 0 });
+  }).join('');
+
+  container.innerHTML = html;
+}
+
+async function doClaimAchievement(achId) {
+  if (!supa) return;
+
+  // Disable all matching claim buttons immediately (anti-double-click)
+  document.querySelectorAll('[data-claim-ach="' + achId + '"]').forEach(function (b) {
+    b.disabled = true;
+    b.textContent = '⏳ Начисляем...';
+  });
+
+  var r = await safeSupabaseCall('database', function () {
+    return supa.rpc('claim_achievement', { p_achievement_id: achId });
+  }, { silent: true });
+
+  var result = r.ok && r.data && r.data.data ? r.data.data : null;
+
+  if (result && result.success) {
+    PROFILE.spk_balance = Number(result.new_balance) || PROFILE.spk_balance;
+    updateHeader();
+    achSparkEffect();
+    toast('🏆 Достижение разблокировано! +' + result.reward + ' SPK!', 'var(--ac)');
+    renderAchievements('D');
+    renderAchievements('M');
+  } else {
+    var msg = result && result.message;
+    var text = msg === 'already_claimed'          ? 'Ачивка уже получена'
+             : msg === 'condition_not_met_bio'     ? 'Заполните Bio в профиле'
+             : msg === 'condition_not_met_username' ? 'Задайте уникальный никнейм'
+             : msg === 'condition_not_met_ideas'   ? ('Нужно ' + (5 - (result && result.current_count || 0)) + ' больше идей')
+             : msg === 'condition_not_met_repost'  ? 'Сначала пройдите AI-проверку репоста'
+             : 'Не удалось получить достижение';
+    toast(text, 'var(--red)');
+    // Re-enable buttons
+    renderAchievements('D');
+    renderAchievements('M');
+  }
+}
+
+async function doVerifyRepost(sfx) {
+  var input   = document.getElementById('achRepostInput-' + sfx);
+  var verdict = document.getElementById('achRepostVerdict-' + sfx);
+  var btn     = document.querySelector('[data-verify-repost="' + sfx + '"]');
+  if (!input || !verdict || !btn) return;
+
+  var link = input.value.trim();
+  if (!link) {
+    verdict.innerHTML = '<span class="ach-verdict-fail">Вставьте ссылку на пост</span>';
+    return;
+  }
+
+  // Basic URL check on client side
+  try { new URL(link); } catch (_) {
+    verdict.innerHTML = '<span class="ach-verdict-fail">Некорректная ссылка</span>';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="ach-spin"></span> ИИ проверяет…';
+  verdict.innerHTML = '';
+
+  var r = await callEdgeFunction('verify-repost', { repost_link: link });
+
+  btn.disabled = false;
+  btn.textContent = 'Проверить';
+
+  if (!r.ok) {
+    var errMsg = r.status === 429
+      ? 'Подождите ' + (r.data && r.data.wait_seconds || 300) + ' сек. перед следующей попыткой'
+      : (r.status === 401 ? 'Необходимо войти в аккаунт' : 'Ошибка сервера, попробуйте позже');
+    verdict.innerHTML = '<span class="ach-verdict-fail">' + escapeHTML(errMsg) + '</span>';
+    return;
+  }
+
+  var data = r.data || {};
+
+  if (data.message === 'already_approved' || data.status === 'approved') {
+    verdict.innerHTML = '<span class="ach-verdict-ok">✓ Репост подтверждён! Теперь заберите награду.</span>';
+    renderAchievements('D');
+    renderAchievements('M');
+    return;
+  }
+
+  if (data.success) {
+    verdict.innerHTML = '<span class="ach-verdict-ok">✓ ' + escapeHTML(data.reason || 'Репост подтверждён!') + '</span>';
+    renderAchievements('D');
+    renderAchievements('M');
+  } else {
+    verdict.innerHTML = '<span class="ach-verdict-fail">✗ ' + escapeHTML(data.reason || 'Репост не прошёл проверку') + '</span>';
+  }
+}
+
+function achSparkEffect() {
+  var overlay = document.createElement('div');
+  overlay.className = 'ach-spark-overlay';
+  var html = '';
+  for (var i = 0; i < 18; i++) {
+    var angle = (i / 18) * 360;
+    var dist  = 60 + Math.random() * 80;
+    var size  = 4 + Math.random() * 6;
+    var delay = Math.random() * 0.3;
+    html += '<div class="ach-spark-particle" style="'
+      + '--angle:' + angle + 'deg;--dist:' + dist + 'px;'
+      + 'width:' + size + 'px;height:' + size + 'px;'
+      + 'animation-delay:' + delay + 's"></div>';
+  }
+  overlay.innerHTML = html;
+  document.body.appendChild(overlay);
+  setTimeout(function () { overlay.remove(); }, 1200);
 }
 
 async function getUserIdeas() {
