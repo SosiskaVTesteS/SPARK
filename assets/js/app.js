@@ -1726,7 +1726,7 @@ async function doClaimAchievement(achId) {
   // Disable all matching claim buttons immediately (anti-double-click)
   document.querySelectorAll('[data-claim-ach="' + achId + '"]').forEach(function (b) {
     b.disabled = true;
-    b.textContent = '⏳ Начисляем...';
+    b.textContent = '⏳ ' + T('achClaiming');
   });
 
   var r = await safeSupabaseCall('database', function () {
@@ -1776,13 +1776,13 @@ async function doVerifyRepost(sfx) {
   }
 
   btn.disabled = true;
-  btn.innerHTML = '<span class="ach-spin"></span> ИИ проверяет…';
+  btn.innerHTML = '<span class="ach-spin"></span> ' + T('achChecking');
   verdict.innerHTML = '';
 
   var r = await callEdgeFunction('verify-repost', { repost_link: link });
 
   btn.disabled = false;
-  btn.textContent = 'Проверить';
+  btn.textContent = T('achCheckBtn');
 
   if (!r.ok) {
     var errMsg = r.status === 429
@@ -1858,18 +1858,178 @@ async function renderMyIdeas() {
   ['D', 'M'].forEach(function (sfx) {
     var el = document.getElementById('myIdeasList-' + sfx);
     if (!el) return;
+
     if (list.length === 0) {
       el.innerHTML = '<div style="text-align:center;padding:24px 0;color:var(--mu);font-size:13px">' + T('noMyIdeas') + '</div>';
       return;
     }
-    el.innerHTML = list.map(cardHTML).join('');
+
+    /* Single-card carousel: show one idea, swipe right→left to advance.
+       Dots + hint appear only when there is more than one idea. */
+    var slides = list.map(function (x) {
+      return '<div class="mi-slide">' + cardHTML(x) + '</div>';
+    }).join('');
+
+    var multi = list.length > 1;
+    var dots = '';
+    var hint = '';
+    if (multi) {
+      dots = '<div class="mi-dots" role="tablist">'
+        + list.map(function (_, i) {
+            return '<button type="button" class="mi-dot' + (i === 0 ? ' active' : '')
+              + '" data-mi-dot="' + i + '" aria-label="' + (i + 1) + ' / ' + list.length + '"></button>';
+          }).join('')
+        + '</div>';
+      hint = '<div class="mi-hint">'
+        + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>'
+        + '<span>' + T('myIdeasSwipe') + '</span>'
+        + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>'
+        + '</div>';
+    }
+
+    el.innerHTML = '<div class="mi-carousel' + (multi ? ' mi-multi' : '') + '" data-mi-idx="0" data-mi-count="' + list.length + '">'
+      + '<div class="mi-viewport"><div class="mi-track">' + slides + '</div></div>'
+      + dots
+      + hint
+      + '</div>';
+
+    initMyIdeasCarousel(el.querySelector('.mi-carousel'));
   });
-  
+
   // Animate SVG graphs for user ideas using IntersectionObserver
   ['D', 'M'].forEach(function (sfx) {
     var el = document.getElementById('myIdeasList-' + sfx);
     if (el) animateAllGraphs(el);
   });
+}
+
+/* ── My Ideas carousel: swipe + dots navigation ─────────────────────────── */
+function initMyIdeasCarousel(root) {
+  if (!root) return;
+  var track = root.querySelector('.mi-track');
+  var count = parseInt(root.dataset.miCount, 10) || 1;
+  if (!track || count <= 1) return;
+
+  var idx       = 0;
+  var dragging  = false;
+  var startX    = 0;
+  var startY    = 0;
+  var deltaX    = 0;
+  var width     = 0;
+  var moved     = false;          // became a real horizontal drag
+  var lockedDir = null;           // 'x' | 'y' | null
+
+  function setTransition(on) {
+    track.style.transition = on ? 'transform .42s cubic-bezier(0.22, 1, 0.36, 1)' : 'none';
+  }
+  function snap() {
+    setTransition(true);
+    track.style.transform = 'translateX(' + (-idx * 100) + '%)';
+    root.dataset.miIdx = idx;
+    root.querySelectorAll('.mi-dot').forEach(function (d, i) {
+      d.classList.toggle('active', i === idx);
+    });
+    // (re)draw any graphs that just became visible
+    if (typeof animateAllGraphs === 'function') animateAllGraphs(root);
+  }
+  function go(to) {
+    idx = Math.max(0, Math.min(count - 1, to));
+    snap();
+  }
+
+  /* Dot navigation */
+  root.querySelectorAll('.mi-dot').forEach(function (dot) {
+    dot.addEventListener('click', function () {
+      triggerVibration(8);
+      go(parseInt(dot.dataset.miDot, 10) || 0);
+    });
+  });
+
+  /* Pointer-based swipe (covers touch + mouse on modern browsers) */
+  var vp = root.querySelector('.mi-viewport');
+  if (!vp) return;
+
+  var usePointer = !!window.PointerEvent;
+
+  function bindDragListeners() {
+    if (usePointer) {
+      window.addEventListener('pointermove', onMove, { passive: false });
+      window.addEventListener('pointerup', onUp);
+      window.addEventListener('pointercancel', onUp);
+    } else {
+      window.addEventListener('touchmove', onMoveTouch, { passive: false });
+      window.addEventListener('touchend', onUp);
+      window.addEventListener('touchcancel', onUp);
+    }
+  }
+  function unbindDragListeners() {
+    if (usePointer) {
+      window.removeEventListener('pointermove', onMove, { passive: false });
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+    } else {
+      window.removeEventListener('touchmove', onMoveTouch, { passive: false });
+      window.removeEventListener('touchend', onUp);
+      window.removeEventListener('touchcancel', onUp);
+    }
+  }
+
+  function onDown(e) {
+    if (e.button !== undefined && e.button !== 0) return; // ignore non-primary mouse
+    dragging  = true;
+    moved     = false;
+    lockedDir = null;
+    startX    = e.clientX;
+    startY    = e.clientY;
+    deltaX    = 0;
+    width     = vp.clientWidth || 1;
+    setTransition(false);
+    bindDragListeners();
+  }
+  function onMove(e) {
+    if (!dragging) return;
+    var dx = e.clientX - startX;
+    var dy = e.clientY - startY;
+    if (lockedDir === null) {
+      if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+      lockedDir = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+    }
+    if (lockedDir === 'y') { dragging = false; unbindDragListeners(); return; } // let vertical scroll happen
+    if (e.cancelable) e.preventDefault();
+    moved  = true;
+    var atStart = idx === 0 && dx > 0;
+    var atEnd   = idx === count - 1 && dx < 0;
+    deltaX = (atStart || atEnd) ? dx * 0.32 : dx;          // rubber-band at the ends
+    var pct = (-idx * width + deltaX) / width * 100;
+    track.style.transform = 'translateX(' + pct + '%)';
+  }
+  function onMoveTouch(e) { if (e.touches[0]) onMove(e.touches[0]); }
+  function onUp() {
+    unbindDragListeners();
+    if (!dragging) return;
+    dragging = false;
+    var threshold = Math.min(width * 0.22, 90);
+    if (deltaX <= -threshold && idx < count - 1)      idx++;
+    else if (deltaX >= threshold && idx > 0)          idx--;
+    snap();
+    if (moved) suppressNextClick();
+  }
+  /* Prevent the click that ends a drag from triggering card actions */
+  function suppressNextClick() {
+    var blocker = function (ev) {
+      ev.stopPropagation();
+      ev.preventDefault();
+      vp.removeEventListener('click', blocker, true);
+    };
+    vp.addEventListener('click', blocker, true);
+    setTimeout(function () { vp.removeEventListener('click', blocker, true); }, 350);
+  }
+
+  if (usePointer) {
+    vp.addEventListener('pointerdown', onDown);
+  } else {
+    vp.addEventListener('touchstart', function (e) { if (e.touches[0]) onDown(e.touches[0]); }, { passive: true });
+  }
 }
 
 function toggleDeskProf() {

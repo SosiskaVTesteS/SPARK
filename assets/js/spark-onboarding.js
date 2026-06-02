@@ -20,6 +20,15 @@
     _lang = l;
     try { localStorage.setItem('spark_lang', l); } catch(e) {}
     if (window.LANG !== undefined) window.LANG = l;
+    /* Keep the underlying auth screen (login / register / all sub-steps) in sync */
+    _syncAppLang();
+  }
+  /* Re-translate the main app's static UI (auth screen + sub-steps) to match _lang.
+     Light-weight: applyStaticI18n() is null-safe and re-renders all auth labels. */
+  function _syncAppLang() {
+    if (typeof window.applyStaticI18n === 'function') {
+      try { window.applyStaticI18n(); } catch (e) {}
+    }
   }
 
   /* ─── Ключи хранилища ─── */
@@ -477,6 +486,8 @@
     document.documentElement.classList.add('auth-active');
     var as = document.getElementById('authScreen');
     if (as) as.classList.remove('gone');
+    /* Make sure the auth screen reflects the language chosen during onboarding */
+    _syncAppLang();
     setTimeout(function() {
       var tabId = (tab === 'signin') ? 'tabSI' : 'tabSU';
       var t = document.getElementById(tabId);

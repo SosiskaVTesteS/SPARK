@@ -1685,6 +1685,83 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
   opacity: 1;
 }
 
+/* ── My Ideas — single-card swipe carousel ── */
+.mi-carousel {
+  position: relative;
+  width: 100%;
+}
+.mi-viewport {
+  overflow: hidden;
+  border-radius: 16px;
+  touch-action: pan-y;          /* allow vertical scroll, we handle horizontal */
+}
+.mi-track {
+  display: flex;
+  will-change: transform;
+}
+.mi-slide {
+  flex: 0 0 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  /* breathing room so the active card's shadow isn't clipped by the viewport */
+  padding: 4px 3px;
+}
+/* When there are multiple ideas, hint the swipe affordance with a faint cursor */
+.mi-multi .mi-viewport { cursor: grab; }
+.mi-multi .mi-viewport:active { cursor: grabbing; }
+
+/* Dots */
+.mi-dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 7px;
+  margin-top: 12px;
+}
+.mi-dot {
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.16);
+  cursor: pointer;
+  transition: width 0.32s var(--ease-spring),
+              background 0.25s ease,
+              box-shadow 0.25s ease;
+}
+.mi-dot:hover { background: rgba(255,255,255,0.32); }
+.mi-dot.active {
+  width: 20px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--ac2), var(--ac));
+  box-shadow: 0 0 8px rgba(90,232,197,0.45);
+}
+
+/* Swipe hint */
+.mi-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--mu2);
+  user-select: none;
+}
+.mi-hint svg { color: var(--ac2); opacity: 0.65; }
+.mi-hint svg:first-child { animation: miNudgeL 1.8s ease-in-out infinite; }
+.mi-hint svg:last-child  { animation: miNudgeR 1.8s ease-in-out infinite; }
+@keyframes miNudgeL { 0%,100%{transform:translateX(0);opacity:.4} 50%{transform:translateX(-2px);opacity:.85} }
+@keyframes miNudgeR { 0%,100%{transform:translateX(0);opacity:.4} 50%{transform:translateX(2px);opacity:.85} }
+
+@media (prefers-reduced-motion: reduce) {
+  .mi-track { transition: none !important; }
+  .mi-hint svg { animation: none !important; }
+}
+
 /* ════════════════════════════════════════════════
    V3 — PROFILE EDIT SECTION
    ════════════════════════════════════════════════ */

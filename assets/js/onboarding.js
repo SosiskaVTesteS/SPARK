@@ -660,6 +660,21 @@ var SparkTour = (function () {
       case 'profile':
         svg = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="url(#t3-icon-grad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>';
         break;
+      case 'profile-edit':
+        svg = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="url(#t3-icon-grad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
+        break;
+      case 'profile-myideas':
+        svg = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="url(#t3-icon-grad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A5 5 0 0 0 8 8c0 1 .3 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"></path><line x1="9" y1="18" x2="15" y2="18"></line><line x1="10" y1="22" x2="14" y2="22"></line></svg>';
+        break;
+      case 'profile-ach':
+        svg = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="url(#t3-icon-grad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>';
+        break;
+      case 'profile-notif':
+        svg = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="url(#t3-icon-grad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>';
+        break;
+      case 'profile-privacy':
+        svg = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="url(#t3-icon-grad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>';
+        break;
       case 'finish':
         svg = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="url(#t3-icon-grad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
         break;
@@ -801,27 +816,61 @@ var SparkTour = (function () {
         )
       },
       {
-        id:'profile', el:'#btnProfDesk', elMob:'#panel-profile',
+        /* Opens the profile panel and spotlights the identity header */
+        id:'profile', panel:'profile',
+        el:'#dpPanel .phero', elMob:'#mobProfInner .phero',
         t:_T('👤 Your Profile','👤 Ваш профиль'),
         b:_T(
-          'Edit <span class="spk-t3-hl">Username</span>, <span class="spk-t3-hl">Bio</span>, avatar colour, and theme. The <span class="spk-t3-hl">Theme Studio</span> packs 16 presets — Cosmos, Cyberpunk, Aurora, and more — plus custom colour pickers.',
-          'Измените <span class="spk-t3-hl">Никнейм</span> (<span class="spk-t3-hl">Username</span>), <span class="spk-t3-hl">Bio</span>, <span class="spk-t3-hl">цвет аватара</span> и <span class="spk-t3-hl">тему</span>. В <span class="spk-t3-hl">Студии тем</span> доступно <span class="spk-t3-hl">16 пресетов</span> (Космос, Киберпанк, Аврора и др.) и ручная настройка.'
+          'This is your <span class="spk-t3-hl">command centre</span>. Here live your stats, wallet, achievements and settings. We\'ll walk through each section — let\'s go.',
+          'Это ваш <span class="spk-t3-hl">центр управления</span>. Здесь — ваша статистика, кошелёк, достижения и настройки. Пройдёмся по каждому разделу — начнём.'
         )
       },
       {
-        id:'achievements', el:'#dpPanel', elMob:'#mobProfInner',
-        t:_T('🏆 Achievements — Earn Bonus SPK','🏆 Достижения — бонусный SPK'),
+        id:'profile-edit', panel:'profile',
+        el:'#peditSec-D', elMob:'#peditSec-M',
+        prep:function(mob){ _prepSection('pedit', mob); },
+        t:_T('✏️ Edit Profile','✏️ Редактирование профиля'),
         b:_T(
-          'Complete missions to earn <span class="spk-t3-hl">bonus SPK</span> right away:<br>'
-          + '<span class="spk-t3-hl">👤 Fill your profile</span> → <span class="spk-t3-hl">+100 SPK</span><br>'
-          + '<span class="spk-t3-hl">💡 Post 5 ideas</span> → <span class="spk-t3-hl">+100 SPK</span><br>'
-          + '<span class="spk-t3-hl">📢 Share SPARK on social media</span> → <span class="spk-t3-hl">+50 SPK</span><br>'
-          + 'Open your profile and scroll to <span class="spk-t3-hl">Achievements</span> to track your progress and claim rewards.',
-          'Выполняйте задания и сразу получайте <span class="spk-t3-hl">бонусный SPK</span>:<br>'
-          + '<span class="spk-t3-hl">👤 Заполните профиль</span> → <span class="spk-t3-hl">+100 SPK</span><br>'
-          + '<span class="spk-t3-hl">💡 Опубликуйте 5 идей</span> → <span class="spk-t3-hl">+100 SPK</span><br>'
-          + '<span class="spk-t3-hl">📢 Поделитесь SPARK в соцсетях</span> → <span class="spk-t3-hl">+50 SPK</span><br>'
-          + 'Откройте профиль и прокрутите до раздела <span class="spk-t3-hl">Достижения</span>, чтобы отслеживать прогресс и забрать награды.'
+          'Set a unique <span class="spk-t3-hl">username</span>, write a <span class="spk-t3-hl">Bio</span>, pick an <span class="spk-t3-hl">avatar colour</span> and open the <span class="spk-t3-hl">Theme Studio</span> (16 presets + custom colours). Filling this earns you <span class="spk-t3-hl">+100 SPK</span>.',
+          'Задайте уникальный <span class="spk-t3-hl">никнейм</span>, напишите <span class="spk-t3-hl">Bio</span>, выберите <span class="spk-t3-hl">цвет аватара</span> и откройте <span class="spk-t3-hl">Студию тем</span> (16 пресетов + свои цвета). За заполнение — <span class="spk-t3-hl">+100 SPK</span>.'
+        )
+      },
+      {
+        id:'profile-myideas', panel:'profile',
+        el:'#myideasSec-D', elMob:'#myideasSec-M',
+        prep:function(mob){ _prepSection('myideas', mob); },
+        t:_T('💡 My Ideas','💡 Мои идеи'),
+        b:_T(
+          'Every idea you publish lives here. They appear as a <span class="spk-t3-hl">card deck</span> — swipe right-to-left (or tap the dots) to browse them one by one.',
+          'Все ваши опубликованные идеи — здесь. Они показаны <span class="spk-t3-hl">колодой карточек</span>: листайте справа налево (или нажимайте точки), чтобы просматривать их по одной.'
+        )
+      },
+      {
+        id:'profile-ach', panel:'profile',
+        el:'#achSec-D', elMob:'#achSec-M',
+        prep:function(mob){ _prepSection('ach', mob); },
+        t:_T('🏆 Achievements — Bonus SPK','🏆 Достижения — бонусный SPK'),
+        b:_T(
+          'Complete missions for instant <span class="spk-t3-hl">bonus SPK</span>: fill profile <span class="spk-t3-hl">+100</span>, post 5 ideas <span class="spk-t3-hl">+100</span>, share SPARK on social media <span class="spk-t3-hl">+50</span>. Track progress and claim rewards right here.',
+          'Выполняйте задания и получайте <span class="spk-t3-hl">бонусный SPK</span>: заполните профиль <span class="spk-t3-hl">+100</span>, опубликуйте 5 идей <span class="spk-t3-hl">+100</span>, поделитесь SPARK в соцсетях <span class="spk-t3-hl">+50</span>. Прогресс и награды — прямо здесь.'
+        )
+      },
+      {
+        id:'profile-notif', panel:'profile',
+        el:'#dpPanel [data-settings="notifications"]', elMob:'#mobProfInner [data-settings="notifications"]',
+        t:_T('🔔 Notifications','🔔 Уведомления'),
+        b:_T(
+          'Fine-tune your signals: <span class="spk-t3-hl">terminal vibration</span>, <span class="spk-t3-hl">important announcements</span> by email and <span class="spk-t3-hl">new-post alerts</span> in the feed.',
+          'Настройте сигналы: <span class="spk-t3-hl">вибрацию</span>, <span class="spk-t3-hl">важные анонсы</span> на почту и <span class="spk-t3-hl">уведомления о новых постах</span> в ленте.'
+        )
+      },
+      {
+        id:'profile-privacy', panel:'profile',
+        el:'#dpPanel [data-settings="privacy"]', elMob:'#mobProfInner [data-settings="privacy"]',
+        t:_T('🔒 Privacy & Security','🔒 Приватность и безопасность'),
+        b:_T(
+          'Manage your <span class="spk-t3-hl">access key</span> (password) and control your account. Everything about your <span class="spk-t3-hl">security</span> lives in one place.',
+          'Управляйте <span class="spk-t3-hl">ключом доступа</span> (паролем) и своим аккаунтом. Всё о вашей <span class="spk-t3-hl">безопасности</span> — в одном месте.'
         )
       },
       {
@@ -1448,12 +1497,51 @@ var SparkTour = (function () {
   /* ─────────────────────────────────────────────────────
      RENDER A STEP
   ───────────────────────────────────────────────────── */
+  /* ── Profile-panel orchestration (Tour 2.0) ───────────────────────────
+     For profile steps we force the profile panel open so the spotlighted
+     sub-section is actually on-screen, and auto-expand collapsible blocks. */
+  function _openProfilePanel(mob) {
+    if (mob) {
+      if (typeof window.openPanel === 'function') window.openPanel('profile');
+    } else {
+      var ov = document.getElementById('dpOverlay');
+      var b  = document.getElementById('btnProfDesk');
+      if (ov) {
+        ov.classList.add('open');
+        /* The drawer is z-index:90 (own stacking context). Lift it between the
+           tour's dark panels (99980) and the ring (99982) so the spotlighted
+           section + neon ring render above the dimmed backdrop. */
+        ov.style.zIndex = '99981';
+      }
+      if (b)  b.classList.add('active');
+    }
+  }
+  function _closeProfilePanel() {
+    /* desktop only — mobile panels are swapped automatically */
+    var ov = document.getElementById('dpOverlay');
+    var b  = document.getElementById('btnProfDesk');
+    if (ov) { ov.classList.remove('open'); ov.style.zIndex = ''; }
+    if (b)  b.classList.remove('active');
+  }
+  function _expandSection(toggleId, bodyId) {
+    var body   = document.getElementById(bodyId);
+    var toggle = document.getElementById(toggleId);
+    if (body && !body.classList.contains('open'))   body.classList.add('open');
+    if (toggle && !toggle.classList.contains('open')) toggle.classList.add('open');
+  }
+  /* base: 'pedit' | 'myideas' | 'ach' → expands the D or M variant */
+  function _prepSection(base, mob) {
+    var sfx = mob ? 'M' : 'D';
+    _expandSection(base + 'Toggle-' + sfx, base + 'Body-' + sfx);
+  }
+
   function _render(idx) {
     /* clean up previous step */
     _cleanStep();
     _idx = idx;
     var step   = _steps[idx];
     var mob    = _isMob();
+    var needsProfile = step.panel === 'profile';
 
     /* Switch mobile panel programmatically to reveal the element */
     if (mob && typeof window.openPanel === 'function') {
@@ -1461,8 +1549,16 @@ var SparkTour = (function () {
       if (step.id === 'trending') targetPanel = 'trends';
       else if (step.id === 'leaderboard') targetPanel = 'leaders';
       else if (step.id === 'chats') targetPanel = 'chats';
-      else if (step.id === 'profile') targetPanel = 'profile';
+      else if (needsProfile) targetPanel = 'profile';
       window.openPanel(targetPanel);
+    }
+
+    /* Force-open the profile panel for profile steps; close it otherwise (desktop) */
+    if (needsProfile) {
+      _openProfilePanel(mob);
+      if (typeof step.prep === 'function') { try { step.prep(mob); } catch(e){} }
+    } else if (!mob) {
+      _closeProfilePanel();
     }
 
     var selStr = mob ? step.elMob : step.el;
@@ -1558,6 +1654,9 @@ var SparkTour = (function () {
   function _finish() {
     _mark();
     _cleanStep();
+
+    /* leave the profile panel closed when the tour ends (desktop) */
+    if (!_isMob()) _closeProfilePanel();
 
     /* fade out overlay */
     if (_overlay) {
