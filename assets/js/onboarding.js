@@ -1503,25 +1503,64 @@ var SparkTour = (function () {
   function _openProfilePanel(mob) {
     if (mob) {
       if (typeof window.openPanel === 'function') window.openPanel('profile');
+      /* The mobile profile panel is z-index:400 (own stacking context), so its
+         content would sit UNDER the tour's dark panels (99980). Lift it between
+         the panels (99980) and the ring (99982) so the spotlighted row + neon
+         ring are visible above the dimmed backdrop. */
+      var mp = document.getElementById('panel-profile');
+      if (mp) mp.style.zIndex = '99981';
+      /* Add scroll room so even the bottom-most rows (Notifications, Privacy)
+         can be scrolled up into the band above the bottom sheet. */
+      var inner = document.getElementById('mobProfInner');
+      if (inner) inner.style.paddingBottom = '65vh';
     } else {
       var ov = document.getElementById('dpOverlay');
       var b  = document.getElementById('btnProfDesk');
       if (ov) {
         ov.classList.add('open');
-        /* The drawer is z-index:90 (own stacking context). Lift it between the
-           tour's dark panels (99980) and the ring (99982) so the spotlighted
-           section + neon ring render above the dimmed backdrop. */
+        /* Same idea on desktop: the drawer is z-index:90. */
         ov.style.zIndex = '99981';
       }
       if (b)  b.classList.add('active');
     }
   }
   function _closeProfilePanel() {
-    /* desktop only — mobile panels are swapped automatically */
+    /* desktop drawer */
     var ov = document.getElementById('dpOverlay');
     var b  = document.getElementById('btnProfDesk');
     if (ov) { ov.classList.remove('open'); ov.style.zIndex = ''; }
     if (b)  b.classList.remove('active');
+    /* mobile profile panel z-index lift + scroll-room padding */
+    var mp = document.getElementById('panel-profile');
+    if (mp) mp.style.zIndex = '';
+    var inner = document.getElementById('mobProfInner');
+    if (inner) inner.style.paddingBottom = '';
+  }
+
+  /* Scroll a profile target into the visible band ABOVE the mobile bottom sheet,
+     so steps near the bottom of the panel (notifications, privacy) aren't hidden. */
+  function _scrollableAncestor(el) {
+    var n = el && el.parentElement;
+    while (n && n !== document.body) {
+      var oy = getComputedStyle(n).overflowY;
+      if ((oy === 'auto' || oy === 'scroll') && n.scrollHeight > n.clientHeight + 2) return n;
+      n = n.parentElement;
+    }
+    return document.scrollingElement || document.documentElement;
+  }
+  function _revealAboveSheet(el) {
+    if (!el) return;
+    var sheetH  = _sheet ? _sheet.getBoundingClientRect().height : Math.round(window.innerHeight * 0.42);
+    var topSafe = 78;                                   // clear the top app bar
+    var avail   = window.innerHeight - sheetH - topSafe;
+    if (avail < 90) avail = 90;
+    var er = el.getBoundingClientRect();
+    var desiredTop = topSafe + Math.max(0, (avail - er.height) / 2);  // centre within the band
+    var delta = er.top - desiredTop;
+    if (Math.abs(delta) < 6) return;
+    var sc = _scrollableAncestor(el);
+    if (sc && typeof sc.scrollBy === 'function') sc.scrollBy({ top: delta, behavior: 'smooth' });
+    else window.scrollBy({ top: delta, behavior: 'smooth' });
   }
   function _expandSection(toggleId, bodyId) {
     var body   = document.getElementById(bodyId);
@@ -1553,11 +1592,11 @@ var SparkTour = (function () {
       window.openPanel(targetPanel);
     }
 
-    /* Force-open the profile panel for profile steps; close it otherwise (desktop) */
+    /* Force-open the profile panel for profile steps; close/restore it otherwise */
     if (needsProfile) {
       _openProfilePanel(mob);
       if (typeof step.prep === 'function') { try { step.prep(mob); } catch(e){} }
-    } else if (!mob) {
+    } else {
       _closeProfilePanel();
     }
 
@@ -1565,8 +1604,11 @@ var SparkTour = (function () {
     var el     = null;
     if (selStr) { try { el = document.querySelector(selStr); } catch(e){} }
 
-    /* Scroll target into view */
-    if (el) el.scrollIntoView({ behavior:'smooth', block:'center', inline:'nearest' });
+    /* Scroll target into view.
+       Mobile profile steps are revealed above the bottom sheet once it's sized. */
+    if (el && !(mob && needsProfile)) {
+      el.scrollIntoView({ behavior:'smooth', block:'center', inline:'nearest' });
+    }
 
     // Start self-healing dynamic tracking immediately
     _target = null;
@@ -1581,6 +1623,11 @@ var SparkTour = (function () {
       document.body.appendChild(_sheet);
       requestAnimationFrame(function(){ _sheet.classList.add('open'); });
       _wireSheetSwipe(_sheet);
+      /* Once the sheet has its final height, lift the profile target into the
+         visible band above it (fixes hidden Notifications / Privacy steps). */
+      if (needsProfile && el) {
+        requestAnimationFrame(function(){ setTimeout(function(){ _revealAboveSheet(el); }, 80); });
+      }
     } else {
       /* ── desktop tooltip ── */
       _tip = _buildTip(step, isFirst, isLast, _steps.length, idx);
@@ -1655,8 +1702,8 @@ var SparkTour = (function () {
     _mark();
     _cleanStep();
 
-    /* leave the profile panel closed when the tour ends (desktop) */
-    if (!_isMob()) _closeProfilePanel();
+    /* reset any profile-panel lift when the tour ends (desktop drawer + mobile panel) */
+    _closeProfilePanel();
 
     /* fade out overlay */
     if (_overlay) {
