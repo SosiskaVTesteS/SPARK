@@ -204,6 +204,15 @@ document.addEventListener('DOMContentLoaded', function () {
         if (pulseBtn.dataset.settings === 'privacy') showPrivacy();
         return;
       }
+      var howToggle = event.target.closest('[data-ach-how]');
+      if (howToggle) {
+        var howBody = document.getElementById('achHow-' + howToggle.dataset.achHow);
+        if (howBody) {
+          var open = howBody.classList.toggle('open');
+          howToggle.classList.toggle('open', open);
+        }
+        return;
+      }
       var copyCodeEl = event.target.closest('[id^="achCode-"]');
       if (copyCodeEl) {
         var codeText = copyCodeEl.querySelector('span') ? copyCodeEl.querySelector('span').textContent : '';
@@ -1627,17 +1636,54 @@ function achCardHTML(ach, state, sfx, extra) {
   if (ach.id === 'adv_repost' && state === 'locked') {
     var userCode = ME ? ('SPARK-' + ME.id.replace(/-/g, '').slice(0, 6).toUpperCase()) : 'SPARK-??????';
     repostFormHtml = '<div class="ach-repost-form">'
-      + '<div class="ach-repost-instruction">'
-      + '<div class="ach-repost-step">1. Опубликуйте пост в VK, Telegram, X или Reddit</div>'
-      + '<div class="ach-repost-step">2. Упомяните <strong>sparksie.vercel.app</strong></div>'
-      + '<div class="ach-repost-step">3. Вставьте в текст поста ваш личный код:</div>'
+
+      /* ── Раскрывающаяся инструкция ── */
+      + '<button type="button" class="ach-how-toggle" data-ach-how="' + sfx + '">'
+      + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>'
+      + ' Инструкция'
+      + '<svg class="ach-how-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>'
+      + '</button>'
+
+      + '<div class="ach-how-body" id="achHow-' + sfx + '">'
+      + '<div class="ach-how-steps">'
+
+      + '<div class="ach-how-step">'
+      + '<div class="ach-how-num">1</div>'
+      + '<div class="ach-how-text">Скопируйте ваш личный код верификации — он уникален и нужен для подтверждения что пост написан именно вами:</div>'
+      + '</div>'
       + '<div class="ach-repost-code" id="achCode-' + sfx + '" title="Нажмите чтобы скопировать">'
       + '<span>' + userCode + '</span>'
       + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'
       + '</div>'
+
+      + '<div class="ach-how-step">'
+      + '<div class="ach-how-num">2</div>'
+      + '<div class="ach-how-text">Создайте <strong>публичный</strong> пост в любой соцсети (ВКонтакте, Telegram-канал, X/Twitter, Reddit). Пост должен содержать:<br>'
+      + '<span class="ach-how-req">• Ссылку на сайт: <strong>sparksie.vercel.app</strong></span>'
+      + '<span class="ach-how-req">• Ваш код: <strong>' + userCode + '</strong></span>'
       + '</div>'
+      + '</div>'
+
+      + '<div class="ach-how-step">'
+      + '<div class="ach-how-num">3</div>'
+      + '<div class="ach-how-text">Скопируйте прямую ссылку на пост (не на канал, а именно на конкретное сообщение). Примеры:<br>'
+      + '<span class="ach-how-example">t.me/ваш_канал/<strong>123</strong></span>'
+      + '<span class="ach-how-example">vk.com/wall-<strong>12345678_99</strong></span>'
+      + '<span class="ach-how-example">x.com/username/status/<strong>123...</strong></span>'
+      + '</div>'
+      + '</div>'
+
+      + '<div class="ach-how-step">'
+      + '<div class="ach-how-num">4</div>'
+      + '<div class="ach-how-text">Вставьте эту ссылку в поле ниже и нажмите <strong>Проверить</strong>.</div>'
+      + '</div>'
+
+      + '</div>'
+      + '</div>'
+
+      /* ── Форма ── */
       + '<div class="ach-repost-row">'
-      + '<input type="url" class="ach-repost-input" id="achRepostInput-' + sfx + '" placeholder="https://t.me/channel/123 или vk.com/wall…" autocomplete="off" spellcheck="false">'
+      + '<input type="url" class="ach-repost-input" id="achRepostInput-' + sfx + '" placeholder="https://t.me/канал/123" autocomplete="off" spellcheck="false">'
       + '<button class="ach-repost-check-btn" data-verify-repost="' + sfx + '">Проверить</button>'
       + '</div>'
       + '<div class="ach-repost-verdict" id="achRepostVerdict-' + sfx + '"></div>'
