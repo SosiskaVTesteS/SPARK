@@ -1808,23 +1808,20 @@ async function renderAchievements(sfx) {
       return achCardHTML(ach, rankData[ach.id], sfx, { profile_filled: !!st.profile_filled });
     }
     // Graceful fallback для случая когда миграция ещё не применена
-    var claimedIds = Array.isArray(st.claimed_ids) ? st.claimed_ids : [];
-    var claimed    = claimedIds.indexOf(ach.id) !== -1;
-    var ready      = false;
-    if      (ach.id === 'fill_profile')  ready = !!st.profile_filled;
-    else if (ach.id === 'create_ideas')  ready = (st.ideas_count || 0) >= 5;
-    else if (ach.id === 'adv_repost')    ready = !!st.has_approved_repost;
+    var claimedIds  = Array.isArray(st.claimed_ids) ? st.claimed_ids : [];
+    var claimedRank = claimedIds.indexOf(ach.id) !== -1 ? 1 : 0;
+    var nxtRank     = claimedRank < 5 ? claimedRank + 1 : null;
     var fakeRd = {
-      current_rank:     claimed ? 1 : 0,
-      next_rank:        claimed ? null : 1,
-      next_rank_reward: ach.ranks[0].reward,
+      current_rank:     claimedRank,
+      next_rank:        nxtRank,
+      next_rank_reward: nxtRank ? ach.ranks[nxtRank - 1].reward : ach.ranks[4].reward,
       progress: {
         bio_length:    0,
         has_username:  !!st.profile_filled,
         avatar_color:  0,
         ideas_count:   st.ideas_count || 0,
         reposts_count: st.has_approved_repost ? 1 : 0,
-        threshold:     ach.ranks[0].threshold || null,
+        threshold:     nxtRank ? (ach.ranks[nxtRank - 1].threshold || null) : null,
       }
     };
     return achCardHTML(ach, fakeRd, sfx, { profile_filled: !!st.profile_filled });
@@ -1964,22 +1961,34 @@ async function doVerifyRepost(sfx) {
     return;
   }
 
-  var data = r.data || {};
+  var data       = r.data || {};
+  var isApproved = data.message === 'already_approved' || data.status === 'approved';
+  var isPending  = !isApproved && data.status === 'pending';
 
-  if (data.message === 'already_approved' || data.status === 'approved') {
-    verdict.innerHTML = '<span class="ach-verdict-ok">' + T('repostOkApproved') + '</span>';
-    renderAchievements('D');
-    renderAchievements('M');
+  if (isApproved || data.success) {
+    // Перерисовываем карточки (счётчик репостов изменился), затем
+    // вставляем вердикт в НОВЫЕ div'ы — старые уничтожены ре-рендером
+    await Promise.all([renderAchievements('D'), renderAchievements('M')]);
+    var okMsg = '<span class="ach-verdict-ok">' + T('repostOkApproved') + '</span>';
+    ['D', 'M'].forEach(function (s) {
+      var v = document.getElementById('achRepostVerdict-' + s);
+      if (v) v.innerHTML = okMsg;
+    });
     return;
   }
 
-  if (data.success) {
-    verdict.innerHTML = '<span class="ach-verdict-ok">✓ ' + escapeHTML(data.reason || '') + '</span>';
-    renderAchievements('D');
-    renderAchievements('M');
-  } else {
-    verdict.innerHTML = '<span class="ach-verdict-fail">✗ ' + escapeHTML(data.reason || '') + '</span>';
+  if (isPending) {
+    // Страница недоступна для автопроверки — заявка в очереди, не ре-рендерим
+    var codeEl = document.getElementById('achCodeVal-' + sfx);
+    var code   = codeEl ? codeEl.textContent : '';
+    verdict.innerHTML = '<span class="ach-verdict-pending">'
+      + escapeHTML(T('repostPending').replace('{code}', code))
+      + '</span>';
+    return;
   }
+
+  // Rejected — показываем причину, ре-рендер не нужен
+  verdict.innerHTML = '<span class="ach-verdict-fail">✗ ' + escapeHTML(data.reason || T('repostErrServer')) + '</span>';
 }
 
 function achSparkEffect() {
