@@ -36,6 +36,16 @@ document.addEventListener('DOMContentLoaded', function () {
       if (event.target === moInvest) closeMo('moInvest');
     });
   }
+  var moContactAuthor = document.getElementById('moContactAuthor');
+  if (moContactAuthor) {
+    moContactAuthor.addEventListener('click', function (event) {
+      if (event.target === moContactAuthor) closeMo('moContactAuthor');
+    });
+  }
+  var caCancel = document.getElementById('caCancel');
+  if (caCancel) caCancel.addEventListener('click', function () { closeMo('moContactAuthor'); });
+  var caConfirm = document.getElementById('caConfirm');
+  if (caConfirm) caConfirm.addEventListener('click', doUnlockContact);
   var reportConfirmModal = document.getElementById('reportConfirmModal');
   if (reportConfirmModal) {
     reportConfirmModal.addEventListener('click', function (event) {
@@ -113,8 +123,22 @@ document.addEventListener('DOMContentLoaded', function () {
     cardsList.addEventListener('click', function (event) {
       var investBtn = event.target.closest('[data-invest-id]');
       if (investBtn) {
-        // Pass ID as string — UUIDs must not be parsed as integers
         openInvest(investBtn.dataset.investId);
+        return;
+      }
+      // Связаться с автором — открыть модалку подтверждения
+      var contactBtn = event.target.closest('[data-contact-author-id]');
+      if (contactBtn && !contactBtn.disabled) {
+        openContactAuthorModal(
+          contactBtn.dataset.contactAuthorId,
+          contactBtn.dataset.contactAuthorName
+        );
+        return;
+      }
+      // Автор уже открыт — перейти в чат
+      var openChatBtn = event.target.closest('[data-open-chat-id]');
+      if (openChatBtn && !openChatBtn.disabled) {
+        _switchToChat(openChatBtn.dataset.openChatId);
         return;
       }
       var reactAddBtn = event.target.closest('.react-add-btn[data-id]');
@@ -1057,6 +1081,185 @@ async function doLogout(skipSignOut) {
   }, 150);
 }
 
+// ── Контакт автора: состояние ожидающей операции ────────────
+var _pendingContactId   = null;
+var _pendingContactName = null;
+
+// Открыть модалку подтверждения покупки контакта
+function openContactAuthorModal(authorId, authorName) {
+  _pendingContactId   = authorId;
+  _pendingContactName = authorName || '?';
+
+  var cost = IDEA_CONTACT_COST;
+  var el = function(id) { return document.getElementById(id); };
+
+  var titleEl = el('caTitle');
+  if (titleEl) titleEl.textContent = T('caTitle');
+
+  var nameEl = el('caAuthorName');
+  if (nameEl) nameEl.textContent = authorName || '?';
+
+  // Аватар — первая буква + инициируем нужный цвет
+  var avEl = el('caAuthorAv');
+  if (avEl) avEl.textContent = (authorName || '?').replace('@', '').charAt(0).toUpperCase();
+
+  var costEl = el('caCostLabel');
+  if (costEl) costEl.textContent = cost + ' SPK';
+
+  var noticeEl = el('caNotice');
+  if (noticeEl) noticeEl.innerHTML = T('caNotice').replace('{cost}', cost);
+
+  var balEl = el('caBalVal');
+  if (balEl) balEl.textContent = (PROFILE.spk_balance || 0).toLocaleString() + ' SPK';
+
+  var balLblEl = el('caBalLabel');
+  if (balLblEl) balLblEl.textContent = T('caBalLabel');
+
+  var confirmEl = el('caConfirm');
+  if (confirmEl) {
+    confirmEl.textContent = T('caConfirmBtn').replace('{cost}', cost);
+    confirmEl.disabled = (PROFILE.spk_balance || 0) < cost;
+  }
+
+  var cancelEl = el('caCancel');
+  if (cancelEl) cancelEl.textContent = T('caCancel');
+
+  var warnEl = el('caWarn');
+  if (warnEl) {
+    if ((PROFILE.spk_balance || 0) < cost) {
+      warnEl.style.display = '';
+      warnEl.textContent = T('caErrBalance');
+    } else {
+      warnEl.style.display = 'none';
+    }
+  }
+
+  openMo('moContactAuthor');
+}
+
+// Выполнить разблокировку контакта
+async function doUnlockContact() {
+  if (!_pendingContactId) return;
+
+  var confirmBtn = document.getElementById('caConfirm');
+  if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = '⏳…'; }
+
+  var cost = IDEA_CONTACT_COST;
+  var authorId   = _pendingContactId;
+  var authorName = _pendingContactName;
+
+  try {
+    if (window.supa && window.ME) {
+      var r = await safeSupabaseCall('database', function () {
+        return supa.rpc('unlock_contact', { p_contact_id: authorId, p_cost: cost });
+      }, { silent: true });
+
+      var result = r.ok && r.data && r.data.data ? r.data.data : null;
+
+      if (!result || !result.success) {
+        var msg = result && result.message;
+        var errText = msg === 'insufficient_balance' ? T('caErrBalance') : T('caErrGeneric');
+        toast(errText, 'var(--red)');
+        if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = T('caConfirmBtn').replace('{cost}', cost); }
+        return;
+      }
+
+      PROFILE.spk_balance = Number(result.new_balance) || PROFILE.spk_balance;
+      updateHeader();
+    } else {
+      // Offline-режим: локальное списание
+      PROFILE.spk_balance = Math.max(0, (PROFILE.spk_balance || 0) - cost);
+      updateHeader();
+    }
+  } catch (e) {
+    toast(T('caErrGeneric'), 'var(--red)');
+    if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = T('caConfirmBtn').replace('{cost}', cost); }
+    return;
+  }
+
+  // Добавляем в множество разблокированных
+  window.UNLOCKED_CONTACT_IDS.add(authorId);
+
+  // Добавляем в список чатов (LocalStorage)
+  if (window.ChatsEngine) {
+    var contacts = (window.ChatsEngine._getContacts ? window.ChatsEngine._getContacts() : []);
+    var alreadyIn = contacts.some(function (c) { return c.id === authorId; });
+    if (!alreadyIn) {
+      contacts.push({
+        id:       authorId,
+        name:     authorName,
+        username: authorName,
+        online:   false,
+        avColor:  0,
+        preview:  ''
+      });
+      if (window.ChatsEngine._saveContacts) window.ChatsEngine._saveContacts(contacts);
+    }
+  }
+
+  closeMo('moContactAuthor');
+  toast(T('caSuccess').replace('{cost}', cost), 'var(--ac)');
+
+  // Обновляем ленту чтобы кнопка на карточке сменилась
+  renderFeed();
+
+  // Переключаемся в чаты
+  setTimeout(function () { _switchToChat(authorId); }, 350);
+}
+
+// Переключить панель на чаты и открыть диалог с userId
+function _switchToChat(userId) {
+  openPanel('chats');
+  if (window.ChatsEngine) {
+    setTimeout(function () { ChatsEngine.selectChannel(userId); }, 100);
+  }
+}
+
+// Синхронизировать разблокированные контакты из БД при старте
+async function syncUnlockedContacts() {
+  if (!window.supa || !window.ME) return;
+  try {
+    var res = await supa
+      .from('unlocked_contacts')
+      .select('contact_id, contact:contact_id(id, username, avatar_color)')
+      .eq('user_id', ME.id);
+
+    if (res.error || !res.data) return;
+
+    var changed = false;
+    var contacts = window.ChatsEngine ? (window.ChatsEngine._getContacts ? window.ChatsEngine._getContacts() : []) : [];
+
+    res.data.forEach(function (row) {
+      var prof = row.contact;
+      if (!prof) return;
+      window.UNLOCKED_CONTACT_IDS.add(prof.id);
+
+      var exists = contacts.some(function (c) { return c.id === prof.id; });
+      if (!exists) {
+        contacts.push({
+          id:       prof.id,
+          name:     prof.username,
+          username: prof.username,
+          online:   false,
+          avColor:  prof.avatar_color || 0,
+          preview:  ''
+        });
+        changed = true;
+      }
+    });
+
+    if (changed && window.ChatsEngine && window.ChatsEngine._saveContacts) {
+      window.ChatsEngine._saveContacts(contacts);
+      window.ChatsEngine.renderChatList();
+    }
+
+    // Перерисовываем ленту чтобы кнопки обновились
+    if (res.data.length > 0) renderFeed();
+  } catch (e) {
+    console.warn('[syncUnlockedContacts]', e);
+  }
+}
+
 function enterApp() {
   if (appEntered) return;
   appEntered = true;
@@ -1091,6 +1294,8 @@ function enterApp() {
   if (window.SparkTour) {
     SparkTour.init();
   }
+  // Синхронизируем разблокированные контакты из БД
+  syncUnlockedContacts();
 }
 
 function updateHeader() {
@@ -2362,6 +2567,11 @@ function animateAllGraphs(container) {
 var page = 1, sort = 'new', ftag = 'all', q = '';
 var PER = 5;
 
+// ── Платные контакты ───────────────────────────────────────
+var IDEA_CONTACT_COST = 30;   // SPK за открытие контакта с карточки идеи
+var DIRECT_CHAT_COST  = 100;  // SPK за прямой поиск через "+"
+window.UNLOCKED_CONTACT_IDS = new Set();  // UUID разблокированных контактов
+
 function isExpired(x) {
   if (!x.expires_at) return false;
   return new Date(x.expires_at).getTime() < Date.now();
@@ -2400,6 +2610,23 @@ function reactHTML(id) {
   return html;
 }
 
+// Строит кнопку «Связаться/Открыть чат/Моя идея» для карточки идеи
+function _contactBtnHTML(x) {
+  var aid = x.author_id;
+  if (!aid) {
+    // Нет author_id — показываем задизейбленную кнопку
+    return '<button class="binv" disabled style="opacity:0.35;cursor:default">' + T('contactAuthor') + '</button>';
+  }
+  if (window.ME && aid === window.ME.id) {
+    return '<button class="binv" disabled style="opacity:0.35;cursor:default">' + T('myIdea') + '</button>';
+  }
+  if (window.UNLOCKED_CONTACT_IDS && window.UNLOCKED_CONTACT_IDS.has(aid)) {
+    return '<button class="binv" data-open-chat-id="' + aid + '">' + T('openChat') + '</button>';
+  }
+  var label = T('contactAuthorCost').replace('{cost}', IDEA_CONTACT_COST);
+  return '<button class="binv" data-contact-author-id="' + aid + '" data-contact-author-name="' + escapeHTML(x.u) + '">' + label + '</button>';
+}
+
 function cardHTML(x) {
   var fire = (getRS(x.id).counts['🔥'] || 0) >= FIRE_T;
   var safeUser = escapeHTML(x.u);
@@ -2410,8 +2637,6 @@ function cardHTML(x) {
   var safeBg = sanitizeCssBackground(x.bg);
   var safeAv = safeAvatar(x.av);
   var expired = isExpired(x);
-  var btnText = expired ? (LANG === 'ru' ? 'Завершено' : 'Ended') : T('binv');
-  var disabledAttr = expired ? ' disabled style="opacity:0.5;cursor:not-allowed;"' : '';
   var triggerId = x.author_id || (x.u === '@future_founder' ? 1 : '');
   var triggerAttr = triggerId ? ' class="cav mp-trigger" data-user-id="' + triggerId + '"' : ' class="cav"';
   var nameTriggerAttr = triggerId ? ' class="cu mp-trigger" data-user-id="' + triggerId + '"' : ' class="cu"';
@@ -2425,7 +2650,7 @@ function cardHTML(x) {
     + '<div class="' + cmenClass + '" data-idea-id="' + x.id + '" data-immune="' + (isImmune ? '1' : '0') + '"' + (cmenTitle ? ' title="' + cmenTitle + '"' : '') + '><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></div></div>'
     + '<div class="ctitle">' + safeTitle + '</div><div class="cbody">' + safeBody + '</div>'
     + investGraphHTML(x)
-    + '<div class="cact"><button class="binv" data-invest-id="' + x.id + '"' + disabledAttr + '>' + btnText + '</button><button class="bcrit">' + T('bcrit') + '</button><button class="bshare" data-share-id="' + x.id + '" title="' + T('shareIdea') + '"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button></div>'
+    + '<div class="cact">' + _contactBtnHTML(x) + '<button class="bcrit">' + T('bcrit') + '</button><button class="bshare" data-share-id="' + x.id + '" title="' + T('shareIdea') + '"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button></div>'
     + '<div class="creact" id="rc-' + x.id + '">' + reactHTML(x.id) + '</div></div>';
 }
 

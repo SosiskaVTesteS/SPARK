@@ -472,7 +472,37 @@
       <input type="text" id="ccTarget" placeholder="e.g. @sergey_defi" maxlength="30" autocomplete="off" spellcheck="false" style="width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:10px;color:#fff;outline:none">
       <div class="pedit-hint" id="ccHint" style="font-size:10px;margin-top:4px"></div>
     </div>
+    <!-- Секция выбора участников (только для Team Channel) -->
+    <div id="ccMemberSection" style="display:none;margin-top:10px">
+      <div style="font-size:10px;color:var(--mu2);margin-bottom:6px" id="ccMembersLabel">Add members from your contacts</div>
+      <div id="ccMemberList" style="max-height:120px;overflow-y:auto;display:flex;flex-direction:column;gap:4px"></div>
+    </div>
     <button class="hbtn hbtn-gold" id="btnConfirmCreateChat" style="margin-top:14px;width:100%">Open Signal Channel →</button>
+  </div>
+</div>
+
+<!-- МОДАЛКА: СВЯЗАТЬСЯ С АВТОРОМ ИДЕИ -->
+<div class="mo" id="moContactAuthor">
+  <div class="mo-box">
+    <div class="mo-handle"></div>
+    <div class="mo-title" id="caTitle">Связаться с автором 💬</div>
+    <div style="display:flex;align-items:center;gap:12px;margin:14px 0 10px;padding:12px;background:rgba(255,255,255,0.03);border-radius:12px;border:1px solid rgba(255,255,255,0.06)">
+      <div id="caAuthorAv" style="width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0;background:linear-gradient(135deg,#7B5CFA,#E85AA0)">A</div>
+      <div>
+        <div id="caAuthorName" style="font-size:14px;font-weight:600;color:var(--tx)">@author</div>
+        <div style="font-size:11px;color:var(--mu2)" id="caAuthorSub">Автор идеи</div>
+      </div>
+    </div>
+    <div id="caNotice" style="font-size:12px;color:var(--mu2);line-height:1.55;padding:10px 12px;background:rgba(232,197,90,0.06);border:1px solid rgba(232,197,90,0.15);border-radius:10px;margin-bottom:12px">
+      При открытии контакта списывается <strong id="caCostLabel" style="color:var(--ac)">30 SPK</strong>. Обратите внимание, что мы не ручаемся за то, что автор идеи примет вас в проект.
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:12px;color:var(--mu2)">
+      <span id="caBalLabel">Ваш баланс:</span>
+      <strong id="caBalVal" style="color:var(--ac)">0 SPK</strong>
+    </div>
+    <div id="caWarn" style="display:none;font-size:11px;color:var(--red);margin-bottom:8px;text-align:center"></div>
+    <button class="hbtn hbtn-gold" id="caConfirm" style="width:100%;margin-bottom:8px">Открыть чат · −30 SPK</button>
+    <button id="caCancel" style="width:100%;background:none;border:none;color:var(--mu2);font-size:12px;cursor:pointer;padding:6px;border-radius:8px;transition:color .2s" onmouseover="this.style.color='var(--tx)'" onmouseout="this.style.color='var(--mu2)'">Отмена</button>
   </div>
 </div>
 

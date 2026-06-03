@@ -112,16 +112,7 @@ var ChatsEngine = (function () {
     try {
       var cached = localStorage.getItem(CACHE_TEAMS_KEY);
       if (cached) {
-        var parsed = JSON.parse(cached);
-        // Only keep allowed public channels
-        var allowedTeams = ['defi-prophets', 'ai-signals', 'spark-devs'];
-        var filtered = parsed.filter(function (t) {
-          return allowedTeams.includes(t.id);
-        });
-        if (filtered.length !== parsed.length) {
-          saveTeamsList(filtered);
-        }
-        return filtered;
+        return JSON.parse(cached);
       }
     } catch (e) {}
     localStorage.setItem(CACHE_TEAMS_KEY, JSON.stringify(DEFAULT_TEAMS));
@@ -1533,17 +1524,53 @@ var ChatsEngine = (function () {
     var hint = document.getElementById('ccHint');
     var confirmBtn = document.getElementById('btnConfirmCreateChat');
 
+    var memberSection = document.getElementById('ccMemberSection');
+    var memberList    = document.getElementById('ccMemberList');
+    var membersLabel  = document.getElementById('ccMembersLabel');
+    // Чекбоксы выбранных участников: Set UUID
+    var selectedMembers = new Set();
+
+    function _renderMemberPicker() {
+      if (!memberList) return;
+      memberList.innerHTML = '';
+      selectedMembers.clear();
+      var contacts = getContactsList();
+      if (contacts.length === 0) {
+        memberList.innerHTML = '<div style="font-size:10px;color:var(--mu);padding:4px 0">' + (window.T ? window.T('teamMembersEmpty') : 'No contacts yet.') + '</div>';
+        return;
+      }
+      contacts.forEach(function (c) {
+        var row = document.createElement('label');
+        row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;cursor:pointer;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);font-size:11px;color:var(--tx)';
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.value = c.id;
+        cb.style.accentColor = 'var(--ac)';
+        cb.addEventListener('change', function () {
+          if (cb.checked) selectedMembers.add(c.id);
+          else selectedMembers.delete(c.id);
+        });
+        var name = document.createElement('span');
+        name.textContent = c.username || c.name || c.id;
+        row.appendChild(cb);
+        row.appendChild(name);
+        memberList.appendChild(row);
+      });
+    }
+
     if (tabDM) {
       tabDM.addEventListener('click', function () {
         state.modalTab = 'DM';
         tabDM.classList.add('active');
         if (tabTeam) tabTeam.classList.remove('active');
         if (label) label.textContent = 'Recipient Nickname';
-        if (input) {
-          input.value = '';
-          input.placeholder = 'e.g. @sergey_defi';
-        }
+        if (input) { input.value = ''; input.placeholder = 'e.g. @sergey_defi'; }
         if (hint) hint.textContent = '';
+        if (confirmBtn) {
+          delete confirmBtn.dataset.awaitingPayment;
+          confirmBtn.textContent = 'Open Signal Channel →';
+        }
+        if (memberSection) memberSection.style.display = 'none';
       });
     }
 
@@ -1553,11 +1580,12 @@ var ChatsEngine = (function () {
         tabTeam.classList.add('active');
         if (tabDM) tabDM.classList.remove('active');
         if (label) label.textContent = 'Channel Name';
-        if (input) {
-          input.value = '';
-          input.placeholder = 'e.g. #defi-alpha';
-        }
+        if (input) { input.value = ''; input.placeholder = 'e.g. #defi-alpha'; }
         if (hint) hint.textContent = '';
+        if (confirmBtn) confirmBtn.textContent = 'Open Signal Channel →';
+        if (memberSection) memberSection.style.display = '';
+        if (membersLabel) membersLabel.textContent = window.T ? window.T('teamMembersLabel') : 'Add members';
+        _renderMemberPicker();
       });
     }
 
@@ -1612,12 +1640,69 @@ var ChatsEngine = (function () {
             avColor = Math.floor(Math.random() * 12);
           }
 
-          // Check if contact already exists
+          // Check if contact already exists in chat list
           var contacts = getContactsList();
           var exists = contacts.some(function (c) { return c.id === newId; });
           if (exists) {
             _setHint('Contact already in your direct messages', 'err');
             return;
+          }
+
+          // Check if already unlocked (free) or requires payment
+          var isUnlocked = window.UNLOCKED_CONTACT_IDS && window.UNLOCKED_CONTACT_IDS.has(newId);
+          var DIRECT_COST = window.DIRECT_CHAT_COST || 100;
+
+          if (!isUnlocked) {
+            // Two-step confirmation: first click shows cost, second click charges
+            if (!confirmBtn.dataset.awaitingPayment) {
+              var noticeText = (window.T ? window.T('directChatCostNotice') : 'Opening DM will cost {cost} SPK.')
+                .replace('{name}', displayName).replace('{cost}', DIRECT_COST);
+              _setHint(noticeText, 'info');
+              confirmBtn.dataset.awaitingPayment = '1';
+              confirmBtn.textContent = (window.T ? window.T('directChatConfirmBtn') : 'Open for {cost} SPK →')
+                .replace('{cost}', DIRECT_COST);
+              return;
+            }
+            // Second click — charge via RPC
+            delete confirmBtn.dataset.awaitingPayment;
+            confirmBtn.textContent = '⏳…';
+            confirmBtn.disabled = true;
+
+            if (window.supa && window.ME) {
+              var balance = (window.PROFILE && window.PROFILE.spk_balance) || 0;
+              if (balance < DIRECT_COST) {
+                _setHint(window.T ? window.T('caErrBalance') : 'Not enough SPK.', 'err');
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = window.T ? window.T('directChatConfirmBtn').replace('{cost}', DIRECT_COST) : 'Confirm →';
+                return;
+              }
+              try {
+                var unlockRes = await supa.rpc('unlock_contact', { p_contact_id: newId, p_cost: DIRECT_COST });
+                var unlockData = unlockRes.data;
+                if (!unlockData || !unlockData.success) {
+                  var errMsg = (unlockData && unlockData.message === 'insufficient_balance')
+                    ? (window.T ? window.T('caErrBalance') : 'Not enough SPK.')
+                    : (window.T ? window.T('caErrGeneric') : 'Error unlocking contact.');
+                  _setHint(errMsg, 'err');
+                  confirmBtn.disabled = false;
+                  confirmBtn.textContent = window.T ? window.T('directChatConfirmBtn').replace('{cost}', DIRECT_COST) : 'Confirm →';
+                  return;
+                }
+                // Update balance
+                if (window.PROFILE) window.PROFILE.spk_balance = Number(unlockData.new_balance) || window.PROFILE.spk_balance;
+                if (window.updateHeader) window.updateHeader();
+              } catch (e) {
+                _setHint(window.T ? window.T('caErrGeneric') : 'Error.', 'err');
+                confirmBtn.disabled = false;
+                return;
+              }
+            } else {
+              // Offline mode
+              if (window.PROFILE) window.PROFILE.spk_balance = Math.max(0, (window.PROFILE.spk_balance || 0) - DIRECT_COST);
+              if (window.updateHeader) window.updateHeader();
+            }
+            window.UNLOCKED_CONTACT_IDS.add(newId);
+            confirmBtn.disabled = false;
           }
 
           // Push new contact
@@ -1665,19 +1750,52 @@ var ChatsEngine = (function () {
             preview: 'Channel established.'
           });
           saveTeamsList(teams);
+
+          // Сохраняем участников в БД и строим системное сообщение
+          var memberNames = [];
+          var memberRows  = [];
+          if (selectedMembers && selectedMembers.size > 0) {
+            var allContacts = getContactsList();
+            selectedMembers.forEach(function (mid) {
+              var c = allContacts.find(function (x) { return x.id === mid; });
+              if (c) memberNames.push(c.username || c.name || mid);
+              memberRows.push({ channel_id: newId, user_id: mid });
+            });
+          }
+
+          if (window.supa && window.ME && memberRows.length > 0) {
+            // Также записываем создателя
+            memberRows.unshift({ channel_id: newId, user_id: window.ME.id });
+            supa.from('channel_members').insert(memberRows).then(function (r) {
+              if (r.error) console.warn('[channel_members insert]', r.error);
+            });
+          }
+
+          // Системное сообщение о создании
+          var creatorName = (window.PROFILE && window.PROFILE.username) || 'you';
+          var sysText = creatorName + ' created the channel';
+          if (memberNames.length > 0) sysText += ' and added ' + memberNames.join(', ');
+
+          var msgs = getCachedMessages();
+          msgs[newId] = [
+            { id: 'm_sys_init', sender_id: 'system', sender_name: 'SYSTEM', sender_avatar_color: 11, content: sysText, created_at: Date.now() }
+          ];
+          cacheMessages(msgs);
         }
 
-        // Initialize empty message log thread for the new channel
-        var msgs = getCachedMessages();
-        msgs[newId] = [
-          { id: 'm_sys_init', sender_id: 'system', sender_name: 'SYSTEM', sender_avatar_color: 11, content: 'Signal channel opened. Security synchronized.', created_at: Date.now() }
-        ];
-        cacheMessages(msgs);
+        // Close modal and open channel (for both DM and TEAM)
+        if (state.modalTab === 'DM') {
+          // DM: initialize message thread if not already done
+          var dmMsgs = getCachedMessages();
+          if (!dmMsgs[newId]) {
+            dmMsgs[newId] = [
+              { id: 'm_sys_init', sender_id: 'system', sender_name: 'SYSTEM', sender_avatar_color: 11, content: 'Signal channel opened. Security synchronized.', created_at: Date.now() }
+            ];
+            cacheMessages(dmMsgs);
+          }
+        }
 
-        // Close modal
         if (window.closeMo) closeMo('moCreateChat');
-
-        // Select and open the new channel
         selectChannel(newId);
       });
     }
@@ -2923,7 +3041,10 @@ var ChatsEngine = (function () {
     renderChatList:           renderChatList,
     renderActiveConversation: renderActiveConversation,
     updateUnreadBadge:        updateUnreadBadge,
-    isUserOnline:             isUserOnline
+    isUserOnline:             isUserOnline,
+    // Helpers for external contact management
+    _getContacts:             getContactsList,
+    _saveContacts:            saveContactsList
   };
 })();
 
