@@ -1623,6 +1623,13 @@ function achCardHTML(ach, state, sfx, extra) {
     var userCode = ME ? ('SPARK-' + ME.id.replace(/-/g, '').slice(0, 6).toUpperCase()) : 'SPARK-??????';
     repostFormHtml = '<div class="ach-repost-form">'
 
+      /* ── Всегда виден: код верификации ── */
+      + '<div class="ach-code-label">' + T('achCodeLabel') + '</div>'
+      + '<div class="ach-repost-code" id="achCode-' + sfx + '" title="' + T('achCodeCopied') + '">'
+      + '<span>' + userCode + '</span>'
+      + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'
+      + '</div>'
+
       /* ── Раскрывающаяся инструкция ── */
       + '<button type="button" class="ach-how-toggle" data-ach-how="' + sfx + '">'
       + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>'
@@ -1635,10 +1642,6 @@ function achCardHTML(ach, state, sfx, extra) {
 
       + '<div class="ach-how-step"><div class="ach-how-num">1</div>'
       + '<div class="ach-how-text">' + T('achHowStep1') + '</div></div>'
-      + '<div class="ach-repost-code" id="achCode-' + sfx + '" title="' + T('achCodeCopied') + '">'
-      + '<span>' + userCode + '</span>'
-      + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'
-      + '</div>'
 
       + '<div class="ach-how-step"><div class="ach-how-num">2</div>'
       + '<div class="ach-how-text">' + T('achHowStep2Intro') + '<br>'
@@ -1649,6 +1652,7 @@ function achCardHTML(ach, state, sfx, extra) {
       + '<div class="ach-how-step"><div class="ach-how-num">3</div>'
       + '<div class="ach-how-text">' + T('achHowStep3Intro') + '<br>'
       + '<span class="ach-how-example">t.me/channel/<strong>123</strong></span>'
+      + '<span class="ach-how-example">vk.ru/wall<strong>800681375_5</strong></span>'
       + '<span class="ach-how-example">vk.com/wall-<strong>12345678_99</strong></span>'
       + '<span class="ach-how-example">x.com/username/status/<strong>123...</strong></span>'
       + '</div></div>'
@@ -1798,6 +1802,12 @@ async function doVerifyRepost(sfx) {
     verdict.innerHTML = '<span class="ach-verdict-ok">' + T('repostOkApproved') + '</span>';
     renderAchievements('D');
     renderAchievements('M');
+    return;
+  }
+
+  if (data.status === 'pending') {
+    var pendingMsg = T('repostPending').replace('{code}', escapeHTML(data.code || ''));
+    verdict.innerHTML = '<span class="ach-verdict-pending">' + pendingMsg + '</span>';
     return;
   }
 

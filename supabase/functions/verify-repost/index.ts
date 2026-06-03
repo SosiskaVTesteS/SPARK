@@ -23,13 +23,13 @@ function getUserCode(userId: string): string {
 // ── Шаблоны постов в соцсетях ──────────────────────────────────────────────
 const SOCIAL_POST_PATTERNS = [
   /(?:twitter\.com|x\.com)\/\w[\w_]+\/status\/\d+/i,
-  /t\.me\/[^/?#\s]+\/\d+/i,
-  /vk\.com\/wall-?\d+_\d+/i,
-  /vk\.com\/[^/?#\s]+\?w=wall-?\d+_\d+/i,
+  /(?:t\.me|telegram\.me)\/[^/?#\s]+\/\d+/i,
+  /(?:vk\.com|vk\.ru)\/wall-?\d+_\d+/i,
+  /(?:vk\.com|vk\.ru)\/[^/?#\s]+\?w=wall-?\d+_\d+/i,
   /reddit\.com\/r\/\w+\/comments\//i,
-  /linkedin\.com\/posts?\//i,
-  /instagram\.com\/p\//i,
-  /facebook\.com\/[^/?#\s]+\/posts?\//i,
+  /linkedin\.com\/(?:posts?|feed\/update|pulse)\//i,
+  /instagram\.com\/(?:p|reel|tv)\//i,
+  /(?:facebook\.com|m\.facebook\.com|fb\.com)\/[^/?#\s]+\/posts?\//i,
 ];
 
 function looksLikeSocialPost(url: string): boolean {
@@ -66,6 +66,27 @@ function extractText(html: string): string {
     .slice(0, 2000);
 
   return [title, ...metas, body].join(' ');
+}
+
+// ── Reddit: публичный JSON API (не блокирует серверные IP) ───────────────
+async function fetchRedditPost(url: string): Promise<{ text: string; ok: boolean }> {
+  const m = /reddit\.com\/r\/\w+\/comments\/([a-z0-9]+)/i.exec(url);
+  if (!m) return { text: '', ok: false };
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 6000);
+    const res = await fetch(`https://www.reddit.com/comments/${m[1]}.json?limit=1`, {
+      headers: { 'User-Agent': 'SPARK-Verifier/1.0 (post verification)' },
+      signal: ctrl.signal,
+    });
+    clearTimeout(timer);
+    if (!res.ok) return { text: '', ok: false };
+    const data = await res.json();
+    const post = data?.[0]?.data?.children?.[0]?.data;
+    if (!post) return { text: '', ok: false };
+    const text = [post.title ?? '', post.selftext ?? ''].join(' ').trim();
+    return { text, ok: text.length > 0 };
+  } catch { return { text: '', ok: false }; }
 }
 
 // ── Пробуем получить страницу (несколько User-Agent'ов) ───────────────────
@@ -171,17 +192,21 @@ Deno.serve(async (req) => {
     .limit(1).maybeSingle();
   if (alreadyApproved) return json({ message: 'already_approved', status: 'approved' });
 
-  // ── Скрапим страницу (несколько UA) ───────────────────────────────────────
-  const { text: pageText, ok: pageAccessible } = await fetchPage(repostLink);
+  // ── Скрапим страницу; для Reddit используем публичный JSON API ──────────
+  let { text: pageText, ok: pageAccessible } = await fetchPage(repostLink);
+  if (!pageAccessible && /reddit\.com/i.test(repostLink)) {
+    const rr = await fetchRedditPost(repostLink);
+    if (rr.ok) { pageText = rr.text; pageAccessible = true; }
+  }
 
   // ── Проверка ──────────────────────────────────────────────────────────────
-  let verdict: 'VALID' | 'INVALID';
+  let verdict: 'VALID' | 'INVALID' | 'PENDING';
   let reason:  string;
 
   // 1. Обязательно: URL должен быть постом в соцсети
   if (!looksLikeSocialPost(repostLink)) {
     verdict = 'INVALID';
-    reason  = 'Ссылка не соответствует формату поста в соцсети (VK, Telegram, X/Twitter и др.).';
+    reason  = `Ссылка не соответствует формату поста в соцсети. Укажите прямую ссылку на публикацию (VK, Telegram, X/Twitter и др.) и убедитесь, что в тексте поста указан ваш код верификации: ${userCode}.`;
   }
   // 2. Страница доступна — ищем код верификации
   else if (pageAccessible) {
@@ -194,14 +219,15 @@ Deno.serve(async (req) => {
       reason  = `Код верификации ${userCode} найден в посте.`;
     }
   }
-  // 3. Страница недоступна — сообщаем что нужно сделать
+  // 3. Страница недоступна (VK, Instagram, Twitter и др. блокируют серверные IP) —
+  //    без возможности прочитать текст пост нельзя одобрить автоматически.
   else {
-    verdict = 'INVALID';
-    reason  = `Не удалось прочитать пост. Убедитесь что канал/профиль публичный, или сделайте пост общедоступным. Код верификации ${userCode} должен быть в тексте.`;
+    verdict = 'PENDING';
+    reason  = `Не удалось автоматически прочитать ваш пост — соцсеть блокирует серверные запросы. Пост поставлен на ручную проверку. Убедитесь, что в тексте поста есть ваш код верификации: ${userCode}.`;
   }
 
   // ── Запись в БД ───────────────────────────────────────────────────────────
-  const finalStatus = verdict === 'VALID' ? 'approved' : 'rejected';
+  const finalStatus = verdict === 'VALID' ? 'approved' : verdict === 'PENDING' ? 'pending' : 'rejected';
   await admin.from('repost_claims').insert({
     user_id:      userId,
     repost_link:  repostLink,

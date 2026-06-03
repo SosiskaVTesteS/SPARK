@@ -2596,11 +2596,19 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
 }
 .ach-repost-step strong { color: var(--ac2); }
 
+.ach-code-label {
+  font-size: 11px;
+  color: var(--mu2);
+  margin-top: 2px;
+  margin-bottom: 5px;
+}
+
 .ach-repost-code {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  margin-top: 4px;
+  margin-top: 0;
+  margin-bottom: 10px;
   padding: 7px 12px;
   background: rgba(232,197,90,0.08);
   border: 1px solid rgba(232,197,90,0.35);
@@ -2684,8 +2692,9 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
   line-height: 1.45;
   animation: achFadeIn 0.25s ease both;
 }
-.ach-verdict-ok   { color: var(--ac2); }
-.ach-verdict-fail { color: var(--red); }
+.ach-verdict-ok      { color: var(--ac2); }
+.ach-verdict-fail    { color: var(--red); }
+.ach-verdict-pending { color: var(--ac); }
 
 /* ── Spinner ── */
 .ach-spin {
