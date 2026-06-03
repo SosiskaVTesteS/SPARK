@@ -857,14 +857,14 @@ header {
 .binv:hover  { transform:translateY(-2px); box-shadow:0 6px 24px rgba(123,92,250,0.52); }
 .binv:active { transform:translateY(0) scale(0.97); }
 
-/* CRITIQUE */
-.bcrit {
+/* CONTACT AUTHOR button */
+.bcontact {
   flex: 1;
   padding: 11px;
   border-radius: 10px;
-  border: 1px solid rgba(232,90,122,0.35);
-  background: rgba(232,90,122,0.07);
-  color: var(--red);
+  border: 1px solid rgba(232,197,90,0.35);
+  background: rgba(232,197,90,0.07);
+  color: var(--ac);
   font-family: var(--fh);
   font-size: 13px;
   font-weight: 700;
@@ -875,8 +875,10 @@ header {
   overflow: hidden;
   transition: background 0.18s ease, transform 0.22s var(--ease-spring), box-shadow 0.18s ease;
 }
-.bcrit:hover { background:rgba(232,90,122,0.15); transform:translateY(-1px); box-shadow:0 4px 16px rgba(232,90,122,0.2); }
-.bcrit:active{ transform:translateY(0) scale(0.97); }
+.bcontact:hover { background:rgba(232,197,90,0.15); transform:translateY(-1px); box-shadow:0 4px 16px rgba(232,197,90,0.2); }
+.bcontact:active { transform:translateY(0) scale(0.97); }
+.bcontact--open { border-color:rgba(90,232,160,0.35); background:rgba(90,232,160,0.07); color:var(--se); }
+.bcontact--open:hover { background:rgba(90,232,160,0.15); box-shadow:0 4px 16px rgba(90,232,160,0.2); }
 
 /* REPORT button */
 .brep {
@@ -1576,7 +1578,7 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
 @media (max-width:400px) {
   .ctitle { font-size:14px; }
   .cact   { flex-direction:column; }
-  .binv, .bcrit { width:100%; }
+  .binv, .bcontact { width:100%; }
 }
 
 @media (max-width:480px) {
@@ -2102,7 +2104,7 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
   }
 
   /* Bigger touch targets for action buttons */
-  .binv, .bcrit {
+  .binv, .bcontact {
     padding: 13px;
     font-size: 14px;
   }

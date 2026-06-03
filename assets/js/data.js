@@ -157,7 +157,7 @@ var LIVE = [];
 
 var I18N = {
   en: {
-    iot: 'Interest over time', cinv: 'investors', cpool: 'pool', cleft: 'left', binv: 'Invest', bcrit: 'Critique', noResults: 'No ideas match',
+    iot: 'Interest over time', cinv: 'investors', cpool: 'pool', cleft: 'left', binv: 'Invest', noResults: 'No ideas match',
     launchCheckingSession: 'Syncing market signals...',
     launchPreparingWorkspace: 'Preparing your workspace...',
     signIn: 'Sign In', register: 'Register', rememberMe: 'Remember me', createAccount: 'Create Account →', signInBtn: 'Sign In →',
@@ -322,7 +322,7 @@ var I18N = {
     delFinalBtn: 'Permanently erase system'
   },
   ru: {
-    iot: 'Интерес орбиты', cinv: 'инвесторов', cpool: 'пул', cleft: 'осталось', binv: 'Вложить', bcrit: 'Критика', noResults: 'Идеи не найдены',
+    iot: 'Интерес орбиты', cinv: 'инвесторов', cpool: 'пул', cleft: 'осталось', binv: 'Вложить', noResults: 'Идеи не найдены',
     launchCheckingSession: 'Синхронизация рыночных сигналов...',
     launchPreparingWorkspace: 'Подготовка рабочего пространства...',
     signIn: 'Войти', register: 'Регистрация', rememberMe: 'Запомнить меня', createAccount: 'Создать аккаунт →', signInBtn: 'Войти →',

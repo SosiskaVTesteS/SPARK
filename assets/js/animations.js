@@ -304,7 +304,7 @@ var IntroEngine = {
    Adds material-style ripple on all interactive els.
    ════════════════════════════════════════════════ */
 var RippleEngine = {
-  SELECTOR: 'button, .binv, .bcrit, .auth-btn, .btn-post, .fbtn, .tchip, .rbbl, .mob-tab, .dur-btn, .pbtn, .prs-btn, .hbtn, .vm-btn, .spark-btn-submit, .spark-btn-danger',
+  SELECTOR: 'button, .binv, .bcontact, .auth-btn, .btn-post, .fbtn, .tchip, .rbbl, .mob-tab, .dur-btn, .pbtn, .prs-btn, .hbtn, .vm-btn, .spark-btn-submit, .spark-btn-danger',
 
   init: function () {
     document.addEventListener('pointerdown', function (e) {

@@ -2614,17 +2614,16 @@ function reactHTML(id) {
 function _contactBtnHTML(x) {
   var aid = x.author_id;
   if (!aid) {
-    // Нет author_id — показываем задизейбленную кнопку
-    return '<button class="binv" disabled style="opacity:0.35;cursor:default">' + T('contactAuthor') + '</button>';
+    return '<button class="bcontact" disabled style="opacity:0.35;cursor:default">' + T('contactAuthor') + '</button>';
   }
   if (window.ME && aid === window.ME.id) {
-    return '<button class="binv" disabled style="opacity:0.35;cursor:default">' + T('myIdea') + '</button>';
+    return '<button class="bcontact" disabled style="opacity:0.35;cursor:default">' + T('myIdea') + '</button>';
   }
   if (window.UNLOCKED_CONTACT_IDS && window.UNLOCKED_CONTACT_IDS.has(aid)) {
-    return '<button class="binv" data-open-chat-id="' + aid + '">' + T('openChat') + '</button>';
+    return '<button class="bcontact bcontact--open" data-open-chat-id="' + aid + '">' + T('openChat') + '</button>';
   }
   var label = T('contactAuthorCost').replace('{cost}', IDEA_CONTACT_COST);
-  return '<button class="binv" data-contact-author-id="' + aid + '" data-contact-author-name="' + escapeHTML(x.u) + '">' + label + '</button>';
+  return '<button class="bcontact" data-contact-author-id="' + aid + '" data-contact-author-name="' + escapeHTML(x.u) + '">' + label + '</button>';
 }
 
 function cardHTML(x) {
@@ -2650,7 +2649,7 @@ function cardHTML(x) {
     + '<div class="' + cmenClass + '" data-idea-id="' + x.id + '" data-immune="' + (isImmune ? '1' : '0') + '"' + (cmenTitle ? ' title="' + cmenTitle + '"' : '') + '><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></div></div>'
     + '<div class="ctitle">' + safeTitle + '</div><div class="cbody">' + safeBody + '</div>'
     + investGraphHTML(x)
-    + '<div class="cact">' + _contactBtnHTML(x) + '<button class="bcrit">' + T('bcrit') + '</button><button class="bshare" data-share-id="' + x.id + '" title="' + T('shareIdea') + '"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button></div>'
+    + '<div class="cact"><button class="binv" data-invest-id="' + x.id + '">' + T('binv') + '</button>' + _contactBtnHTML(x) + '<button class="bshare" data-share-id="' + x.id + '" title="' + T('shareIdea') + '"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button></div>'
     + '<div class="creact" id="rc-' + x.id + '">' + reactHTML(x.id) + '</div></div>';
 }
 
