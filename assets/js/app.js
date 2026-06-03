@@ -1534,6 +1534,19 @@ function applyStaticI18n() {
   setText('#delModalTitle2', T('delModal2Title'));
   setText('#delModalSub2', T('delModal2Sub'));
   setText('#btnConfirmDel', T('delFinalBtn'));
+
+  // Create Team Channel modal i18n
+  setText('#ccTitle', T('ccTitleTeam'));
+  setText('#lblCcTarget', T('ccLabelChannel'));
+  setPlaceholder('#ccTarget', T('ccPlaceholderChannel'));
+  setText('#ccMembersLabel', T('teamMembersLabel'));
+  setText('#btnConfirmCreateChat', T('ccBtnConfirm'));
+
+  // Contact Author modal i18n
+  setText('#caTitle', T('caTitle'));
+  setText('#caAuthorSub', T('caAuthorSub'));
+  setText('#caBalLabel', T('caBalLabel'));
+  setText('#caCancel', T('caCancel'));
 }
 
 function initObservatory() {

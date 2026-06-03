@@ -19,7 +19,7 @@ var ChatsEngine = (function () {
     composedAttachment: null,   // Holds { title, sub, url }
     realtimeChannel: null,
     presenceChannel: null,      // Track presence
-    modalTab: 'DM',              // 'DM' or 'TEAM'
+    modalTab: 'TEAM',
     initialized: false,
     isTabActive: true,
     multiSelectMode: false,
@@ -238,9 +238,7 @@ var ChatsEngine = (function () {
     var dmsListEl = document.getElementById('chatListDMs');
     if (dmsListEl) {
       if (filteredContacts.length === 0) {
-        var emptyText = window.LANG === 'ru' 
-          ? 'Здесь пока пусто. Никто еще не подключился. Нажмите «+» вверху, чтобы начать общение с другими пользователями.' 
-          : 'It is quiet here. No direct messages yet. Click the "+" button above to search and start a conversation.';
+        var emptyText = window.T ? window.T('chatDmsEmpty') : 'No direct messages yet.';
         dmsListEl.innerHTML = '<div class="chat-sidebar-empty">' + emptyText + '</div>';
       } else {
         dmsListEl.innerHTML = filteredContacts.map(function (c) {
@@ -285,9 +283,7 @@ var ChatsEngine = (function () {
     var teamsListEl = document.getElementById('chatListTeams');
     if (teamsListEl) {
       if (filteredTeams.length === 0) {
-        var emptyTextTeams = window.LANG === 'ru'
-          ? 'Групповые каналы не найдены. Нажмите «+» для создания новой темы.'
-          : 'No channels found. Click "+" to establish a new topic room.';
+        var emptyTextTeams = window.T ? window.T('chatTeamsEmpty') : 'No team channels yet.';
         teamsListEl.innerHTML = '<div class="chat-sidebar-empty">' + emptyTextTeams + '</div>';
       } else {
         teamsListEl.innerHTML = filteredTeams.map(function (t) {
@@ -686,10 +682,9 @@ var ChatsEngine = (function () {
     var id = state.activeChannelId;
     if (!id) {
       // Empty placeholder
-      var emptyTitle = window.LANG === 'ru' ? 'Секретная связь SPARK' : 'SPARK Secure Signal Network';
-      var emptyText = window.LANG === 'ru' 
-        ? 'Выберите защищенный канал или прямой контакт для синхронизации сигналов и обмена разведданными.'
-        : 'Select a secure channel or direct contact to synchronize market signals and share intelligence notes.';
+      var T = window.T || function (k) { return k; };
+      var emptyTitle = T('chatEmptyTitle');
+      var emptyText  = T('chatEmptyText');
       rightPane.innerHTML = ''
         + '<div class="chat-empty-state">'
         + '<div class="chat-empty-icon">🛰️</div>'
@@ -826,7 +821,7 @@ var ChatsEngine = (function () {
 
     if (visibleMsgs.length === 0) {
       return '<div style="text-align:center;padding:48px 0;color:var(--mu);font-size:12px">' 
-        + (window.LANG === 'ru' ? 'В этом секретном канале пока нет сообщений.' : 'No messages in this signal room yet.') 
+        + (window.T ? window.T('chatNoMessages') : 'No messages yet.')
         + '</div>';
     }
 
@@ -834,7 +829,7 @@ var ChatsEngine = (function () {
       if (m.sender_id === 'system') {
         var content = m.content;
         if (content === 'Signal channel opened. Security synchronized.') {
-          content = window.LANG === 'ru' ? 'Сигнальный канал открыт. Безопасность синхронизирована.' : 'Signal channel opened. Security synchronized.';
+          content = window.T ? window.T('chatSysInit') : content;
         }
         return '<div class="chat-system-message">' + _esc(content) + '</div>';
       }
@@ -1485,322 +1480,166 @@ var ChatsEngine = (function () {
     }
   }
 
-  // Show "Create Chat/Channel" Modal
+  // Show "Create Team Channel" Modal
   function showCreateChatModal() {
-    if (window.openMo) {
-      state.modalTab = 'DM';
-      
-      // Update UI components
-      var title = document.getElementById('ccTitle');
-      var label = document.getElementById('lblCcTarget');
-      var input = document.getElementById('ccTarget');
-      var hint = document.getElementById('ccHint');
-      var tabDM = document.getElementById('ccTabDM');
-      var tabTeam = document.getElementById('ccTabTeam');
+    if (!window.openMo) return;
+    var T = window.T || function (k) { return k; };
 
-      if (title) title.textContent = 'Start Message Room 🛰️';
-      if (label) label.textContent = 'Recipient Nickname';
-      if (input) {
-        input.value = '';
-        input.placeholder = 'e.g. @sergey_defi';
-      }
-      if (hint) {
-        hint.textContent = '';
-        hint.style.color = 'var(--mu2)';
-      }
-      if (tabDM) tabDM.classList.add('active');
-      if (tabTeam) tabTeam.classList.remove('active');
-
-      openMo('moCreateChat');
-    }
-  }
-
-  // Wire up the new chat modal elements
-  function _wireCreateChatModal() {
-    var tabDM = document.getElementById('ccTabDM');
-    var tabTeam = document.getElementById('ccTabTeam');
-    var label = document.getElementById('lblCcTarget');
-    var input = document.getElementById('ccTarget');
-    var hint = document.getElementById('ccHint');
+    var title      = document.getElementById('ccTitle');
+    var label      = document.getElementById('lblCcTarget');
+    var input      = document.getElementById('ccTarget');
+    var hint       = document.getElementById('ccHint');
+    var membersLbl = document.getElementById('ccMembersLabel');
     var confirmBtn = document.getElementById('btnConfirmCreateChat');
 
-    var memberSection = document.getElementById('ccMemberSection');
-    var memberList    = document.getElementById('ccMemberList');
-    var membersLabel  = document.getElementById('ccMembersLabel');
-    // Чекбоксы выбранных участников: Set UUID
-    var selectedMembers = new Set();
+    if (title)      title.textContent      = T('ccTitleTeam');
+    if (label)      label.textContent      = T('ccLabelChannel');
+    if (input)    { input.value = ''; input.placeholder = T('ccPlaceholderChannel'); }
+    if (hint)     { hint.textContent = ''; hint.style.color = 'var(--mu2)'; }
+    if (membersLbl) membersLbl.textContent = T('teamMembersLabel');
+    if (confirmBtn) confirmBtn.textContent = T('ccBtnConfirm');
 
-    function _renderMemberPicker() {
-      if (!memberList) return;
-      memberList.innerHTML = '';
-      selectedMembers.clear();
-      var contacts = getContactsList();
-      if (contacts.length === 0) {
-        memberList.innerHTML = '<div style="font-size:10px;color:var(--mu);padding:4px 0">' + (window.T ? window.T('teamMembersEmpty') : 'No contacts yet.') + '</div>';
-        return;
-      }
-      contacts.forEach(function (c) {
-        var row = document.createElement('label');
-        row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;cursor:pointer;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);font-size:11px;color:var(--tx)';
-        var cb = document.createElement('input');
-        cb.type = 'checkbox';
-        cb.value = c.id;
-        cb.style.accentColor = 'var(--ac)';
-        cb.addEventListener('change', function () {
-          if (cb.checked) selectedMembers.add(c.id);
-          else selectedMembers.delete(c.id);
-        });
-        var name = document.createElement('span');
-        name.textContent = c.username || c.name || c.id;
-        row.appendChild(cb);
-        row.appendChild(name);
-        memberList.appendChild(row);
-      });
+    _refreshMemberPicker();
+    openMo('moCreateChat');
+  }
+
+  // Module-level set of selected members for the Team Channel picker
+  var _teamSelectedMembers = new Set();
+
+  // Rebuild the member picker list from unlocked contacts
+  function _refreshMemberPicker() {
+    var memberList = document.getElementById('ccMemberList');
+    if (!memberList) return;
+    var T = window.T || function (k) { return k; };
+
+    _teamSelectedMembers.clear();
+    memberList.innerHTML = '';
+
+    var contacts = getContactsList();
+    if (contacts.length === 0) {
+      memberList.innerHTML = '<div style="font-size:10px;color:var(--mu);padding:4px 0">' + T('teamMembersEmpty') + '</div>';
+      return;
     }
 
-    if (tabDM) {
-      tabDM.addEventListener('click', function () {
-        state.modalTab = 'DM';
-        tabDM.classList.add('active');
-        if (tabTeam) tabTeam.classList.remove('active');
-        if (label) label.textContent = 'Recipient Nickname';
-        if (input) { input.value = ''; input.placeholder = 'e.g. @sergey_defi'; }
-        if (hint) hint.textContent = '';
-        if (confirmBtn) {
-          delete confirmBtn.dataset.awaitingPayment;
-          confirmBtn.textContent = 'Open Signal Channel →';
-        }
-        if (memberSection) memberSection.style.display = 'none';
+    contacts.forEach(function (c) {
+      var row = document.createElement('label');
+      row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;cursor:pointer;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);font-size:11px;color:var(--tx);transition:background .15s';
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.value = c.id;
+      cb.style.accentColor = 'var(--ac)';
+      cb.addEventListener('change', function () {
+        if (cb.checked) _teamSelectedMembers.add(c.id);
+        else _teamSelectedMembers.delete(c.id);
       });
-    }
+      var av = document.createElement('div');
+      av.style.cssText = 'width:22px;height:22px;border-radius:50%;background:' + (window.ProfileEditEngine ? window.ProfileEditEngine.getAvatarGradient(c.avColor) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)') + ';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0';
+      av.textContent = (c.username || c.name || '?').replace('@', '').charAt(0).toUpperCase();
+      var nameSpan = document.createElement('span');
+      nameSpan.textContent = c.username || c.name || c.id;
+      row.appendChild(cb);
+      row.appendChild(av);
+      row.appendChild(nameSpan);
+      memberList.appendChild(row);
+    });
+  }
 
-    if (tabTeam) {
-      tabTeam.addEventListener('click', function () {
-        state.modalTab = 'TEAM';
-        tabTeam.classList.add('active');
-        if (tabDM) tabDM.classList.remove('active');
-        if (label) label.textContent = 'Channel Name';
-        if (input) { input.value = ''; input.placeholder = 'e.g. #defi-alpha'; }
-        if (hint) hint.textContent = '';
-        if (confirmBtn) confirmBtn.textContent = 'Open Signal Channel →';
-        if (memberSection) memberSection.style.display = '';
-        if (membersLabel) membersLabel.textContent = window.T ? window.T('teamMembersLabel') : 'Add members';
-        _renderMemberPicker();
-      });
-    }
+  // Wire up the Team Channel creation modal
+  function _wireCreateChatModal() {
+    var T = window.T || function (k) { return k; };
+
+    var input      = document.getElementById('ccTarget');
+    var hint       = document.getElementById('ccHint');
+    var confirmBtn = document.getElementById('btnConfirmCreateChat');
 
     if (confirmBtn) {
       confirmBtn.addEventListener('click', async function () {
+        var T = window.T || function (k) { return k; };
         if (!input) return;
+
         var rawVal = input.value.trim();
         if (!rawVal) {
-          _setHint('Please enter a name', 'err');
+          _setHint(T('ccErrName'), 'err');
           return;
         }
 
-        var newId = '';
-        var displayName = '';
-        var avColor = 0;
-
-        if (state.modalTab === 'DM') {
-          // Direct Message
-          if (rawVal.charAt(0) !== '@') rawVal = '@' + rawVal;
-          if (rawVal.length < 4) {
-            _setHint('Username must be 3+ characters', 'err');
-            return;
-          }
-          if (!/^@[a-zA-Z0-9_]+$/.test(rawVal)) {
-            _setHint('Letters, numbers, and underscores only', 'err');
-            return;
-          }
-
-          if (window.supa) {
-            _setHint('Verifying user identity... 🛰️', 'info');
-            try {
-              var res = await supa.from('profiles').select('*').ilike('username', rawVal).single();
-              if (res.error || !res.data) {
-                _setHint('User ' + rawVal + ' not found in the grid.', 'err');
-                return;
-              }
-              var prof = res.data;
-              newId = prof.id; // Profile UUID
-              displayName = prof.username;
-              avColor = prof.avatar_color || 0;
-            } catch (e) {
-              console.warn('Failed to verify user:', e);
-              _setHint('Database error verifying user identity.', 'err');
-              return;
-            }
-          } else {
-            // Local offline fallback
-            newId = rawVal;
-            displayName = rawVal.replace('@', '').split('_').map(function(s) {
-              return s.charAt(0).toUpperCase() + s.slice(1);
-            }).join(' ');
-            avColor = Math.floor(Math.random() * 12);
-          }
-
-          // Check if contact already exists in chat list
-          var contacts = getContactsList();
-          var exists = contacts.some(function (c) { return c.id === newId; });
-          if (exists) {
-            _setHint('Contact already in your direct messages', 'err');
-            return;
-          }
-
-          // Check if already unlocked (free) or requires payment
-          var isUnlocked = window.UNLOCKED_CONTACT_IDS && window.UNLOCKED_CONTACT_IDS.has(newId);
-          var DIRECT_COST = window.DIRECT_CHAT_COST || 100;
-
-          if (!isUnlocked) {
-            // Two-step confirmation: first click shows cost, second click charges
-            if (!confirmBtn.dataset.awaitingPayment) {
-              var noticeText = (window.T ? window.T('directChatCostNotice') : 'Opening DM will cost {cost} SPK.')
-                .replace('{name}', displayName).replace('{cost}', DIRECT_COST);
-              _setHint(noticeText, 'info');
-              confirmBtn.dataset.awaitingPayment = '1';
-              confirmBtn.textContent = (window.T ? window.T('directChatConfirmBtn') : 'Open for {cost} SPK →')
-                .replace('{cost}', DIRECT_COST);
-              return;
-            }
-            // Second click — charge via RPC
-            delete confirmBtn.dataset.awaitingPayment;
-            confirmBtn.textContent = '⏳…';
-            confirmBtn.disabled = true;
-
-            if (window.supa && window.ME) {
-              var balance = (window.PROFILE && window.PROFILE.spk_balance) || 0;
-              if (balance < DIRECT_COST) {
-                _setHint(window.T ? window.T('caErrBalance') : 'Not enough SPK.', 'err');
-                confirmBtn.disabled = false;
-                confirmBtn.textContent = window.T ? window.T('directChatConfirmBtn').replace('{cost}', DIRECT_COST) : 'Confirm →';
-                return;
-              }
-              try {
-                var unlockRes = await supa.rpc('unlock_contact', { p_contact_id: newId, p_cost: DIRECT_COST });
-                var unlockData = unlockRes.data;
-                if (!unlockData || !unlockData.success) {
-                  var errMsg = (unlockData && unlockData.message === 'insufficient_balance')
-                    ? (window.T ? window.T('caErrBalance') : 'Not enough SPK.')
-                    : (window.T ? window.T('caErrGeneric') : 'Error unlocking contact.');
-                  _setHint(errMsg, 'err');
-                  confirmBtn.disabled = false;
-                  confirmBtn.textContent = window.T ? window.T('directChatConfirmBtn').replace('{cost}', DIRECT_COST) : 'Confirm →';
-                  return;
-                }
-                // Update balance
-                if (window.PROFILE) window.PROFILE.spk_balance = Number(unlockData.new_balance) || window.PROFILE.spk_balance;
-                if (window.updateHeader) window.updateHeader();
-              } catch (e) {
-                _setHint(window.T ? window.T('caErrGeneric') : 'Error.', 'err');
-                confirmBtn.disabled = false;
-                return;
-              }
-            } else {
-              // Offline mode
-              if (window.PROFILE) window.PROFILE.spk_balance = Math.max(0, (window.PROFILE.spk_balance || 0) - DIRECT_COST);
-              if (window.updateHeader) window.updateHeader();
-            }
-            window.UNLOCKED_CONTACT_IDS.add(newId);
-            confirmBtn.disabled = false;
-          }
-
-          // Push new contact
-          contacts.push({
-            id: newId,
-            name: displayName,
-            username: displayName,
-            online: true,
-            avColor: avColor,
-            preview: 'Signal room opened.'
-          });
-          saveContactsList(contacts);
-
-        } else {
-          // Team Channel
-          if (rawVal.charAt(0) !== '#') rawVal = '#' + rawVal;
-          if (rawVal.length < 4) {
-            _setHint('Channel name must be 3+ characters', 'err');
-            return;
-          }
-          if (!/^#[a-zA-Z0-9_-]+$/.test(rawVal)) {
-            _setHint('Letters, numbers, dashes and underscores only', 'err');
-            return;
-          }
-
-          newId = rawVal.replace('#', '').toLowerCase();
-          displayName = rawVal.replace('#', '').split('-').map(function(s) {
-            return s.charAt(0).toUpperCase() + s.slice(1);
-          }).join(' ');
-
-          // Check if team already exists
-          var teams = getTeamsList();
-          var exists = teams.some(function (t) { return t.id === newId; });
-          if (exists) {
-            _setHint('Channel already exists in your registry', 'err');
-            return;
-          }
-
-          // Push new team
-          teams.push({
-            id: newId,
-            name: displayName,
-            activeCount: 1,
-            avColor: Math.floor(Math.random() * 12),
-            preview: 'Channel established.'
-          });
-          saveTeamsList(teams);
-
-          // Сохраняем участников в БД и строим системное сообщение
-          var memberNames = [];
-          var memberRows  = [];
-          if (selectedMembers && selectedMembers.size > 0) {
-            var allContacts = getContactsList();
-            selectedMembers.forEach(function (mid) {
-              var c = allContacts.find(function (x) { return x.id === mid; });
-              if (c) memberNames.push(c.username || c.name || mid);
-              memberRows.push({ channel_id: newId, user_id: mid });
-            });
-          }
-
-          if (window.supa && window.ME && memberRows.length > 0) {
-            // Также записываем создателя
-            memberRows.unshift({ channel_id: newId, user_id: window.ME.id });
-            supa.from('channel_members').insert(memberRows).then(function (r) {
-              if (r.error) console.warn('[channel_members insert]', r.error);
-            });
-          }
-
-          // Системное сообщение о создании
-          var creatorName = (window.PROFILE && window.PROFILE.username) || 'you';
-          var sysText = creatorName + ' created the channel';
-          if (memberNames.length > 0) sysText += ' and added ' + memberNames.join(', ');
-
-          var msgs = getCachedMessages();
-          msgs[newId] = [
-            { id: 'm_sys_init', sender_id: 'system', sender_name: 'SYSTEM', sender_avatar_color: 11, content: sysText, created_at: Date.now() }
-          ];
-          cacheMessages(msgs);
+        // Normalize: ensure leading '#'
+        if (rawVal.charAt(0) !== '#') rawVal = '#' + rawVal;
+        if (rawVal.length < 4) {
+          _setHint(T('ccErrName'), 'err');
+          return;
+        }
+        if (!/^#[a-zA-Z0-9_-]+$/.test(rawVal)) {
+          _setHint(T('ccErrNameChars'), 'err');
+          return;
         }
 
-        // Close modal and open channel (for both DM and TEAM)
-        if (state.modalTab === 'DM') {
-          // DM: initialize message thread if not already done
-          var dmMsgs = getCachedMessages();
-          if (!dmMsgs[newId]) {
-            dmMsgs[newId] = [
-              { id: 'm_sys_init', sender_id: 'system', sender_name: 'SYSTEM', sender_avatar_color: 11, content: 'Signal channel opened. Security synchronized.', created_at: Date.now() }
-            ];
-            cacheMessages(dmMsgs);
-          }
+        var newId       = rawVal.slice(1).toLowerCase();
+        var displayName = rawVal.slice(1).split('-').map(function (s) {
+          return s.charAt(0).toUpperCase() + s.slice(1);
+        }).join(' ');
+
+        var teams  = getTeamsList();
+        if (teams.some(function (t) { return t.id === newId; })) {
+          _setHint(T('ccErrExists'), 'err');
+          return;
         }
+
+        // Disable button while saving
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = '⏳…';
+
+        teams.push({
+          id:          newId,
+          name:        displayName,
+          activeCount: 1,
+          avColor:     Math.floor(Math.random() * 12),
+          preview:     T('ccBtnConfirm')
+        });
+        saveTeamsList(teams);
+
+        // Save members to DB and build system message
+        var memberNames = [];
+        var memberRows  = [];
+        if (_teamSelectedMembers.size > 0) {
+          var allContacts = getContactsList();
+          _teamSelectedMembers.forEach(function (mid) {
+            var c = allContacts.find(function (x) { return x.id === mid; });
+            if (c) memberNames.push(c.username || c.name || mid);
+            memberRows.push({ channel_id: newId, user_id: mid });
+          });
+        }
+        if (window.supa && window.ME && memberRows.length > 0) {
+          memberRows.unshift({ channel_id: newId, user_id: window.ME.id });
+          supa.from('channel_members').insert(memberRows).then(function (r) {
+            if (r.error) console.warn('[channel_members insert]', r.error);
+          });
+        }
+
+        var creatorName = (window.PROFILE && window.PROFILE.username) || 'you';
+        var sysText = creatorName + T('chatSysCreated');
+        if (memberNames.length > 0) sysText += T('chatSysAdded') + memberNames.join(', ');
+
+        var msgs = getCachedMessages();
+        msgs[newId] = [{
+          id: 'm_sys_init',
+          sender_id: 'system',
+          sender_name: 'SYSTEM',
+          sender_avatar_color: 11,
+          content: sysText,
+          created_at: Date.now()
+        }];
+        cacheMessages(msgs);
+
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = T('ccBtnConfirm');
 
         if (window.closeMo) closeMo('moCreateChat');
         selectChannel(newId);
       });
     }
 
-    // Wire up backdrop overlay click to close
+    // Backdrop click closes modal
     var moCreateChat = document.getElementById('moCreateChat');
     if (moCreateChat) {
       moCreateChat.addEventListener('click', function (event) {
@@ -2915,7 +2754,7 @@ var ChatsEngine = (function () {
 
     if (visibleMsgs.length === 0) {
       existingArea.innerHTML = '<div style="text-align:center;padding:48px 0;color:var(--mu);font-size:12px">' 
-        + (window.LANG === 'ru' ? 'В этом секретном канале пока нет сообщений.' : 'No messages in this signal room yet.') 
+        + (window.T ? window.T('chatNoMessages') : 'No messages yet.')
         + '</div>';
       return;
     }
