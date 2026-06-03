@@ -1620,13 +1620,12 @@ function achCardHTML(ach, state, sfx, extra) {
 
   var repostFormHtml = '';
   if (ach.id === 'adv_repost' && state === 'locked') {
-    var userCode = ME ? ('SPARK-' + ME.id.replace(/-/g, '').slice(0, 6).toUpperCase()) : 'SPARK-??????';
     repostFormHtml = '<div class="ach-repost-form">'
 
       /* ── Всегда виден: код верификации ── */
       + '<div class="ach-code-label">' + T('achCodeLabel') + '</div>'
       + '<div class="ach-repost-code" id="achCode-' + sfx + '" title="' + T('achCodeCopied') + '">'
-      + '<span>' + userCode + '</span>'
+      + '<span id="achCodeVal-' + sfx + '">SPARK-??????</span>'
       + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'
       + '</div>'
 
@@ -1646,7 +1645,7 @@ function achCardHTML(ach, state, sfx, extra) {
       + '<div class="ach-how-step"><div class="ach-how-num">2</div>'
       + '<div class="ach-how-text">' + T('achHowStep2Intro') + '<br>'
       + '<span class="ach-how-req">' + T('achHowStep2Link') + '</span>'
-      + '<span class="ach-how-req">' + T('achHowStep2Code').replace('{code}', '<strong>' + userCode + '</strong>') + '</span>'
+      + '<span class="ach-how-req">' + T('achHowStep2Code').replace('{code}', '<strong id="achCodeInline-' + sfx + '">SPARK-??????</strong>') + '</span>'
       + '</div></div>'
 
       + '<div class="ach-how-step"><div class="ach-how-num">3</div>'
@@ -1722,6 +1721,22 @@ async function renderAchievements(sfx) {
   }).join('');
 
   container.innerHTML = html;
+
+  // Загружаем HMAC-код верификации с сервера (не может быть вычислен локально)
+  if (container.querySelector('#achCode-' + sfx)) {
+    loadUserRepostCode(sfx);
+  }
+}
+
+async function loadUserRepostCode(sfx) {
+  if (!ME) return;
+  var r = await callEdgeFunction('verify-repost', { repost_link: '__get_code__' });
+  if (!r.ok || !r.data || !r.data.code) return;
+  var code = r.data.code;
+  var span = document.getElementById('achCodeVal-' + sfx);
+  if (span) span.textContent = code;
+  var inline = document.getElementById('achCodeInline-' + sfx);
+  if (inline) inline.textContent = code;
 }
 
 async function doClaimAchievement(achId) {
@@ -1802,12 +1817,6 @@ async function doVerifyRepost(sfx) {
     verdict.innerHTML = '<span class="ach-verdict-ok">' + T('repostOkApproved') + '</span>';
     renderAchievements('D');
     renderAchievements('M');
-    return;
-  }
-
-  if (data.status === 'pending') {
-    var pendingMsg = T('repostPending').replace('{code}', escapeHTML(data.code || ''));
-    verdict.innerHTML = '<span class="ach-verdict-pending">' + pendingMsg + '</span>';
     return;
   }
 

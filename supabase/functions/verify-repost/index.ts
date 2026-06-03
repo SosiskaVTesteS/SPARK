@@ -12,12 +12,24 @@ function json(body: unknown, status = 200) {
   });
 }
 
-const RATE_LIMIT_MS = 5 * 60 * 1000;
+const RATE_LIMIT_MS      = 5 * 60 * 1000;
+const ACCOUNT_MIN_AGE_MS = 24 * 60 * 60 * 1000; // 24 часа
 
-// ── Генерируем уникальный код из user_id (детерминированный, без БД) ────────
-function getUserCode(userId: string): string {
-  const clean = userId.replace(/-/g, '').toUpperCase();
-  return 'SPARK-' + clean.slice(0, 6);
+// ── Генерируем стойкий уникальный код через HMAC-SHA256 ──────────────────
+async function getUserCode(userId: string, secret: string): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(userId));
+  const hex = Array.from(new Uint8Array(sig).slice(0, 5))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+    .toUpperCase();
+  return 'SPARK-' + hex;
 }
 
 // ── Шаблоны постов в соцсетях ──────────────────────────────────────────────
@@ -131,6 +143,28 @@ async function fetchPage(url: string): Promise<{ text: string; ok: boolean }> {
   return { text: '', ok: false };
 }
 
+// ── Журнал мошеннических действий ────────────────────────────────────────
+async function logFraud(
+  admin:      ReturnType<typeof createClient>,
+  userId:     string,
+  repostLink: string,
+  eventType:  string,
+  codeUsed:   string,
+  meta:       Record<string, unknown> = {},
+): Promise<void> {
+  try {
+    await admin.from('fraud_log').insert({
+      user_id:     userId     || null,
+      event_type:  eventType,
+      repost_link: repostLink || null,
+      code_used:   codeUsed,
+      meta,
+    });
+  } catch (e) {
+    console.error('[verify-repost] fraud_log insert failed:', e);
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
@@ -152,7 +186,8 @@ Deno.serve(async (req) => {
   if (authErr || !user) return json({ message: 'Unauthorized' }, 401);
 
   const userId   = user.id;
-  const userCode = getUserCode(userId); // e.g. "SPARK-A3F2B1"
+  const secret   = Deno.env.get('REPOST_CODE_SECRET') ?? 'fallback-dev-secret';
+  const userCode = await getUserCode(userId, secret);
 
   // ── Body ─────────────────────────────────────────────────────────────────
   let payload: { repost_link?: string };
@@ -170,6 +205,18 @@ Deno.serve(async (req) => {
     const u = new URL(repostLink);
     if (!['http:', 'https:'].includes(u.protocol)) throw new Error('bad protocol');
   } catch { return json({ message: 'invalid_url' }, 400); }
+
+  // ── Возраст аккаунта: минимум 24 часа (#4) ───────────────────────────────
+  const createdAt = user.created_at ? new Date(user.created_at).getTime() : 0;
+  if (Date.now() - createdAt < ACCOUNT_MIN_AGE_MS) {
+    logFraud(admin, userId, repostLink, 'account_too_new', userCode);
+    return json({
+      success: false,
+      status:  'rejected',
+      reason:  'Аккаунт слишком новый. Попробуйте через 24 часа после регистрации.',
+      code:    userCode,
+    }, 403);
+  }
 
   // ── Rate limit ────────────────────────────────────────────────────────────
   const rateCutoff = new Date(Date.now() - RATE_LIMIT_MS).toISOString();
@@ -192,6 +239,26 @@ Deno.serve(async (req) => {
     .limit(1).maybeSingle();
   if (alreadyApproved) return json({ message: 'already_approved', status: 'approved' });
 
+  // ── Защита от дублирования ссылки между пользователями (#3) ────────────
+  const { data: linkUsedByOther } = await admin
+    .from('repost_claims')
+    .select('user_id')
+    .eq('repost_link', repostLink)
+    .eq('status', 'approved')
+    .neq('user_id', userId)
+    .limit(1)
+    .maybeSingle();
+
+  if (linkUsedByOther) {
+    logFraud(admin, userId, repostLink, 'duplicate_link', userCode);
+    return json({
+      success: false,
+      status:  'rejected',
+      reason:  'Эта ссылка уже была использована другим пользователем.',
+      code:    userCode,
+    });
+  }
+
   // ── Скрапим страницу; для Reddit используем публичный JSON API ──────────
   let { text: pageText, ok: pageAccessible } = await fetchPage(repostLink);
   if (!pageAccessible && /reddit\.com/i.test(repostLink)) {
@@ -205,6 +272,7 @@ Deno.serve(async (req) => {
 
   // 1. Обязательно: URL должен быть постом в соцсети
   if (!looksLikeSocialPost(repostLink)) {
+    logFraud(admin, userId, repostLink, 'invalid_social_url', userCode);
     verdict = 'INVALID';
     reason  = `Ссылка не соответствует формату поста в соцсети. Укажите прямую ссылку на публикацию (VK, Telegram, X/Twitter и др.) и убедитесь, что в тексте поста указан ваш код верификации: ${userCode}.`;
   }
@@ -212,6 +280,7 @@ Deno.serve(async (req) => {
   else if (pageAccessible) {
     const codeFound = pageText.toUpperCase().includes(userCode);
     if (!codeFound) {
+      logFraud(admin, userId, repostLink, 'invalid_code_in_page', userCode);
       verdict = 'INVALID';
       reason  = `В тексте поста не найден ваш код верификации ${userCode}. Добавьте его в пост.`;
     } else {
@@ -223,11 +292,13 @@ Deno.serve(async (req) => {
   //    без возможности прочитать текст пост нельзя одобрить автоматически.
   else {
     verdict = 'PENDING';
-    reason  = `Не удалось автоматически прочитать ваш пост — соцсеть блокирует серверные запросы. Пост поставлен на ручную проверку. Убедитесь, что в тексте поста есть ваш код верификации: ${userCode}.`;
+    reason  = `Страница недоступна для автопроверки. Заявка поставлена в очередь. Убедитесь, что в посте есть ваш код ${userCode} и он публично доступен.`;
   }
 
   // ── Запись в БД ───────────────────────────────────────────────────────────
-  const finalStatus = verdict === 'VALID' ? 'approved' : verdict === 'PENDING' ? 'pending' : 'rejected';
+  const finalStatus = verdict === 'VALID'   ? 'approved'
+                    : verdict === 'PENDING' ? 'pending'
+                    : 'rejected';
   await admin.from('repost_claims').insert({
     user_id:      userId,
     repost_link:  repostLink,
