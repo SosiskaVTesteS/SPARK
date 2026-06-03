@@ -233,11 +233,39 @@ Deno.serve(async (req) => {
     return json({ message: 'rate_limited', wait_seconds: waitSec }, 429);
   }
 
-  // ── Уже одобрено? ─────────────────────────────────────────────────────────
-  const { data: alreadyApproved } = await admin
-    .from('repost_claims').select('id').eq('user_id', userId).eq('status', 'approved')
+  // ── Проверка максимума одобренных репостов (ранг V = 30 репостов) ──────────
+  const { count: approvedCount } = await admin
+    .from('repost_claims')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('status', 'approved');
+
+  if ((approvedCount ?? 0) >= 30) {
+    return json({
+      success: false,
+      status:  'max_reached',
+      reason:  'Достигнут максимум (30 репостов). Все ранги Амбассадора SPARK открыты!',
+    });
+  }
+
+  // ── Защита от повторной подачи той же ссылки тем же пользователем ──────────
+  const { data: ownClaim } = await admin
+    .from('repost_claims')
+    .select('id, status')
+    .eq('user_id', userId)
+    .eq('repost_link', repostLink)
+    .neq('status', 'rejected')
     .limit(1).maybeSingle();
-  if (alreadyApproved) return json({ message: 'already_approved', status: 'approved' });
+
+  if (ownClaim) {
+    return json({
+      success: false,
+      status:  'rejected',
+      reason:  ownClaim.status === 'approved'
+        ? `Этот пост уже был подтверждён ранее. Для следующего ранга нужна новая публикация с кодом ${userCode}.`
+        : 'Этот пост уже находится на проверке.',
+    });
+  }
 
   // ── Защита от дублирования ссылки между пользователями (#3) ────────────
   const { data: linkUsedByOther } = await admin

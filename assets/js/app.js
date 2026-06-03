@@ -1962,12 +1962,13 @@ async function doVerifyRepost(sfx) {
   }
 
   var data       = r.data || {};
-  var isApproved = data.message === 'already_approved' || data.status === 'approved';
+  var isApproved = data.status === 'approved' || data.message === 'already_approved';
   var isPending  = !isApproved && data.status === 'pending';
+  var isMaxed    = data.status === 'max_reached';
 
+  // Репост одобрен (свежий или ранее одобренный) — ре-рендерим карточку,
+  // затем вставляем вердикт в НОВЫЕ div'ы (старые уничтожены ре-рендером)
   if (isApproved || data.success) {
-    // Перерисовываем карточки (счётчик репостов изменился), затем
-    // вставляем вердикт в НОВЫЕ div'ы — старые уничтожены ре-рендером
     await Promise.all([renderAchievements('D'), renderAchievements('M')]);
     var okMsg = '<span class="ach-verdict-ok">' + T('repostOkApproved') + '</span>';
     ['D', 'M'].forEach(function (s) {
@@ -1977,8 +1978,19 @@ async function doVerifyRepost(sfx) {
     return;
   }
 
+  // Достигнут максимум (30 репостов) — ре-рендерим чтобы показать актуальный прогресс
+  if (isMaxed) {
+    await Promise.all([renderAchievements('D'), renderAchievements('M')]);
+    var maxMsg = '<span class="ach-verdict-ok">' + T('repostMaxReached') + '</span>';
+    ['D', 'M'].forEach(function (s) {
+      var v = document.getElementById('achRepostVerdict-' + s);
+      if (v) v.innerHTML = maxMsg;
+    });
+    return;
+  }
+
+  // Страница недоступна для автопроверки — заявка в очереди, не ре-рендерим
   if (isPending) {
-    // Страница недоступна для автопроверки — заявка в очереди, не ре-рендерим
     var codeEl = document.getElementById('achCodeVal-' + sfx);
     var code   = codeEl ? codeEl.textContent : '';
     verdict.innerHTML = '<span class="ach-verdict-pending">'
@@ -1987,7 +1999,7 @@ async function doVerifyRepost(sfx) {
     return;
   }
 
-  // Rejected — показываем причину, ре-рендер не нужен
+  // Rejected — показываем причину от сервера, ре-рендер не нужен
   verdict.innerHTML = '<span class="ach-verdict-fail">✗ ' + escapeHTML(data.reason || T('repostErrServer')) + '</span>';
 }
 
