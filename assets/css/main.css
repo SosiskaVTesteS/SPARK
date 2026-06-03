@@ -2692,6 +2692,18 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
   line-height: 1.45;
   animation: achFadeIn 0.25s ease both;
 }
+.ach-repost-age-notice {
+  margin-top: 7px;
+  font-size: 11px;
+  color: var(--mu2);
+}
+.ach-age-timer {
+  font-family: var(--fh);
+  font-weight: 700;
+  color: var(--ac);
+  letter-spacing: 0.05em;
+}
+
 .ach-verdict-ok      { color: var(--ac2); }
 .ach-verdict-fail    { color: var(--red); }
 .ach-verdict-pending { color: var(--ac); }
@@ -2750,4 +2762,82 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
 .ach-spark-particle:nth-child(odd)  { background: var(--vl2); box-shadow: 0 0 6px var(--vl2); }
 .ach-spark-particle:nth-child(3n)   { background: var(--ac2); box-shadow: 0 0 6px var(--ac2); }
 
+/* ── Rank badges ──────────────────────────────────────────── */
+.ach-rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  padding: 2px 7px;
+  border-radius: 20px;
+  margin-left: 6px;
+  vertical-align: middle;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  border: 1px solid rgba(255,255,255,0.15);
+}
+.ach-rank-badge--I   { background: #CD7F32; color: #fff; box-shadow: 0 0 6px rgba(205,127,50,0.5); }
+.ach-rank-badge--II  { background: #9BA4B5; color: #fff; box-shadow: 0 0 6px rgba(192,192,192,0.5); }
+.ach-rank-badge--III { background: #FFD700; color: #333; box-shadow: 0 0 10px rgba(255,215,0,0.6); }
+.ach-rank-badge--IV  { background: #00BFFF; color: #fff; box-shadow: 0 0 10px rgba(0,191,255,0.6); }
+.ach-rank-badge--V   { background: linear-gradient(135deg,#9B59B6,#E91E63); color: #fff; box-shadow: 0 0 14px rgba(155,89,182,0.7); }
+
+/* ── Rank track (5 pips + connectors) ─────────────────────── */
+.ach-rank-track {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 8px 0 6px;
+}
+.ach-rank-pip {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  font-weight: 700;
+  flex-shrink: 0;
+  border: 1.5px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.05);
+  color: var(--mu);
+  transition: all 0.3s ease;
+}
+.ach-rank-pip.earned { color: #fff; }
+.ach-rank-pip.pip-I   { background: #CD7F32; border-color: #CD7F32; box-shadow: 0 0 6px rgba(205,127,50,0.5); }
+.ach-rank-pip.pip-II  { background: #9BA4B5; border-color: #9BA4B5; }
+.ach-rank-pip.pip-III { background: #FFD700; border-color: #FFD700; color: #333; box-shadow: 0 0 8px rgba(255,215,0,0.5); }
+.ach-rank-pip.pip-IV  { background: #00BFFF; border-color: #00BFFF; box-shadow: 0 0 8px rgba(0,191,255,0.5); }
+.ach-rank-pip.pip-V   { background: linear-gradient(135deg,#9B59B6,#E91E63); border-color: #9B59B6; box-shadow: 0 0 12px rgba(155,89,182,0.7); }
+
+.ach-rank-connector {
+  flex: 1;
+  height: 2px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 1px;
+  position: relative;
+  overflow: hidden;
+}
+.ach-rank-connector.filled::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, var(--ac), var(--ac2));
+  animation: achRankFill 0.5s ease forwards;
+}
+@keyframes achRankFill {
+  from { width: 0 }
+  to   { width: 100% }
+}
+
+/* ── Claim button pulse when rank is ready ─────────────────── */
+.ach-btn-ready.rank-ready {
+  animation: achRankPulse 1.8s ease-in-out infinite;
+}
+@keyframes achRankPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(232,197,90,0.4); }
+  50%       { box-shadow: 0 0 0 8px rgba(232,197,90,0); }
+}
 

@@ -225,7 +225,7 @@ document.addEventListener('DOMContentLoaded', function () {
       }
       var claimAchBtn = event.target.closest('[data-claim-ach]');
       if (claimAchBtn && !claimAchBtn.disabled) {
-        doClaimAchievement(claimAchBtn.dataset.claimAch);
+        doClaimAchievement(claimAchBtn.dataset.claimAch, parseInt(claimAchBtn.dataset.claimRank, 10) || 1);
         return;
       }
       var verifyRepostBtn = event.target.closest('[data-verify-repost]');
@@ -1587,39 +1587,126 @@ function initAchievementsToggle(sfx) {
 
 function getAchDefs() {
   return [
-    { id:'fill_profile',   title:T('achFillProfileTitle'),  desc:T('achFillProfileDesc'),  reward:100, icon:'👤' },
-    { id:'create_5_ideas', title:T('achCreate5IdeasTitle'), desc:T('achCreate5IdeasDesc'), reward:100, icon:'💡' },
-    { id:'adv_repost',     title:T('achAdvRepostTitle'),    desc:T('achAdvRepostDesc'),    reward:50,  icon:'📢' },
+    {
+      id: 'fill_profile', icon: '👤',
+      title: T('achFillProfileTitle'),
+      ranks: [
+        { rank: 1, label: 'I',   reward: 100, desc: T('achFillProfileDesc1') },
+        { rank: 2, label: 'II',  reward: 150, desc: T('achFillProfileDesc2') },
+        { rank: 3, label: 'III', reward: 200, desc: T('achFillProfileDesc3') },
+        { rank: 4, label: 'IV',  reward: 300, desc: T('achFillProfileDesc4') },
+        { rank: 5, label: 'V',   reward: 500, desc: T('achFillProfileDesc5') },
+      ]
+    },
+    {
+      id: 'create_ideas', icon: '💡',
+      title: T('achCreate5IdeasTitle'),
+      ranks: [
+        { rank: 1, label: 'I',   reward: 100,  threshold: 5,   desc: T('achIdeasDesc1') },
+        { rank: 2, label: 'II',  reward: 200,  threshold: 15,  desc: T('achIdeasDesc2') },
+        { rank: 3, label: 'III', reward: 350,  threshold: 30,  desc: T('achIdeasDesc3') },
+        { rank: 4, label: 'IV',  reward: 500,  threshold: 60,  desc: T('achIdeasDesc4') },
+        { rank: 5, label: 'V',   reward: 1000, threshold: 100, desc: T('achIdeasDesc5') },
+      ]
+    },
+    {
+      id: 'adv_repost', icon: '📢',
+      title: T('achAdvRepostTitle'),
+      ranks: [
+        { rank: 1, label: 'I',   reward: 50,  threshold: 1,  desc: T('achRepostDesc1') },
+        { rank: 2, label: 'II',  reward: 100, threshold: 3,  desc: T('achRepostDesc2') },
+        { rank: 3, label: 'III', reward: 200, threshold: 7,  desc: T('achRepostDesc3') },
+        { rank: 4, label: 'IV',  reward: 350, threshold: 15, desc: T('achRepostDesc4') },
+        { rank: 5, label: 'V',   reward: 500, threshold: 30, desc: T('achRepostDesc5') },
+      ]
+    },
   ];
 }
 // ACH_DEFS не кешируем — вызываем getAchDefs() при каждом рендере чтобы язык всегда был актуальным
 var ACH_DEFS = [];
 
-function achCardHTML(ach, state, sfx, extra) {
-  extra = extra || {};
+function achCardHTML(ach, rankData, sfx, extra) {
+  extra    = extra    || {};
+  rankData = rankData || { current_rank: 0, next_rank: 1, next_rank_reward: ach.ranks[0].reward, progress: {} };
+
+  var currentRank = rankData.current_rank || 0;
+  var nextRank    = rankData.next_rank;          // null when all 5 done
+  var progress    = rankData.progress || {};
+
+  var isAllDone = (currentRank === 5);
+  var isReady   = false;
+  if (!isAllDone && nextRank) {
+    if (ach.id === 'fill_profile') {
+      if      (nextRank === 1) isReady = (progress.bio_length > 0 && !!progress.has_username);
+      else if (nextRank === 2) isReady = (progress.bio_length > 50 && progress.avatar_color !== 0);
+      else if (nextRank === 3) isReady = (progress.bio_length > 100);
+      else if (nextRank === 4) isReady = (currentRank >= 3);   // link check is server-side only
+      else if (nextRank === 5) isReady = (progress.bio_length >= 160);
+    } else if (ach.id === 'create_ideas') {
+      isReady = ((progress.ideas_count || 0) >= progress.threshold);
+    } else if (ach.id === 'adv_repost') {
+      isReady = ((progress.reposts_count || 0) >= progress.threshold);
+    }
+  }
+  var state = isAllDone ? 'claimed' : (isReady ? 'ready' : 'locked');
+
   var lockSvg  = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
   var checkSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
   var starSvg  = '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
 
+  // Rank badge shows the highest earned rank
+  var rankLabels = ['I', 'II', 'III', 'IV', 'V'];
+  var badgeHtml = currentRank > 0
+    ? '<span class="ach-rank-badge ach-rank-badge--' + rankLabels[currentRank - 1] + '">' + rankLabels[currentRank - 1] + '</span>'
+    : '';
+
+  // Header: description and reward of the NEXT rank to earn
+  var nextRankDef = nextRank ? ach.ranks[nextRank - 1] : null;
+  var descHtml    = nextRankDef ? nextRankDef.desc : T('achAllRanksDone');
+  var rewardVal   = nextRankDef ? nextRankDef.reward : ach.ranks[4].reward;
+
+  // Rank track: 5 pips with connectors
+  var trackHtml = '<div class="ach-rank-track">';
+  for (var rp = 1; rp <= 5; rp++) {
+    var lbl    = rankLabels[rp - 1];
+    var earned = rp <= currentRank;
+    trackHtml += '<div class="ach-rank-pip' + (earned ? ' earned pip-' + lbl : '') + '">' + lbl + '</div>';
+    if (rp < 5) {
+      trackHtml += '<div class="ach-rank-connector' + (rp < currentRank ? ' filled' : '') + '"></div>';
+    }
+  }
+  trackHtml += '</div>';
+
+  // Numeric progress bar
+  var progressHtml = '';
+  if (ach.id === 'create_ideas' && !isAllDone && progress.threshold) {
+    var ideasCnt = Math.min(progress.ideas_count || 0, progress.threshold);
+    var ideasPct = Math.round(ideasCnt / progress.threshold * 100);
+    progressHtml = '<div class="ach-progress"><div class="ach-progress-bar" style="width:' + ideasPct + '%"></div></div>'
+      + '<div class="ach-progress-label">' + ideasCnt + ' / ' + progress.threshold + ' ' + T('achIdeasUnit') + '</div>';
+  } else if (ach.id === 'adv_repost' && !isAllDone && progress.threshold) {
+    var repostCnt = Math.min(progress.reposts_count || 0, progress.threshold);
+    var repostPct = Math.round(repostCnt / progress.threshold * 100);
+    progressHtml = '<div class="ach-progress"><div class="ach-progress-bar" style="width:' + repostPct + '%"></div></div>'
+      + '<div class="ach-progress-label">' + repostCnt + ' / ' + progress.threshold + ' ' + T('achRepostsUnit') + '</div>';
+  }
+
+  // Button
   var btn = '';
-  if (state === 'claimed') {
-    btn = '<button class="ach-btn ach-btn-claimed" disabled>' + checkSvg + ' ' + T('achClaimed') + '</button>';
-  } else if (state === 'ready') {
-    btn = '<button class="ach-btn ach-btn-ready" data-claim-ach="' + ach.id + '">' + starSvg + ' +' + ach.reward + ' SPK</button>';
+  if (isAllDone) {
+    btn = '<button class="ach-btn ach-btn-claimed" disabled>' + checkSvg + ' ' + T('achAllRanksDone') + '</button>';
+  } else if (isReady) {
+    var nxtLabel = rankLabels[nextRank - 1];
+    btn = '<button class="ach-btn ach-btn-ready rank-ready" data-claim-ach="' + ach.id + '" data-claim-rank="' + nextRank + '">'
+      + starSvg + ' ' + T('achNextRank').replace('{label}', nxtLabel).replace('{reward}', rewardVal)
+      + '</button>';
   } else {
     btn = '<button class="ach-btn ach-btn-locked" disabled>' + lockSvg + ' ' + T('achLocked') + '</button>';
   }
 
-  var progressHtml = '';
-  if (ach.id === 'create_5_ideas' && state !== 'claimed') {
-    var cnt = Math.min(extra.ideas_count || 0, 5);
-    var pct = Math.round(cnt / 5 * 100);
-    progressHtml = '<div class="ach-progress"><div class="ach-progress-bar" style="width:' + pct + '%"></div></div>'
-      + '<div class="ach-progress-label">' + cnt + ' / 5 идей</div>';
-  }
-
+  // Repost form (adv_repost only, visible until all ranks are done)
   var repostFormHtml = '';
-  if (ach.id === 'adv_repost' && state === 'locked') {
+  if (ach.id === 'adv_repost' && !isAllDone) {
     repostFormHtml = '<div class="ach-repost-form">'
 
       /* ── Всегда виден: код верификации ── */
@@ -1667,6 +1754,11 @@ function achCardHTML(ach, state, sfx, extra) {
       + '<input type="url" class="ach-repost-input" id="achRepostInput-' + sfx + '" placeholder="' + T('achInputPlaceholder') + '" autocomplete="off" spellcheck="false">'
       + '<button class="ach-repost-check-btn" data-verify-repost="' + sfx + '">' + T('achCheckBtn') + '</button>'
       + '</div>'
+      + (ME && ME.created_at && (Date.now() - new Date(ME.created_at).getTime()) < 24 * 60 * 60 * 1000
+          ? '<div class="ach-repost-age-notice" id="achRepostAgeNotice-' + sfx + '">'
+            + T('repostAccountAge') + ' <span class="ach-age-timer" id="achRepostTimer-' + sfx + '">--:--:--</span>'
+            + '</div>'
+          : '')
       + '<div class="ach-repost-verdict" id="achRepostVerdict-' + sfx + '"></div>'
       + '</div>';
   }
@@ -1675,11 +1767,12 @@ function achCardHTML(ach, state, sfx, extra) {
     + '<div class="ach-card-top">'
     + '<div class="ach-icon">' + ach.icon + '</div>'
     + '<div class="ach-info">'
-    + '<div class="ach-title">' + ach.title + '</div>'
-    + '<div class="ach-desc">' + ach.desc + '</div>'
+    + '<div class="ach-title">' + ach.title + badgeHtml + '</div>'
+    + '<div class="ach-desc">' + descHtml + '</div>'
     + '</div>'
-    + '<div class="ach-reward">+' + ach.reward + '<span class="ach-spk-lbl"> SPK</span></div>'
+    + (!isAllDone ? '<div class="ach-reward">+' + rewardVal + '<span class="ach-spk-lbl"> SPK</span></div>' : '')
     + '</div>'
+    + trackHtml
     + progressHtml
     + repostFormHtml
     + '<div class="ach-btn-row">' + btn + '</div>'
@@ -1707,17 +1800,34 @@ async function renderAchievements(sfx) {
     return;
   }
 
-  var st = r.data.data.data;
-  var claimedIds = Array.isArray(st.claimed_ids) ? st.claimed_ids : [];
+  var st       = r.data.data.data;
+  var rankData = st.rank_data || null;
 
   var html = ACH_DEFS.map(function (ach) {
-    var claimed = claimedIds.indexOf(ach.id) !== -1;
-    var ready   = false;
-    if      (ach.id === 'fill_profile')   ready = !!st.profile_filled;
-    else if (ach.id === 'create_5_ideas') ready = (st.ideas_count || 0) >= 5;
-    else if (ach.id === 'adv_repost')     ready = !!st.has_approved_repost;
-    var state = claimed ? 'claimed' : (ready ? 'ready' : 'locked');
-    return achCardHTML(ach, state, sfx, { ideas_count: st.ideas_count || 0 });
+    if (rankData && rankData[ach.id]) {
+      return achCardHTML(ach, rankData[ach.id], sfx, { profile_filled: !!st.profile_filled });
+    }
+    // Graceful fallback для случая когда миграция ещё не применена
+    var claimedIds = Array.isArray(st.claimed_ids) ? st.claimed_ids : [];
+    var claimed    = claimedIds.indexOf(ach.id) !== -1;
+    var ready      = false;
+    if      (ach.id === 'fill_profile')  ready = !!st.profile_filled;
+    else if (ach.id === 'create_ideas')  ready = (st.ideas_count || 0) >= 5;
+    else if (ach.id === 'adv_repost')    ready = !!st.has_approved_repost;
+    var fakeRd = {
+      current_rank:     claimed ? 1 : 0,
+      next_rank:        claimed ? null : 1,
+      next_rank_reward: ach.ranks[0].reward,
+      progress: {
+        bio_length:    0,
+        has_username:  !!st.profile_filled,
+        avatar_color:  0,
+        ideas_count:   st.ideas_count || 0,
+        reposts_count: st.has_approved_repost ? 1 : 0,
+        threshold:     ach.ranks[0].threshold || null,
+      }
+    };
+    return achCardHTML(ach, fakeRd, sfx, { profile_filled: !!st.profile_filled });
   }).join('');
 
   container.innerHTML = html;
@@ -1725,6 +1835,11 @@ async function renderAchievements(sfx) {
   // Загружаем HMAC-код верификации с сервера (не может быть вычислен локально)
   if (container.querySelector('#achCode-' + sfx)) {
     loadUserRepostCode(sfx);
+  }
+
+  // Запускаем таймер обратного отсчёта возраста аккаунта
+  if (ME && ME.created_at && container.querySelector('#achRepostTimer-' + sfx)) {
+    startRepostCountdown(sfx, new Date(ME.created_at).getTime() + 24 * 60 * 60 * 1000);
   }
 }
 
@@ -1739,17 +1854,18 @@ async function loadUserRepostCode(sfx) {
   if (inline) inline.textContent = code;
 }
 
-async function doClaimAchievement(achId) {
+async function doClaimAchievement(achId, rank) {
   if (!supa) return;
+  rank = rank || 1;
 
-  // Disable all matching claim buttons immediately (anti-double-click)
-  document.querySelectorAll('[data-claim-ach="' + achId + '"]').forEach(function (b) {
+  // Disable matching button immediately (anti-double-click)
+  document.querySelectorAll('[data-claim-ach="' + achId + '"][data-claim-rank="' + rank + '"]').forEach(function (b) {
     b.disabled = true;
     b.textContent = '⏳ ' + T('achClaiming');
   });
 
   var r = await safeSupabaseCall('database', function () {
-    return supa.rpc('claim_achievement', { p_achievement_id: achId });
+    return supa.rpc('claim_achievement_rank', { p_achievement_id: achId, p_rank: rank });
   }, { silent: true });
 
   var result = r.ok && r.data && r.data.data ? r.data.data : null;
@@ -1758,22 +1874,57 @@ async function doClaimAchievement(achId) {
     PROFILE.spk_balance = Number(result.new_balance) || PROFILE.spk_balance;
     updateHeader();
     achSparkEffect();
-    toast(T('achUnlocked').replace('{reward}', result.reward), 'var(--ac)');
+    var rankLabels = ['I', 'II', 'III', 'IV', 'V'];
+    var label = rankLabels[(result.rank || rank) - 1] || rank;
+    toast(T('achRankUnlocked').replace('{label}', label).replace('{reward}', result.reward), 'var(--ac)');
     renderAchievements('D');
     renderAchievements('M');
   } else {
-    var msg = result && result.message;
-    var text = msg === 'already_claimed'           ? T('achErrClaimed')
-             : msg === 'condition_not_met_bio'      ? T('achErrBio')
-             : msg === 'condition_not_met_username' ? T('achErrUsername')
-             : msg === 'condition_not_met_ideas'    ? T('achErrIdeas').replace('{n}', 5 - (result && result.current_count || 0))
-             : msg === 'condition_not_met_repost'   ? T('achErrRepost')
+    var msg  = result && result.message;
+    var need = result && result.required ? result.required - (result.current_count || 0) : '?';
+    var text = msg === 'already_claimed'              ? T('achErrClaimed')
+             : msg === 'previous_rank_required'       ? T('achErrPrevRank')
+             : msg === 'condition_not_met_bio'         ? T('achErrBio')
+             : msg === 'condition_not_met_username'    ? T('achErrUsername')
+             : msg === 'condition_not_met_bio_length'  ? T('achErrBioLength')
+             : msg === 'condition_not_met_avatar'      ? T('achErrAvatar')
+             : msg === 'condition_not_met_bio_link'    ? T('achErrBioLink')
+             : msg === 'condition_not_met_bio_max'     ? T('achErrBioMax')
+             : msg === 'condition_not_met_ideas'       ? T('achErrIdeas').replace('{n}', need)
+             : msg === 'condition_not_met_repost'      ? T('achErrRepost')
              : T('achErrGeneric');
     toast(text, 'var(--red)');
-    // Re-enable buttons
     renderAchievements('D');
     renderAchievements('M');
   }
+}
+
+var _repostTimers = {};
+
+function formatCountdown(ms) {
+  var s = Math.max(0, Math.ceil(ms / 1000));
+  var h = Math.floor(s / 3600);
+  var m = Math.floor((s % 3600) / 60);
+  var sec = s % 60;
+  return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
+}
+
+function startRepostCountdown(sfx, targetMs) {
+  if (_repostTimers[sfx]) clearInterval(_repostTimers[sfx]);
+  function tick() {
+    var el = document.getElementById('achRepostTimer-' + sfx);
+    if (!el) { clearInterval(_repostTimers[sfx]); delete _repostTimers[sfx]; return; }
+    var remaining = targetMs - Date.now();
+    if (remaining <= 0) {
+      clearInterval(_repostTimers[sfx]);
+      delete _repostTimers[sfx];
+      renderAchievements(sfx);
+      return;
+    }
+    el.textContent = formatCountdown(remaining);
+  }
+  tick();
+  _repostTimers[sfx] = setInterval(tick, 1000);
 }
 
 async function doVerifyRepost(sfx) {
@@ -1806,6 +1957,8 @@ async function doVerifyRepost(sfx) {
   if (!r.ok) {
     var errMsg = r.status === 429
       ? T('repostErrRate').replace('{n}', (r.data && r.data.wait_seconds) || 300)
+      : r.status === 403
+      ? T('repostErrAccountAge')
       : T('repostErrServer');
     verdict.innerHTML = '<span class="ach-verdict-fail">' + escapeHTML(errMsg) + '</span>';
     return;
