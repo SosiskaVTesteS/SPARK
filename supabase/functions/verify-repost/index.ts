@@ -80,6 +80,46 @@ function extractText(html: string): string {
   return [title, ...metas, body].join(' ');
 }
 
+// ── VK: публичный API wall.getById (не требует токена для публичных постов) ─
+async function fetchVkPost(url: string): Promise<{ text: string; ok: boolean }> {
+  // Поддерживаемые форматы:
+  //   vk.com/wall{owner_id}_{post_id}
+  //   vk.com/wall-{group_id}_{post_id}
+  //   vk.ru/wall...  (редирект на vk.com)
+  const m = /(?:vk\.com|vk\.ru)\/wall(-?\d+)_(\d+)/i.exec(url);
+  if (!m) return { text: '', ok: false };
+  const posts = `${m[1]}_${m[2]}`;
+  try {
+    const ctrl  = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 7000);
+    const res = await fetch(
+      `https://api.vk.com/method/wall.getById?posts=${posts}&v=5.199&extended=0`,
+      {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; SPARK-Verifier/1.0)',
+          'Accept':     'application/json',
+        },
+        signal: ctrl.signal,
+      },
+    );
+    clearTimeout(timer);
+    if (!res.ok) return { text: '', ok: false };
+    const data = await res.json();
+    if (data.error) return { text: '', ok: false };
+    // v5.x: { response: { items: [...] } }  /  legacy: { response: [...] }
+    const items: Record<string, unknown>[] =
+      (data.response?.items ?? data.response ?? []) as Record<string, unknown>[];
+    if (!Array.isArray(items) || items.length === 0) return { text: '', ok: false };
+    const post  = items[0];
+    const parts = [String(post.text ?? '')];
+    // репосты внутри поста (copy_history)
+    const copies = (post.copy_history as Record<string, unknown>[] | undefined) ?? [];
+    for (const c of copies) parts.push(String(c.text ?? ''));
+    const text = parts.join(' ').trim();
+    return { text, ok: true };   // ok:true даже при пустом тексте — пост читаем, кода нет
+  } catch { return { text: '', ok: false }; }
+}
+
 // ── Reddit: публичный JSON API (не блокирует серверные IP) ───────────────
 async function fetchRedditPost(url: string): Promise<{ text: string; ok: boolean }> {
   const m = /reddit\.com\/r\/\w+\/comments\/([a-z0-9]+)/i.exec(url);
@@ -287,8 +327,14 @@ Deno.serve(async (req) => {
     });
   }
 
-  // ── Скрапим страницу; для Reddit используем публичный JSON API ──────────
+  // ── Скрапим страницу; для VK и Reddit используем публичные API ──────────
   let { text: pageText, ok: pageAccessible } = await fetchPage(repostLink);
+
+  if (!pageAccessible && /(?:vk\.com|vk\.ru)/i.test(repostLink)) {
+    const vkr = await fetchVkPost(repostLink);
+    if (vkr.ok) { pageText = vkr.text; pageAccessible = true; }
+  }
+
   if (!pageAccessible && /reddit\.com/i.test(repostLink)) {
     const rr = await fetchRedditPost(repostLink);
     if (rr.ok) { pageText = rr.text; pageAccessible = true; }
