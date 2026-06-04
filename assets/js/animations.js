@@ -520,8 +520,25 @@ function refreshLogoAnimation () {
    BOOT — initialise all engines on DOMContentLoaded
    ════════════════════════════════════════════════ */
 function bootAnimations () {
-  /* Intro first — before anything else renders */
-  IntroEngine.run();
+  /* ── Two-level intro selection ──────────────────────────────
+     1. CinematicIntroEngine (~6s)
+        — absolute first visit (localStorage 'spark_ever_visited' absent)
+        — long absence (last visit > 30 days)
+     2. IntroEngine / SINGULARITY (~1.75s)
+        — all other new sessions (sessionStorage 'spark_intro_v2' absent)
+     3. Nothing — same session, intro already shown
+     markVisit() is always called to keep the last-visit timestamp fresh.
+  ─────────────────────────────────────────────────────────── */
+  if (typeof CinematicIntroEngine !== 'undefined') {
+    CinematicIntroEngine.markVisit();
+    if (CinematicIntroEngine.shouldShow()) {
+      CinematicIntroEngine.run();
+    } else {
+      IntroEngine.run();
+    }
+  } else {
+    IntroEngine.run();
+  }
 
   /* Ripples — always on */
   RippleEngine.init();

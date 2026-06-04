@@ -145,6 +145,12 @@ html.auth-active, html.auth-active body { overflow: hidden !important; height: 1
 </div>
 
 
+<!-- ════ CINEMATIC INTRO (first-ever visit + long absence) ════ -->
+<div id="cinematicIntro" aria-hidden="true">
+  <canvas id="ciCanvas"></canvas>
+  <div id="ciFadeOverlay"></div>
+</div>
+
 <!-- Декоративные сферы -->
 <div class="orb orb-b" aria-hidden="true"></div>
 <div class="orb orb-g" aria-hidden="true"></div>
@@ -776,6 +782,7 @@ html.auth-active, html.auth-active body { overflow: hidden !important; height: 1
 <!-- Настройка: скопируйте assets/js/config.example.js → assets/js/config.js (или используйте fallback) -->
 <script src="assets/js/config.js" onerror="document.write('<script src=\'assets/js/config.example.js\'></script>')"></script>
 <script src="assets/js/profile-edit.js" defer></script>
+<script src="assets/js/cinematic-intro.js" defer></script>
 <script src="assets/js/animations.js" defer></script>
 <script src="assets/js/integrations.js" defer></script>
 <script src="assets/js/data.js" defer></script>

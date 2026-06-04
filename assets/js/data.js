@@ -335,7 +335,8 @@ var I18N = {
     delSendCode: 'Send confirmation code',
     delModal2Title: 'ORBITAL CONFIRMATION',
     delModal2Sub: 'The system sent a 6-digit code to your email. Enter it to permanently erase your data. Check your spam folder if needed.',
-    delFinalBtn: 'Permanently erase system'
+    delFinalBtn: 'Permanently erase system',
+    you: 'You'
   },
   ru: {
     iot: 'Интерес орбиты', cinv: 'инвесторов', cpool: 'пул', cleft: 'осталось', binv: 'Вложить', noResults: 'Идеи не найдены',
@@ -516,7 +517,8 @@ var I18N = {
     delSendCode: 'Выслать код подтверждения',
     delModal2Title: 'ПОДТВЕРЖДЕНИЕ С ОРБИТЫ',
     delModal2Sub: 'Система отправила письмо с 6-значным кодом на ваш email. Введите его для окончательного стирания данных. Если не можете найти ключ, посмотрите в папке «Спам».',
-    delFinalBtn: 'Окончательно стереть систему'
+    delFinalBtn: 'Окончательно стереть систему',
+    you: 'Вы'
   }
 };
 var LANG = localStorage.getItem('spark_lang') || 'ru';

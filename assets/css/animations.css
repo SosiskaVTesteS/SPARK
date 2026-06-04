@@ -400,6 +400,48 @@ body.intro-active #launchOverlay { display: none !important; }
 
 
 /* ════════════════════════════════════════════════
+   CINEMATIC INTRO  #cinematicIntro
+   First-visit + long-absence brand film (~6s).
+   Sits above #sparkIntro (z-index 10001 vs 10000).
+════════════════════════════════════════════════ */
+
+#cinematicIntro {
+  position: fixed;
+  inset: 0;
+  z-index: 10001;
+  overflow: hidden;
+  background: #08070c;
+}
+
+#cinematicIntro.ci-hidden { display: none; }
+
+#ciCanvas {
+  display: block;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Fade-to-dark overlay used for the exit transition */
+#ciFadeOverlay {
+  position: absolute;
+  inset: 0;
+  background: #08070c;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 9;
+  transition: opacity 0.55s cubic-bezier(0.4, 0, 1, 1);
+}
+#ciFadeOverlay.active { opacity: 1; }
+
+/* Suppress cinematic for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  #cinematicIntro { display: none !important; }
+}
+
+
+/* ════════════════════════════════════════════════
    RIPPLE
    ════════════════════════════════════════════════ */
 

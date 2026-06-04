@@ -771,6 +771,7 @@ async function fetchProfile() {
     if (appEntered) {
       updateHeader();
       renderProfile();
+      renderLeaders();
     }
   }, 0);
 }
@@ -970,14 +971,38 @@ function renderTrends() {
 // ═══ Render leaders from profiles DB ═══
 async function renderLeaders() {
   var rankColors = ['gold', 'silver', 'bronze'];
-  var loadingHtml = '<div style="color:var(--mu);font-size:12px;padding:8px 0">Loading...</div>';
+
+  // Build self-row — shown in both online and offline paths
+  var selfHtml = '';
+  if (typeof ME !== 'undefined' && ME && PROFILE) {
+    var selfUname = escapeHTML(PROFILE.username || '@user');
+    var selfLetter = selfUname.replace('@', '').charAt(0).toUpperCase();
+    var selfAvIdx  = PROFILE.avatar_color || 0;
+    var selfAvGrad = window.ProfileEditEngine
+      ? ProfileEditEngine.getAvatarGradient(selfAvIdx)
+      : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
+    var selfBal    = Number(PROFILE.spk_balance) || 0;
+    var selfInv    = Number(PROFILE.investments_count) || 0;
+    var selfRank   = PROFILE.rank ? '#' + PROFILE.rank : '#—';
+    selfHtml = '<div class="divider"></div>'
+      + '<div class="stitle">' + T('you') + '</div>'
+      + '<div class="li li-self">'
+      + '<span class="lrank" style="width:auto;min-width:22px;color:var(--mu)">' + selfRank + '</span>'
+      + '<div class="lav" style="background:' + selfAvGrad + '">' + selfLetter + '</div>'
+      + '<div class="linf">'
+      + '<div class="lname">' + selfUname + '</div>'
+      + '<div class="lsub">' + selfInv + ' ' + (LANG === 'ru' ? 'вложений' : 'investments') + '</div>'
+      + '</div>'
+      + '<div class="lprofit" style="color:var(--ac)">' + selfBal.toLocaleString() + ' SPK</div>'
+      + '</div>';
+  }
 
   if (!supa) {
     var emptyHtml = '<div style="color:var(--mu);font-size:12px;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных' : 'No data yet') + '</div>';
     var ld = document.getElementById('leaderListDesk');
-    if (ld) ld.innerHTML = emptyHtml;
+    if (ld) ld.innerHTML = emptyHtml + selfHtml;
     var lm = document.getElementById('leaderListMob');
-    if (lm) lm.innerHTML = emptyHtml;
+    if (lm) lm.innerHTML = emptyHtml + selfHtml;
     return;
   }
 
@@ -1023,6 +1048,8 @@ async function renderLeaders() {
   } else {
     html = '<div style="color:var(--mu);font-size:12px;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных' : 'No data yet') + '</div>';
   }
+
+  html += selfHtml;
 
   var ld = document.getElementById('leaderListDesk');
   if (ld) ld.innerHTML = html;

@@ -561,6 +561,8 @@ header {
   margin-bottom: 3px;
 }
 .li:hover { background: rgba(123,92,250,0.08); transform: translateX(3px); }
+.li-self { background: rgba(123,92,250,0.07); border: 1px solid rgba(123,92,250,0.22); cursor: default; }
+.li-self:hover { background: rgba(123,92,250,0.12); transform: none; }
 .lrank { font-family:var(--fh); font-size:13px; font-weight:800; width:19px; text-align:center; flex-shrink:0; }
 .lrank.gold   { color:#FFD700; text-shadow:0 0 8px rgba(255,215,0,0.5); }
 .lrank.silver { color:#C0C0C0; text-shadow:0 0 8px rgba(192,192,192,0.4); }
