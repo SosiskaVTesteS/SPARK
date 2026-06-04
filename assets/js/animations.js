@@ -9,295 +9,203 @@
    INTRO ENGINE
    Shows animated logo sequence once per session.
    ════════════════════════════════════════════════ */
-var IntroEngine = {
-  STORAGE_KEY: 'spark_intro_v1',
-  canvas: null,
-  ctx: null,
-  particles: [],
-  animationFrameId: null,
-  phase: 'vortex', // 'vortex' | 'shockwave' | 'float'
-  shockwaveTime: 820,
-  exitTime: 2700,
-  logoCenter: { x: 0, y: 0 },
-  flashAlpha: 0,
-  colors: ['rgba(155, 95, 255, ', 'rgba(232, 90, 160, ', 'rgba(232, 197, 90, ', 'rgba(90, 232, 197, ', 'rgba(123, 92, 250, '],
+/* ════════════════════════════════════════════════
+   IntroEngine v2 — "SINGULARITY"
 
-  alreadyShown: function () {
-    try { return sessionStorage.getItem(this.STORAGE_KEY) === '1'; } catch (e) { return true; }
-  },
+   Canvas draws:
+   • 12 precision burst rays from logo center
+   • 3 expanding pulse rings (purple → pink → gold)
+   No random particles. Pure controlled geometry.
 
-  markShown: function () {
-    try { sessionStorage.setItem(this.STORAGE_KEY, '1'); } catch (e) {}
-  },
+   Shows once per session (sessionStorage flag).
+   STORAGE_KEY bumped to v2 → existing users see
+   the new preloader on their next session.
+════════════════════════════════════════════════ */
+var IntroEngine = (function () {
+  'use strict';
 
-  run: function () {
-    var intro = document.getElementById('sparkIntro');
-    if (!intro) return;
+  var _canvas = null;
+  var _ctx    = null;
+  var _raf    = null;
+  var _t0     = null;
+  var _W = 0, _H = 0, _cx = 0, _cy = 0;
 
-    if (this.alreadyShown()) {
-      intro.classList.add('si-hidden');
-      return;
-    }
+  /* Brand color palette [R, G, B] */
+  var PALETTE = [
+    [155,  95, 255],   /* purple  */
+    [232,  90, 160],   /* pink    */
+    [232, 197,  90],   /* gold    */
+    [ 90, 232, 197],   /* teal    */
+    [123,  92, 250],   /* violet  */
+  ];
 
-    document.body.classList.add('intro-active');
-    this.markShown();
-
-    this.initCanvas();
-
-    /* Trigger shockwave at 820ms */
-    setTimeout(function () {
-      IntroEngine.triggerShockwave();
-    }, this.shockwaveTime);
-
-    /* Begin exit at 2700ms */
-    setTimeout(function () {
-      intro.classList.add('si-exiting');
-      setTimeout(function () {
-        intro.classList.add('si-hidden');
-        document.body.classList.remove('intro-active');
-        IntroEngine.stop();
-      }, 900);
-    }, this.exitTime);
-  },
-
-  initCanvas: function () {
-    this.canvas = document.getElementById('siCanvas');
-    if (!this.canvas) return;
-    this.ctx = this.canvas.getContext('2d');
-    this.resizeCanvas();
-    window.addEventListener('resize', this.handleResize);
-
-    this.particles = [];
-    this.phase = 'vortex';
-    this.flashAlpha = 0;
-    
-    // Spawn initial vortex particles
-    var count = 180;
-    for (var i = 0; i < count; i++) {
-      this.particles.push(this.createVortexParticle(i, count));
-    }
-
-    this.tick();
-  },
-
-  handleResize: function () {
-    if (IntroEngine.canvas) {
-      IntroEngine.resizeCanvas();
-    }
-  },
-
-  resizeCanvas: function () {
-    var rect = this.canvas.getBoundingClientRect();
+  /* ── Resize canvas to full viewport ── */
+  function _resize() {
+    if (!_canvas) return;
     var dpr = window.devicePixelRatio || 1;
-    this.canvas.width = rect.width * dpr;
-    this.canvas.height = rect.height * dpr;
-    this.ctx.scale(dpr, dpr);
-    this.logoCenter = { x: rect.width / 2, y: rect.height / 2 - 19 }; // Adjusted for logo offset (-19px)
-  },
+    _W = window.innerWidth;
+    _H = window.innerHeight;
+    _canvas.width  = _W * dpr;
+    _canvas.height = _H * dpr;
+    _canvas.style.width  = _W + 'px';
+    _canvas.style.height = _H + 'px';
+    _ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  createVortexParticle: function (idx, total) {
-    var angle = (idx / total) * Math.PI * 2 * 6; // Spiral layout
-    var maxRadius = Math.max(window.innerWidth, window.innerHeight) * 0.35;
-    var radius = 25 + Math.random() * maxRadius;
-    var speed = 0.025 + (1.2 - radius / maxRadius) * 0.04;
-    var size = 0.8 + Math.random() * 2.2;
-    var color = this.colors[idx % this.colors.length];
-    
-    return {
-      type: 'vortex',
-      angle: angle,
-      radius: radius,
-      speed: speed,
-      size: size,
-      color: color,
-      alpha: 0,
-      targetAlpha: 0.35 + Math.random() * 0.55,
-      x: 0,
-      y: 0
-    };
-  },
-
-  triggerShockwave: function () {
-    this.phase = 'shockwave';
-    
-    // Convert existing particles to shockwave particles, plus spawn a massive burst!
-    var oldParticles = this.particles;
-    this.particles = [];
-
-    // Spark shockwave blast
-    var blastCount = 200;
-    for (var i = 0; i < blastCount; i++) {
-      var angle = Math.random() * Math.PI * 2;
-      var speed = 3.5 + Math.random() * 11; // Explosive speed
-      var size = 0.9 + Math.random() * 2.4;
-      var color = this.colors[Math.floor(Math.random() * this.colors.length)];
-      var life = 0.7 + Math.random() * 0.8;
-      
-      this.particles.push({
-        type: 'shockwave',
-        x: this.logoCenter.x,
-        y: this.logoCenter.y,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        size: size,
-        color: color,
-        alpha: 1,
-        life: life,
-        maxLife: life,
-        friction: 0.965,
-        gravity: 0.05
-      });
-    }
-
-    // Add visual flash screen overlay or let canvas render a quick white lens flare!
-    this.flashAlpha = 0.85;
-  },
-
-  stop: function () {
-    if (this.animationFrameId) {
-      cancelAnimationFrame(this.animationFrameId);
-    }
-    window.removeEventListener('resize', this.handleResize);
-    this.particles = [];
-  },
-
-  tick: function () {
-    var self = IntroEngine;
-    if (!self.canvas || !self.ctx) return;
-    self.animationFrameId = requestAnimationFrame(self.tick);
-    self.update();
-    self.draw();
-  },
-
-  update: function () {
-    var self = this;
-    var center = self.logoCenter;
-    
-    if (self.flashAlpha > 0) {
-      self.flashAlpha -= 0.05;
-    }
-
-    for (var i = self.particles.length - 1; i >= 0; i--) {
-      var p = self.particles[i];
-
-      if (self.phase === 'vortex' && p.type === 'vortex') {
-        p.angle += p.speed;
-        p.radius -= 1.8; // spiral inward
-        if (p.radius < 5) p.radius = 5;
-        p.alpha += (p.targetAlpha - p.alpha) * 0.08;
-        
-        p.x = center.x + Math.cos(p.angle) * p.radius;
-        p.y = center.y + Math.sin(p.angle) * p.radius;
-      } 
-      else if (p.type === 'shockwave') {
-        p.vx *= p.friction;
-        p.vy *= p.friction;
-        p.vy += p.gravity; // fall down slightly
-        p.x += p.vx;
-        p.y += p.vy;
-        
-        p.life -= 0.016;
-        p.alpha = Math.max(0, p.life / p.maxLife);
-        
-        if (p.life <= 0) {
-          self.particles.splice(i, 1);
-        }
-      }
-    }
-
-    // Phase transitions or continuous floating sparks
-    if (self.phase === 'shockwave' && self.particles.length < 80) {
-      // Transition slowly to floating ambient sparks
-      self.phase = 'float';
-    }
-
-    if (self.phase === 'float' && self.particles.length < 120) {
-      // Spawn subtle floating upward sparks
-      var x = Math.random() * window.innerWidth;
-      var speedY = -(0.5 + Math.random() * 1.5);
-      var speedX = (Math.random() - 0.5) * 0.6;
-      var size = 0.8 + Math.random() * 1.8;
-      var color = self.colors[Math.floor(Math.random() * self.colors.length)];
-      var life = 1.0 + Math.random() * 1.5;
-      
-      self.particles.push({
-        type: 'float',
-        x: x,
-        y: window.innerHeight + 10,
-        vx: speedX,
-        vy: speedY,
-        size: size,
-        color: color,
-        alpha: 0,
-        life: life,
-        maxLife: life
-      });
-    }
-
-    if (self.phase === 'float') {
-      for (var i = self.particles.length - 1; i >= 0; i--) {
-        var p = self.particles[i];
-        if (p.type === 'float') {
-          p.x += p.vx;
-          p.y += p.vy;
-          p.life -= 0.012;
-          
-          if (p.alpha < 0.6 && p.life > 0.4) {
-            p.alpha += 0.04;
-          } else {
-            p.alpha = Math.max(0, p.life / p.maxLife * 0.6);
-          }
-
-          if (p.life <= 0 || p.y < -10) {
-            self.particles.splice(i, 1);
-          }
-        }
-      }
-    }
-  },
-
-  draw: function () {
-    var self = this;
-    var ctx = self.ctx;
-    var canvas = self.canvas;
-    
-    // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Draw particles
-    for (var i = 0; i < self.particles.length; i++) {
-      var p = self.particles[i];
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-      ctx.fillStyle = p.color + p.alpha.toFixed(3) + ')';
-      
-      // Add subtle glow shadow to highlight larger sparks
-      if (p.size > 1.8) {
-        ctx.shadowBlur = 4;
-        ctx.shadowColor = p.color + '0.5)';
-      } else {
-        ctx.shadowBlur = 0;
-      }
-      
-      ctx.fill();
-    }
-    ctx.shadowBlur = 0; // reset shadow
-
-    // Draw supernova flash flare
-    if (self.flashAlpha > 0) {
-      var grad = ctx.createRadialGradient(self.logoCenter.x, self.logoCenter.y, 0, self.logoCenter.x, self.logoCenter.y, 220);
-      grad.addColorStop(0, 'rgba(255,255,255,' + self.flashAlpha + ')');
-      grad.addColorStop(0.12, 'rgba(155,95,255,' + (self.flashAlpha * 0.5) + ')');
-      grad.addColorStop(0.35, 'rgba(232,90,160,' + (self.flashAlpha * 0.2) + ')');
-      grad.addColorStop(1, 'rgba(0,0,0,0)');
-      
-      ctx.beginPath();
-      ctx.arc(self.logoCenter.x, self.logoCenter.y, 220, 0, Math.PI * 2);
-      ctx.fillStyle = grad;
-      ctx.fill();
+    /* Use actual logo DOM position for precise centering */
+    var wrap = document.querySelector('.si-logo-wrap');
+    if (wrap) {
+      var r = wrap.getBoundingClientRect();
+      _cx = r.left + r.width  / 2;
+      _cy = r.top  + r.height / 2;
+    } else {
+      _cx = _W / 2;
+      _cy = _H / 2 - 50;
     }
   }
-};
+
+  /* ── Animation tick ── */
+  function _tick() {
+    if (!_canvas) return;
+    var t = performance.now() - _t0;
+    if (t >= 1100) {
+      _ctx.clearRect(0, 0, _W + 2, _H + 2);
+      return;
+    }
+    _raf = requestAnimationFrame(_tick);
+    _draw(t);
+  }
+
+  /* ── Main draw: rays + rings ── */
+  function _draw(t) {
+    _ctx.clearRect(0, 0, _W + 2, _H + 2);
+
+    /* Burst rays: 0 → 620ms */
+    if (t < 620) _rays(t / 620);
+
+    /* Pulse rings: staggered start times */
+    _ring(t,  55, 660, PALETTE[0], 0.52, 0.41); /* purple */
+    _ring(t, 240, 660, PALETTE[1], 0.30, 0.46); /* pink   */
+    _ring(t, 440, 580, PALETTE[2], 0.16, 0.52); /* gold   */
+  }
+
+  /* ── 12 burst rays from logo center ── */
+  function _rays(p) {
+    var N    = 12;
+    var maxL = Math.min(_W, _H) * 0.36;
+
+    for (var i = 0; i < N; i++) {
+      var angle = (i / N) * Math.PI * 2 + 0.262; /* slight rotation offset */
+      var lag   = (i % 2 === 0) ? 0.27 : 0.33;
+      var ext   = Math.min(p / lag, 1);
+
+      /* Alpha: ramp-up → plateau → ramp-down */
+      var pk = (i % 2 === 0) ? 0.66 : 0.44;
+      var a;
+      if      (p < 0.18) a = (p / 0.18) * pk;
+      else if (p < 0.40) a = pk;
+      else               a = (1 - (p - 0.40) / 0.60) * pk;
+      if (a < 0.006) continue;
+
+      var len = maxL * ext;
+      var col = PALETTE[i % PALETTE.length];
+      var ex  = _cx + Math.cos(angle) * len;
+      var ey  = _cy + Math.sin(angle) * len;
+      var cc  = 'rgba(' + col[0] + ',' + col[1] + ',' + col[2] + ',';
+
+      var g = _ctx.createLinearGradient(_cx, _cy, ex, ey);
+      g.addColorStop(0,    cc + (a * 1.10).toFixed(3) + ')');
+      g.addColorStop(0.10, cc + (a * 0.88).toFixed(3) + ')');
+      g.addColorStop(0.42, cc + (a * 0.40).toFixed(3) + ')');
+      g.addColorStop(1,    cc + '0)');
+
+      _ctx.save();
+      _ctx.beginPath();
+      _ctx.moveTo(_cx, _cy);
+      _ctx.lineTo(ex, ey);
+      _ctx.strokeStyle = g;
+      _ctx.lineWidth   = i % 3 === 0 ? 1.9 : (i % 3 === 1 ? 1.2 : 0.75);
+      _ctx.lineCap     = 'round';
+      _ctx.stroke();
+      _ctx.restore();
+    }
+  }
+
+  /* ── Expanding pulse ring ── */
+  function _ring(t, start, duration, col, maxAlpha, radiusFraction) {
+    if (t < start || t > start + duration) return;
+    var p     = Math.min((t - start) / duration, 1);
+    var eased = 1 - Math.pow(1 - p, 2.7);
+    var r     = Math.min(_W, _H) * radiusFraction * eased;
+    var alpha = maxAlpha * (1 - p);
+    var lw    = Math.max(0.3, 2.2 * (1 - p * 0.76));
+    var c     = 'rgba(' + col[0] + ',' + col[1] + ',' + col[2] + ',' + alpha.toFixed(3) + ')';
+
+    _ctx.save();
+    _ctx.beginPath();
+    _ctx.arc(_cx, _cy, r, 0, Math.PI * 2);
+    _ctx.strokeStyle = c;
+    _ctx.lineWidth   = lw;
+    _ctx.stroke();
+    _ctx.restore();
+  }
+
+  function _onResize() { if (_canvas) _resize(); }
+
+  function _teardown() {
+    if (_raf) cancelAnimationFrame(_raf);
+    window.removeEventListener('resize', _onResize);
+    _canvas = null;
+    _ctx    = null;
+  }
+
+  /* ── Public API ── */
+  return {
+    STORAGE_KEY: 'spark_intro_v2',
+
+    alreadyShown: function () {
+      try { return sessionStorage.getItem(this.STORAGE_KEY) === '1'; }
+      catch (e) { return false; }
+    },
+
+    markShown: function () {
+      try { sessionStorage.setItem(this.STORAGE_KEY, '1'); }
+      catch (e) {}
+    },
+
+    run: function () {
+      var intro = document.getElementById('sparkIntro');
+      if (!intro) return;
+
+      if (this.alreadyShown()) {
+        intro.classList.add('si-hidden');
+        return;
+      }
+
+      document.body.classList.add('intro-active');
+      this.markShown();
+
+      _canvas = document.getElementById('siCanvas');
+      if (!_canvas) return;
+      _ctx = _canvas.getContext('2d');
+      _resize();
+      window.addEventListener('resize', _onResize);
+      _t0 = performance.now();
+      _tick();
+
+      var self = this;
+      setTimeout(function () {
+        intro.classList.add('si-exiting');
+        setTimeout(function () {
+          intro.classList.add('si-hidden');
+          document.body.classList.remove('intro-active');
+          _teardown();
+        }, 530);
+      }, 1250);
+    },
+
+    stop: function () { _teardown(); }
+  };
+})();
 
 /* ════════════════════════════════════════════════
    RIPPLE ENGINE
