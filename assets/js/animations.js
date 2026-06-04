@@ -537,17 +537,21 @@ function bootAnimations () {
     }
   };
 
+  /* #sparkIntro starts with si-hidden in HTML to prevent any flash before JS runs */
+  var shortIntro = document.getElementById('sparkIntro');
+
   if (typeof CinematicIntroEngine !== 'undefined') {
     if (CinematicIntroEngine.shouldShow()) {
       CinematicIntroEngine.markVisit();
-      var shortIntro = document.getElementById('sparkIntro');
-      if (shortIntro) shortIntro.classList.add('si-hidden');
+      /* Keep #sparkIntro hidden — cinematic is playing */
       CinematicIntroEngine.run(onIntroDone);
     } else {
       CinematicIntroEngine.markVisit();
+      if (shortIntro) shortIntro.classList.remove('si-hidden');
       IntroEngine.run(onIntroDone);
     }
   } else {
+    if (shortIntro) shortIntro.classList.remove('si-hidden');
     IntroEngine.run(onIntroDone);
   }
 

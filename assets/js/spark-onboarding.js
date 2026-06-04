@@ -589,15 +589,15 @@
     card.appendChild(buildNav());
 
     overlay.appendChild(card);
+
+    /* Set ob-visible BEFORE appending so the overlay renders at opacity:1 instantly —
+       no 0→1 fade-in: the cinematic/short intro was already covering the screen,
+       so a fade-in would briefly expose app content underneath. */
+    overlay.classList.add('ob-visible');
     document.body.appendChild(overlay);
     state.overlay = overlay;
 
     renderSlide(0, null);
-
-    /* Animate in */
-    requestAnimationFrame(function() {
-      requestAnimationFrame(function() { overlay.classList.add('ob-visible'); });
-    });
 
     /* Touch events */
     attachTouch(card);
@@ -763,10 +763,12 @@
     document.removeEventListener('keydown', onKeyDown);
     var overlay = state.overlay;
     if (!overlay) return;
+    /* Show auth screen BEFORE the overlay starts fading so it is visible
+       beneath the closing animation — not a flash of raw app content. */
+    openAuth(tab || 'signup');
     overlay.classList.add('ob-exit');
     setTimeout(function() {
       if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-      openAuth(tab || 'signup');
     }, 600);
   }
 

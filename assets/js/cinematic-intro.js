@@ -561,10 +561,15 @@ var CinematicIntroEngine = (function () {
     window.removeEventListener('resize', _onResize);
     if (_overlay) _overlay.classList.add('active');
     setTimeout(function () {
-      var el = document.getElementById('cinematicIntro');
-      if (el) el.classList.add('ci-hidden');
-      document.body.classList.remove('intro-active');
+      /* Fire the callback (mounts onboarding) WHILE ciFadeOverlay still covers
+         the screen. By the time we hide #cinematicIntro in the next frame,
+         the onboarding overlay is already in the DOM at full opacity — no gap. */
       if (_onDone) _onDone();
+      requestAnimationFrame(function () {
+        var el = document.getElementById('cinematicIntro');
+        if (el) el.classList.add('ci-hidden');
+        document.body.classList.remove('intro-active');
+      });
     }, 600);
   }
 
