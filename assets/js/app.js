@@ -3567,8 +3567,12 @@ async function bootApp() {
     document.documentElement.classList.add('auth-active');
     var authScreen = document.getElementById('authScreen');
     if (authScreen) authScreen.classList.remove('gone');
+  } else {
+    /* Hide auth form during onboarding — spark-onboarding.js will reveal it after the 9-slide guide */
+    document.documentElement.classList.remove('auth-active');
+    var authScreen = document.getElementById('authScreen');
+    if (authScreen) authScreen.classList.add('gone');
   }
-  /* else: spark-onboarding.js will boot after intro delay and show the 9-slide guide */
 }
 
 window.addEventListener('error', function (event) {

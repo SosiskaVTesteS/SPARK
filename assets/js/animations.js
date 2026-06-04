@@ -172,12 +172,13 @@ var IntroEngine = (function () {
       catch (e) {}
     },
 
-    run: function () {
+    run: function (onDone) {
       var intro = document.getElementById('sparkIntro');
       if (!intro) return;
 
       if (this.alreadyShown()) {
         intro.classList.add('si-hidden');
+        if (onDone) onDone();
         return;
       }
 
@@ -199,6 +200,7 @@ var IntroEngine = (function () {
           intro.classList.add('si-hidden');
           document.body.classList.remove('intro-active');
           _teardown();
+          if (onDone) onDone();
         }, 530);
       }, 1250);
     },
@@ -529,17 +531,24 @@ function bootAnimations () {
      3. Nothing — same session, intro already shown
      markVisit() is always called to keep the last-visit timestamp fresh.
   ─────────────────────────────────────────────────────────── */
+  var onIntroDone = function () {
+    if (typeof PreRegOnboarding !== 'undefined') {
+      PreRegOnboarding.run();
+    }
+  };
+
   if (typeof CinematicIntroEngine !== 'undefined') {
-    CinematicIntroEngine.markVisit();
     if (CinematicIntroEngine.shouldShow()) {
+      CinematicIntroEngine.markVisit();
       var shortIntro = document.getElementById('sparkIntro');
       if (shortIntro) shortIntro.classList.add('si-hidden');
-      CinematicIntroEngine.run();
+      CinematicIntroEngine.run(onIntroDone);
     } else {
-      IntroEngine.run();
+      CinematicIntroEngine.markVisit();
+      IntroEngine.run(onIntroDone);
     }
   } else {
-    IntroEngine.run();
+    IntroEngine.run(onIntroDone);
   }
 
   /* Ripples — always on */

@@ -49,13 +49,13 @@
     return false;
   }
   function seenBefore()    { try { return !!localStorage.getItem(OB_KEY); } catch(e){ return false; } }
-  function introWasShown() { try { return sessionStorage.getItem(INTRO_KEY) === '1'; } catch(e){ return true; } }
 
-  if (hasSession() || seenBefore()) return;
-
-  /* ─── Запускаем после intro-анимации SPARK ─── */
-  var startDelay = introWasShown() ? 350 : 4200;
-  setTimeout(boot, startDelay);
+  window.PreRegOnboarding = {
+    run: function () {
+      if (hasSession() || seenBefore()) return;
+      boot();
+    }
+  };
 
   /* ══════════════════════════════════════
      ДАННЫЕ СЛАЙДОВ
@@ -528,7 +528,7 @@
     skip.className = 'ob-skip';
     skip.textContent = _L('Skip','Пропустить');
     skip.setAttribute('aria-label', _L('Skip welcome guide','Пропустить приветственный гид'));
-    skip.addEventListener('click', finish);
+    skip.addEventListener('click', function() { finish('signup'); });
     card.appendChild(skip);
 
     /* Language switcher */
@@ -681,7 +681,7 @@
       var ctaBtn = document.createElement('button');
       ctaBtn.className = 'ob-btn-cta';
       ctaBtn.textContent = _L('Create Account →','Создать аккаунт →');
-      ctaBtn.addEventListener('click', function() { finish(); openAuth('signup'); });
+      ctaBtn.addEventListener('click', function() { finish('signup'); });
       ctaWrap.appendChild(ctaBtn);
 
       var signInHint = document.createElement('div');
@@ -742,8 +742,7 @@
       var siLink = document.getElementById('obSignIn');
       if (siLink) {
         siLink.addEventListener('click', function() {
-          finish();
-          openAuth('signin');
+          finish('signin');
         });
       }
     }, 50);
@@ -759,7 +758,7 @@
   /* ══════════════════════════════════════
      ЗАВЕРШЕНИЕ
   ══════════════════════════════════════ */
-  function finish() {
+  function finish(tab) {
     try { localStorage.setItem(OB_KEY, '1'); } catch(e) {}
     document.removeEventListener('keydown', onKeyDown);
     var overlay = state.overlay;
@@ -767,6 +766,7 @@
     overlay.classList.add('ob-exit');
     setTimeout(function() {
       if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      openAuth(tab || 'signup');
     }, 600);
   }
 
@@ -796,7 +796,7 @@
   function onKeyDown(e) {
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goTo(state.current + 1);
     else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') goTo(state.current - 1);
-    else if (e.key === 'Escape') finish();
+    else if (e.key === 'Escape') finish('signup');
   }
 
 })();
