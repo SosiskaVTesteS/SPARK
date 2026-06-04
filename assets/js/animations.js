@@ -532,6 +532,8 @@ function bootAnimations () {
   if (typeof CinematicIntroEngine !== 'undefined') {
     CinematicIntroEngine.markVisit();
     if (CinematicIntroEngine.shouldShow()) {
+      var shortIntro = document.getElementById('sparkIntro');
+      if (shortIntro) shortIntro.classList.add('si-hidden');
       CinematicIntroEngine.run();
     } else {
       IntroEngine.run();

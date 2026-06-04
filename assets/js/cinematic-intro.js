@@ -613,6 +613,7 @@ var CinematicIntroEngine = (function () {
     run: function (onDone) {
       var el = document.getElementById('cinematicIntro');
       if (!el) return;
+      el.classList.remove('ci-hidden');
 
       _canvas  = document.getElementById('ciCanvas');
       _overlay = document.getElementById('ciFadeOverlay');
