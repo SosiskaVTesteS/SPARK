@@ -569,8 +569,11 @@ async function doSignIn() {
       return supa.from('profiles').select('is_admin').eq('id', ME.id).single();
     }, { silent: true, timeout: 10000 });
 
-    var userIsAdmin = profileCheck.ok &&
-                      profileCheck.data &&
+    if (!profileCheck.ok) {
+      throw new Error(profileCheck.error && profileCheck.error.message ? profileCheck.error.message : 'Не удалось проверить статус учетной записи. Проверьте соединение с базой данных.');
+    }
+
+    var userIsAdmin = profileCheck.data &&
                       profileCheck.data.data &&
                       profileCheck.data.data.is_admin === true;
 
@@ -1554,7 +1557,13 @@ async function doAdminDeleteConfirm() {
     renderTrends();
     toast('Удалено', 'var(--ac2)');
   } else {
-    toast('Ошибка удаления', 'var(--red)');
+    var errDetail = '';
+    if (!r.ok && r.error) {
+      errDetail = r.error.message || r.error.code || String(r.error);
+    } else if (result && result.message) {
+      errDetail = result.message;
+    }
+    toast('Ошибка: ' + (errDetail || 'неизвестная ошибка'), 'var(--red)');
   }
 }
 
