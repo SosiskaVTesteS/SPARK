@@ -299,10 +299,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // Support FAB
-  var btnSupport = document.getElementById('btnSupport');
-  if (btnSupport) btnSupport.addEventListener('click', function () { openMo('moSupport'); });
-
   // Support modal — close on backdrop
   var moSupport = document.getElementById('moSupport');
   if (moSupport) {
@@ -2035,6 +2031,8 @@ function profileHTML(sfx) {
     + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--mu)"><polyline points="9 18 15 12 9 6"/></svg></div>'
     + '<a class="sset" href="about.html" style="text-decoration:none;color:inherit"><span>' + (typeof T === 'function' && T('aboutUs') !== 'aboutUs' ? T('aboutUs') : (window.LANG === 'ru' ? 'О нас' : 'About us')) + '</span>'
     + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--mu)"><polyline points="9 18 15 12 9 6"/></svg></a>'
+    + '<div class="sset" onclick="openMo(\'moSupport\')"><span>' + (window.LANG === 'ru' ? 'Поддержка' : 'Support') + '</span>'
+    + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--mu)"><polyline points="9 18 15 12 9 6"/></svg></div>'
     + (PROFILE.is_admin
         ? '<a class="sset" href="admin.html" style="text-decoration:none;color:inherit">'
           + '<span style="color:var(--vl2)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:5px;color:var(--vl2)"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Панель управления</span>'
