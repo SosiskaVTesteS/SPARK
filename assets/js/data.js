@@ -126,7 +126,8 @@ try {
 var db = supa;
 
 var ME = null;
-var PROFILE = { username: '@user', spk_balance: 0, ideas_count: 0, rank: null, investments_count: 0, profit_pct: 0, bio: '', avatar_color: 0 };
+var PROFILE = { username: '@user', spk_balance: 0, ideas_count: 0, rank: null, investments_count: 0, profit_pct: 0, bio: '', avatar_color: 0, is_admin: false };
+window.ADMIN_USER_IDS = new Set();
 var PENDING_EMAIL = '';
 var PENDING_NICK = '';
 var PENDING_REG_PASSWORD = '';

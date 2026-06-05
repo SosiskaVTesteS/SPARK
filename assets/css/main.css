@@ -2848,3 +2848,154 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
   50%       { box-shadow: 0 0 0 8px rgba(232,197,90,0); }
 }
 
+
+/* ════════════════════════════════════════════════
+   SUPPORT FAB
+   ════════════════════════════════════════════════ */
+.support-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 800;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  background: var(--g-vl);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 24px rgba(123,92,250,0.55), 0 2px 8px rgba(0,0,0,0.4);
+  transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.22s ease;
+}
+.support-fab:hover {
+  transform: translateY(-3px) scale(1.08);
+  box-shadow: 0 8px 32px rgba(123,92,250,0.7), 0 2px 8px rgba(0,0,0,0.4);
+}
+.support-fab:active { transform: scale(0.95); }
+@media (max-width: 600px) {
+  .support-fab { bottom: 80px; }
+}
+
+/* Support modal email button */
+.support-mail-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  background: var(--g-vl);
+  color: #fff;
+  font-family: var(--fh);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  box-shadow: var(--sh-btn-vl);
+  transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.22s ease;
+}
+.support-mail-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(123,92,250,0.55);
+}
+
+
+/* ════════════════════════════════════════════════
+   ADMIN BADGE — CORE TEAM
+   ════════════════════════════════════════════════ */
+.admin-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #7C3AED, #5B21B6);
+  color: #fff;
+  font-family: var(--fh);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  margin-left: 5px;
+  box-shadow: 0 0 10px rgba(124,58,237,0.55), 0 0 3px rgba(124,58,237,0.3);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+
+/* ════════════════════════════════════════════════
+   ADMIN DELETE BUTTON (on cards)
+   ════════════════════════════════════════════════ */
+.admin-del-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid rgba(232,90,122,0.25);
+  background: rgba(232,90,122,0.08);
+  color: var(--red);
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s, transform 0.15s;
+  margin-left: 4px;
+}
+.admin-del-btn:hover {
+  background: rgba(232,90,122,0.18);
+  border-color: rgba(232,90,122,0.55);
+  transform: scale(1.05);
+}
+.admin-del-btn:active { transform: scale(0.95); }
+
+
+/* ════════════════════════════════════════════════
+   SYSTEM ANNOUNCEMENT BANNER
+   ════════════════════════════════════════════════ */
+#announcementBanner {
+  display: none;
+  margin: 0 0 14px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(123,92,250,0.14), rgba(232,90,160,0.08));
+  border: 1px solid rgba(123,92,250,0.3);
+  animation: annSlideIn 0.35s cubic-bezier(0.22,1,0.36,1);
+}
+@keyframes annSlideIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.ann-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+}
+.ann-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--vl2);
+}
+#announcementText {
+  flex: 1;
+  font-size: 13px;
+  color: var(--tx);
+  line-height: 1.55;
+}
+.ann-close {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--mu2);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  transition: color 0.18s;
+  align-self: flex-start;
+}
+.ann-close:hover { color: var(--tx); }
+

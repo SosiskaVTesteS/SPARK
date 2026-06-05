@@ -1,3 +1,9 @@
+// ════ ADMIN 2FA STATE ════
+// Admin identity is determined server-side by querying profiles.is_admin.
+// The 2FA secret lives only in the verify_admin_secret() Supabase RPC — never here.
+// To grant admin access: UPDATE profiles SET is_admin = true WHERE id = '<uuid>';
+var _pendingAdminSignIn = null; // holds { email, password } while 2FA modal is open
+
 document.addEventListener('DOMContentLoaded', function () {
   document.querySelectorAll('[data-auth-tab]').forEach(function (btn) {
     btn.addEventListener('click', function () {
@@ -176,6 +182,12 @@ document.addEventListener('DOMContentLoaded', function () {
         openCmenDropdown(cmenBtn);
         return;
       }
+      var adminDelBtn = event.target.closest('.admin-del-btn[data-admin-del-id]');
+      if (adminDelBtn && PROFILE.is_admin) {
+        event.stopPropagation();
+        openAdminDeleteModal(adminDelBtn.dataset.adminDelId);
+        return;
+      }
     });
   }
   var invPresets = document.getElementById('invPresets');
@@ -286,6 +298,60 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
   }
+
+  // Support FAB
+  var btnSupport = document.getElementById('btnSupport');
+  if (btnSupport) btnSupport.addEventListener('click', function () { openMo('moSupport'); });
+
+  // Support modal — close on backdrop
+  var moSupport = document.getElementById('moSupport');
+  if (moSupport) {
+    moSupport.addEventListener('click', function (e) {
+      if (e.target === moSupport) closeMo('moSupport');
+    });
+  }
+
+  // Admin 2FA modal
+  var adminCodeConfirmBtn = document.getElementById('adminCodeConfirm');
+  if (adminCodeConfirmBtn) adminCodeConfirmBtn.addEventListener('click', doAdminCodeConfirm);
+  var adminCodeBackBtn = document.getElementById('adminCodeBack');
+  if (adminCodeBackBtn) adminCodeBackBtn.addEventListener('click', closeAdminCodeModal);
+  var adminCodeInput = document.getElementById('adminCodeInput');
+  if (adminCodeInput) {
+    adminCodeInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') doAdminCodeConfirm();
+      if (e.key === 'Escape') closeAdminCodeModal();
+    });
+  }
+
+  // Admin delete modal buttons
+  var adminDelCancelBtn = document.getElementById('adminDelCancelBtn');
+  if (adminDelCancelBtn) adminDelCancelBtn.addEventListener('click', function () { closeMo('moAdminDelete'); });
+  var adminDelConfirmBtn = document.getElementById('adminDelConfirmBtn');
+  if (adminDelConfirmBtn) adminDelConfirmBtn.addEventListener('click', doAdminDeleteConfirm);
+
+  var moAdminDelete = document.getElementById('moAdminDelete');
+  if (moAdminDelete) {
+    moAdminDelete.addEventListener('click', function (e) {
+      if (e.target === moAdminDelete) closeMo('moAdminDelete');
+    });
+  }
+
+  // Announcement banner close
+  var annClose = document.getElementById('announcementClose');
+  if (annClose) {
+    annClose.addEventListener('click', function () {
+      var banner = document.getElementById('announcementBanner');
+      if (banner) banner.style.display = 'none';
+    });
+  }
+
+  // Global Escape key closes any open modal
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      ['moSupport', 'moAdminDelete'].forEach(function (id) { closeMo(id); });
+    }
+  });
 
   initObservatory();
   bootApp();
@@ -470,10 +536,10 @@ function setBtnLoading(idOrEl, isLoading) {
 
 async function doSignIn() {
   var emailEl = document.getElementById('siEmail');
-  var passEl = document.getElementById('siPass');
+  var passEl  = document.getElementById('siPass');
   if (!emailEl || !passEl) { setAuthErr('Form error'); return; }
-  var email = emailEl.value.trim();
-  var pass = passEl.value;
+  var email = emailEl.value.trim().toLowerCase();
+  var pass  = passEl.value;
   if (!email || !pass) { setAuthErr('Please fill all fields'); return; }
   setBtnLoading('btnSI', true);
   setAuthErr('');
@@ -484,11 +550,12 @@ async function doSignIn() {
     var res = await safeSupabaseCall('auth', function () {
       return supa.auth.signInWithPassword({ email: email, password: pass });
     }, { timeout: 25000, silent: true });
-    
+
     if (!res.ok) throw res.error;
     var r = res.data;
     if (r && r.error) throw r.error;
     ME = r.data.user;
+
     if (ME && !ME.email_confirmed_at) {
       PENDING_EMAIL = email;
       showVerify(email, '');
@@ -496,6 +563,26 @@ async function doSignIn() {
       setBtnLoading('btnSI', false);
       return;
     }
+
+    // Check server-side whether this account is flagged as admin
+    var profileCheck = await safeSupabaseCall('database', function () {
+      return supa.from('profiles').select('is_admin').eq('id', ME.id).single();
+    }, { silent: true, timeout: 10000 });
+
+    var userIsAdmin = profileCheck.ok &&
+                      profileCheck.data &&
+                      profileCheck.data.data &&
+                      profileCheck.data.data.is_admin === true;
+
+    if (userIsAdmin) {
+      // Sign out immediately and hold credentials for the 2FA gate
+      await supa.auth.signOut();
+      _pendingAdminSignIn = { email: email, password: pass };
+      setBtnLoading('btnSI', false);
+      openAdminCodeModal();
+      return;
+    }
+
     await fetchProfile();
     enterApp();
   } catch (e) {
@@ -505,6 +592,85 @@ async function doSignIn() {
     setAuthErr(msg);
   } finally {
     setBtnLoading('btnSI', false);
+  }
+}
+
+// ════ ADMIN 2FA MODAL LOGIC ════
+function openAdminCodeModal() {
+  var mo = document.getElementById('moAdminCode');
+  if (!mo) return;
+  var inp = document.getElementById('adminCodeInput');
+  var err = document.getElementById('adminCodeErr');
+  if (inp) inp.value = '';
+  if (err) err.textContent = '';
+  mo.style.display = 'flex';
+  setTimeout(function() { if (inp) inp.focus(); }, 80);
+}
+
+function closeAdminCodeModal() {
+  var mo = document.getElementById('moAdminCode');
+  if (mo) mo.style.display = 'none';
+  _pendingAdminSignIn = null;
+}
+
+async function doAdminCodeConfirm() {
+  var inp = document.getElementById('adminCodeInput');
+  var err = document.getElementById('adminCodeErr');
+  var btn = document.getElementById('adminCodeConfirm');
+  if (!inp || !err || !btn) return;
+
+  var code = inp.value.trim();
+  if (!code) { err.textContent = 'Введите код доступа.'; inp.focus(); return; }
+
+  if (!_pendingAdminSignIn || !supa) {
+    err.textContent = 'Сессия истекла. Войдите заново.';
+    setTimeout(closeAdminCodeModal, 1200);
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Проверяем...';
+  err.textContent = '';
+
+  try {
+    // Step 1: Re-authenticate to get a valid session for the RPC call
+    var loginRes = await safeSupabaseCall('auth', function () {
+      return supa.auth.signInWithPassword({
+        email: _pendingAdminSignIn.email,
+        password: _pendingAdminSignIn.password
+      });
+    }, { timeout: 25000, silent: true });
+
+    if (!loginRes.ok) throw loginRes.error;
+
+    // Step 2: Verify the code server-side — the secret never leaves the DB
+    var verifyRes = await supa.rpc('verify_admin_secret', { p_code: code });
+
+    if (verifyRes.error) throw verifyRes.error;
+    var result = verifyRes.data;
+
+    if (!result || result.success === false) {
+      // Wrong code — revoke the session and show an error
+      await supa.auth.signOut().catch(function () {});
+      err.textContent = '❌ Неверный код. Попробуйте ещё раз.';
+      inp.value = '';
+      inp.focus();
+      btn.disabled = false;
+      btn.textContent = 'Подтвердить →';
+      return;
+    }
+
+    // Step 3: Code verified server-side — proceed into the app
+    ME = loginRes.data.data.user;
+    closeAdminCodeModal();
+    await fetchProfile();
+    enterApp();
+    toast('👑 Добро пожаловать, администратор!', 'var(--vl2)');
+  } catch (e) {
+    err.textContent = '⚠ Ошибка: ' + (e.message || 'попробуйте позже');
+    await supa.auth.signOut().catch(function () {});
+    btn.disabled = false;
+    btn.textContent = 'Подтвердить →';
   }
 }
 
@@ -709,6 +875,8 @@ async function fetchProfile() {
     PROFILE.last_daily_bonus_claim = row.last_daily_bonus_claim || null;
     PROFILE.bio = row.bio || '';
     PROFILE.avatar_color = row.avatar_color || 0;
+    PROFILE.is_admin = row.is_admin === true;
+    if (PROFILE.is_admin) ADMIN_USER_IDS.add(ME.id);
 
     // Check Daily Bonus Eligibility
     var eligible = false;
@@ -826,10 +994,13 @@ async function loadIdeasFromDB() {
     var profilesMap = {};
     if (authorIds.length > 0) {
       var pRes = await safeSupabaseCall('database', function () {
-        return supa.from('profiles').select('id, username').in('id', authorIds);
+        return supa.from('profiles').select('id, username, is_admin').in('id', authorIds);
       }, { silent: true, timeout: 25000 });
       if (pRes.ok && pRes.data && pRes.data.data) {
-        pRes.data.data.forEach(function(p) { profilesMap[p.id] = p.username || '@user'; });
+        pRes.data.data.forEach(function(p) {
+          profilesMap[p.id] = p.username || '@user';
+          if (p.is_admin === true) ADMIN_USER_IDS.add(p.id);
+        });
       }
     }
 
@@ -1008,7 +1179,8 @@ async function renderLeaders() {
 
   var r = await safeSupabaseCall('database', function () {
     return supa.from('profiles')
-      .select('id, username, spk_balance, investments_count')
+      .select('id, username, spk_balance, investments_count, is_admin')
+      .or('is_admin.is.null,is_admin.eq.false')
       .order('spk_balance', { ascending: false })
       .limit(5);
   }, { silent: true, timeout: 25000 });
@@ -1086,7 +1258,8 @@ async function doLogout(skipSignOut) {
 
   // Explicitly reset session state to guarantee immediate redirection to sign-in page
   ME = null;
-  PROFILE = { username: '@user', spk_balance: 0, ideas_count: 0, rank: null, investments_count: 0, bio: '', avatar_color: 0 };
+  PROFILE = { username: '@user', spk_balance: 0, ideas_count: 0, rank: null, investments_count: 0, bio: '', avatar_color: 0, is_admin: false };
+  ADMIN_USER_IDS.clear();
   appEntered = false;
   try {
     Object.keys(localStorage).forEach(function (key) {
@@ -1323,6 +1496,66 @@ function enterApp() {
   }
   // Синхронизируем разблокированные контакты из БД
   syncUnlockedContacts();
+  // Загружаем системное объявление
+  loadAnnouncement();
+}
+
+// ════ СИСТЕМНОЕ ОБЪЯВЛЕНИЕ ════
+async function loadAnnouncement() {
+  if (!supa) return;
+  try {
+    var res = await supa.from('system_announcements').select('message').eq('id', 1).single();
+    if (res.data && res.data.message) {
+      var banner = document.getElementById('announcementBanner');
+      var textEl = document.getElementById('announcementText');
+      if (banner && textEl) {
+        textEl.textContent = res.data.message;
+        banner.style.display = 'flex';
+      }
+    }
+  } catch (e) {
+    // Non-critical — silently ignore
+  }
+}
+
+// ════ ADMIN DELETE IDEA ════
+var _pendingAdminDeleteId = null;
+
+function openAdminDeleteModal(ideaId) {
+  _pendingAdminDeleteId = ideaId;
+  var idea = LIVE.filter(function (x) { return String(x.id) === String(ideaId); })[0];
+  var msgEl = document.getElementById('adminDelMsg');
+  if (msgEl && idea) {
+    msgEl.textContent = 'Точно удалить «' + String(idea.title || '').slice(0, 40) + '»? Действие необратимо.';
+  }
+  openMo('moAdminDelete');
+}
+
+async function doAdminDeleteConfirm() {
+  if (!_pendingAdminDeleteId || !supa || !PROFILE.is_admin) return;
+  var ideaId = _pendingAdminDeleteId;
+  _pendingAdminDeleteId = null;
+
+  var confirmBtn = document.getElementById('adminDelConfirmBtn');
+  if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = '⏳...'; }
+
+  var r = await safeSupabaseCall('database', function () {
+    return supa.rpc('admin_delete_idea', { p_idea_id: ideaId });
+  }, { silent: true });
+
+  if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'Удалить'; }
+  closeMo('moAdminDelete');
+
+  var result = r.ok && r.data && r.data.data ? r.data.data : null;
+  if (result && result.success) {
+    // Optimistic: remove from LIVE and re-render
+    LIVE = LIVE.filter(function (x) { return String(x.id) !== String(ideaId); });
+    renderFeed();
+    renderTrends();
+    toast('Удалено', 'var(--ac2)');
+  } else {
+    toast('Ошибка удаления', 'var(--red)');
+  }
 }
 
 function updateHeader() {
@@ -1716,10 +1949,13 @@ function profileHTML(sfx) {
   var avGrad    = window.ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avIdx) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
   var activeTheme = window.ThemeEngine ? ThemeEngine.getActive() : {};
   var themeIcon = activeTheme.icon || '🌌';
+  var adminBadgeHtml = PROFILE.is_admin
+    ? ' <span class="admin-badge">CORE TEAM</span>'
+    : '';
 
   return '<div class="phero">'
     + '<div class="pav-lg" style="background:' + avGrad + '">' + L + '</div>'
-    + '<div class="pname">' + safeUser + '</div>'
+    + '<div class="pname">' + safeUser + adminBadgeHtml + '</div>'
     + (safeBio ? '<div class="pbio">' + safeBio + '</div>' : '')
     + '<span class="pbadge">' + T('verifiedInvestor') + '</span></div>'
     + '<div class="srow" style="margin-bottom:18px">'
@@ -1777,6 +2013,11 @@ function profileHTML(sfx) {
     + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--mu)"><polyline points="9 18 15 12 9 6"/></svg></div>'
     + '<a class="sset" href="about.html" style="text-decoration:none;color:inherit"><span>' + (typeof T === 'function' && T('aboutUs') !== 'aboutUs' ? T('aboutUs') : (window.LANG === 'ru' ? 'О нас' : 'About us')) + '</span>'
     + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--mu)"><polyline points="9 18 15 12 9 6"/></svg></a>'
+    + (PROFILE.is_admin
+        ? '<a class="sset" href="admin.html" style="text-decoration:none;color:inherit">'
+          + '<span style="color:var(--vl2)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:5px;color:var(--vl2)"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Панель управления</span>'
+          + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--mu)"><polyline points="9 18 15 12 9 6"/></svg></a>'
+        : '')
     + '<div class="sset" data-logout="1"><span style="color:var(--red)">' + T('logout') + '</span>'
     + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--red)"><polyline points="9 18 15 12 9 6"/></svg></div>'
     + '</div>';
@@ -2683,9 +2924,17 @@ function cardHTML(x) {
   var wasReported = MY_REPORTED_IDEAS.indexOf(x.id) !== -1;
   var cmenClass = 'cmen' + (wasReported ? ' cmen--reported' : '');
   var cmenTitle = wasReported ? (LANG === 'ru' ? 'Вы пожаловались на этот пост' : 'You reported this post') : '';
+  var isAuthorAdmin = window.ADMIN_USER_IDS && ADMIN_USER_IDS.has(x.author_id);
+  var authorAdminBadge = isAuthorAdmin ? ' <span class="admin-badge">CORE TEAM</span>' : '';
+  var adminDeleteBtn = (PROFILE.is_admin && ME && x.author_id && x.author_id !== ME.id)
+    ? '<button class="admin-del-btn" data-admin-del-id="' + x.id + '" title="Удалить (admin)">'
+      + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>'
+      + '</button>'
+    : '';
   return '<div class="card' + (fire ? ' fire' : '') + '" data-cid="' + x.id + '">'
     + '<div class="ch"><div' + triggerAttr + ' style="background:' + safeBg + '">' + safeAv + '</div>'
-    + '<div class="cm"><div' + nameTriggerAttr + '>' + safeUser + '</div><div class="ct">' + safeTime + ' · #' + safeTag + '</div></div>'
+    + '<div class="cm"><div' + nameTriggerAttr + '>' + safeUser + authorAdminBadge + '</div><div class="ct">' + safeTime + ' · #' + safeTag + '</div></div>'
+    + adminDeleteBtn
     + '<div class="' + cmenClass + '" data-idea-id="' + x.id + '" data-immune="' + (isImmune ? '1' : '0') + '"' + (cmenTitle ? ' title="' + cmenTitle + '"' : '') + '><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></div></div>'
     + '<div class="ctitle">' + safeTitle + '</div><div class="cbody">' + safeBody + '</div>'
     + investGraphHTML(x)
@@ -3456,7 +3705,8 @@ function bindAuthListener() {
   supa.auth.onAuthStateChange(function (event, session) {
     if (event === 'SIGNED_OUT') {
       ME = null;
-      PROFILE = { username: '@user', spk_balance: 0, ideas_count: 0, rank: null, investments_count: 0, bio: '', avatar_color: 0 };
+      PROFILE = { username: '@user', spk_balance: 0, ideas_count: 0, rank: null, investments_count: 0, bio: '', avatar_color: 0, is_admin: false };
+      ADMIN_USER_IDS.clear();
       appEntered = false;
       document.documentElement.classList.remove('spark-presession');
       document.documentElement.classList.add('auth-active');

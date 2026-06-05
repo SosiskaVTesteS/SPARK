@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>SPARK — Панель управления</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23080C1C'/><path d='M35 22C65 22 72 40 50 50C28 60 34 78 65 78' stroke='%23A07AFF' stroke-width='10' stroke-linecap='round' fill='none'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer onerror="(function(){var s=document.createElement('script');s.src='https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js';s.defer=true;document.head.appendChild(s);})()"></script>
+<link rel="stylesheet" href="assets/css/main.css">
+<style>
+/* ── Admin panel page-specific overrides ── */
+.adm-layout {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 24px 16px 80px;
+}
+.adm-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 32px;
+}
+.adm-header-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--mu2);
+  text-decoration: none;
+  font-size: 13px;
+  transition: color 0.18s;
+}
+.adm-header-back:hover { color: var(--tx); }
+.adm-title {
+  font-family: var(--fh);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  background: var(--g-main);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.adm-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #7C3AED, #5B21B6);
+  color: #fff;
+  font-family: var(--fh);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  box-shadow: 0 0 12px rgba(124,58,237,0.5);
+}
+
+/* Stats cards */
+.adm-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+@media (max-width: 480px) { .adm-stats { grid-template-columns: 1fr; } }
+.adm-stat-card {
+  background: linear-gradient(160deg, var(--sf), var(--sf2)) padding-box,
+              linear-gradient(135deg, rgba(123,92,250,0.3), rgba(232,197,90,0.15)) border-box;
+  border: 1px solid transparent;
+  border-radius: 18px;
+  padding: 20px 22px;
+  box-shadow: var(--sh-card);
+}
+.adm-stat-icon {
+  font-size: 22px;
+  margin-bottom: 10px;
+}
+.adm-stat-label {
+  font-size: 11px;
+  color: var(--mu2);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+}
+.adm-stat-val {
+  font-family: var(--fh);
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--tx);
+}
+.adm-stat-val.loading {
+  color: var(--mu);
+  font-size: 18px;
+  font-weight: 400;
+}
+
+/* Announcement section */
+.adm-section {
+  background: linear-gradient(160deg, var(--sf), var(--sf2)) padding-box,
+              linear-gradient(135deg, rgba(123,92,250,0.25), rgba(232,90,160,0.08)) border-box;
+  border: 1px solid transparent;
+  border-radius: 18px;
+  padding: 22px;
+  margin-bottom: 20px;
+  box-shadow: var(--sh-card);
+}
+.adm-section-title {
+  font-family: var(--fh);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--vl2);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.adm-textarea {
+  width: 100%;
+  min-height: 100px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 12px 14px;
+  color: var(--tx);
+  font-family: var(--fb);
+  font-size: 14px;
+  line-height: 1.6;
+  outline: none;
+  resize: vertical;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+.adm-textarea:focus {
+  border-color: rgba(123,92,250,0.45);
+  box-shadow: 0 0 0 3px rgba(123,92,250,0.1);
+}
+.adm-textarea::placeholder { color: var(--mu); }
+.adm-hint {
+  font-size: 11px;
+  color: var(--mu2);
+  margin-top: 6px;
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+.adm-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border-radius: 12px;
+  border: none;
+  background: var(--g-vl);
+  color: #fff;
+  font-family: var(--fh);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  box-shadow: var(--sh-btn-vl);
+  transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.22s ease, opacity 0.2s;
+}
+.adm-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(123,92,250,0.55); }
+.adm-btn:active { transform: scale(0.97); }
+.adm-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+/* Current announcement preview */
+.adm-ann-preview {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(123,92,250,0.08);
+  border: 1px solid rgba(123,92,250,0.2);
+  font-size: 13px;
+  color: var(--tx-d);
+  line-height: 1.55;
+  margin-bottom: 14px;
+  display: none;
+}
+.adm-ann-preview.visible { display: block; }
+.adm-ann-preview-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--vl2);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+}
+
+/* Status message */
+.adm-status {
+  font-size: 13px;
+  margin-top: 10px;
+  min-height: 20px;
+  color: var(--ac2);
+}
+.adm-status.error { color: var(--red); }
+
+/* Access denied screen */
+.adm-denied {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 60vh;
+  text-align: center;
+  padding: 32px;
+}
+.adm-denied-icon { font-size: 48px; }
+.adm-denied-title {
+  font-family: var(--fh);
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--tx);
+}
+.adm-denied-text { font-size: 14px; color: var(--mu2); }
+
+/* Loading state */
+.adm-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+</style>
+<script src="assets/js/config.js" onerror="document.write('<script src=\'assets/js/config.example.js\'></script>')"></script>
+</head>
+<body>
+
+<div class="orb orb-b" aria-hidden="true"></div>
+<div class="orb orb-v" aria-hidden="true"></div>
+
+<div class="adm-layout" id="admLayout">
+  <div class="adm-loading" id="admLoading">
+    <div class="launch-spinner"></div>
+  </div>
+</div>
+
+<script src="assets/js/admin.js" defer></script>
+</body>
+</html>

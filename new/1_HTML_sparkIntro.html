@@ -1,0 +1,57 @@
+<!--
+  ══════════════════════════════════════════════════════════════
+  SPARK PRELOADER v2 — HTML SNIPPET
+  Замени существующий <div id="sparkIntro" ...>...</div>
+  в файле index.html на этот блок целиком.
+  ══════════════════════════════════════════════════════════════
+-->
+
+<!-- ════ INTRO ANIMATION SCREEN ════ -->
+<div id="sparkIntro" role="presentation" aria-hidden="true">
+  <div class="si-bg"></div>
+  <canvas id="siCanvas"></canvas>
+
+  <div class="si-core">
+
+    <div class="si-logo-wrap">
+      <div class="si-glow"></div>
+      <div class="si-orbit-ring"></div>
+
+      <svg class="si-logo" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="siGrad" x1="35" y1="22" x2="65" y2="78" gradientUnits="userSpaceOnUse">
+            <stop offset="0%"   stop-color="#9B5FFF"/>
+            <stop offset="48%"  stop-color="#E85AA0"/>
+            <stop offset="100%" stop-color="#E8C55A"/>
+          </linearGradient>
+          <filter id="siPathBlur" x="-60%" y="-60%" width="320%" height="320%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="4.5"/>
+          </filter>
+        </defs>
+
+        <!-- Blurred glow layer (draws just ahead of main path) -->
+        <path class="si-s-glow"
+              d="M 35 22 C 65 22 72 40 50 50 C 28 60 34 78 65 78"
+              stroke="url(#siGrad)" stroke-width="13" stroke-linecap="round"
+              filter="url(#siPathBlur)"/>
+
+        <!-- Crisp main path -->
+        <path class="si-s-path"
+              d="M 35 22 C 65 22 72 40 50 50 C 28 60 34 78 65 78"
+              stroke="url(#siGrad)" stroke-width="8.5" stroke-linecap="round"/>
+
+        <circle class="si-dot si-dot--top" cx="35" cy="22" r="5" fill="#9B5FFF"/>
+        <circle class="si-dot si-dot--bot" cx="65" cy="78" r="5" fill="#E8C55A"/>
+      </svg>
+    </div>
+
+    <!-- Wordmark with scan-reveal -->
+    <div class="si-wordmark-outer">
+      <div class="si-scan-beam"></div>
+      <div class="si-wordmark" aria-label="SPARK">SPARK</div>
+    </div>
+
+    <div class="si-tagline">Light Up The Future</div>
+
+  </div>
+</div>

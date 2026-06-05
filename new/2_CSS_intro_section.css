@@ -1,0 +1,267 @@
+/*
+  ══════════════════════════════════════════════════════════════
+  SPARK PRELOADER v2 — CSS PATCH
+  В файле assets/css/animations.css найди блок, начинающийся с:
+    "INTRO SCREEN #sparkIntro"
+  и замени его целиком на этот код (до следующего блока RIPPLE).
+  ══════════════════════════════════════════════════════════════
+*/
+
+/* ════════════════════════════════════════════════
+   INTRO SCREEN v2 — "SINGULARITY"
+
+   ╔══ Timeline (ms) ══════════════════╗
+   │  0    canvas burst + bg fade      │
+   │ 50    glow fades in               │
+   │ 50    S-glow path draws (420ms)   │
+   │ 80    S-main path draws (420ms)   │
+   │280    orbit ring rotates in       │
+   │440    dot–top flash               │
+   │520    dot–bot flash               │
+   │560    scan beam sweeps (380ms)    │
+   │630    wordmark appears            │
+   │680    tagline condenses in        │
+   │1250   exit begins (520ms)         │
+   ╚═══════════════════════════════════╝
+════════════════════════════════════════════════ */
+
+#sparkIntro {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg, #05060F);
+  overflow: hidden;
+}
+
+#sparkIntro.si-hidden { display: none; }
+
+#sparkIntro.si-exiting {
+  animation: siExit 0.52s cubic-bezier(0.55, 0, 1, 0.45) forwards;
+  pointer-events: none;
+}
+
+/* While intro plays, keep launchOverlay hidden */
+body.intro-active #launchOverlay { display: none !important; }
+
+@keyframes siExit {
+  0%   { opacity: 1; transform: scale(1);     filter: blur(0px);  }
+  30%  { opacity: 1; transform: scale(0.975); filter: blur(0px);  }
+  100% { opacity: 0; transform: scale(1.04);  filter: blur(11px); }
+}
+
+/* Background: focused deep-space radial bloom */
+.si-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 46% 46% at 50% 44%, rgba(123,92,250,0.17) 0%, transparent 60%),
+    radial-gradient(ellipse 80% 65% at 50% 58%, rgba(232,90,160,0.05) 0%, transparent 55%),
+    var(--bg, #05060F);
+  opacity: 0;
+  animation: fadeIn 0.22s ease both;
+}
+
+/* Canvas: burst rays + pulse rings (no random particles) */
+#siCanvas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Core: centered flex column */
+.si-core {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  user-select: none;
+}
+
+/* ── Logo zone ──────────────────── */
+
+.si-logo-wrap {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 26px;
+}
+
+/* Ambient glow behind logo */
+.si-glow {
+  position: absolute;
+  width: 202px;
+  height: 202px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(123, 92,250,0.58) 0%,
+    rgba(232, 90,160,0.20) 38%,
+    transparent            68%
+  );
+  filter: blur(19px);
+  opacity: 0;
+  animation:
+    fadeIn           0.55s ease 0.05s both,
+    siGlowBreathe    2.6s  ease-in-out 0.88s infinite;
+}
+
+@keyframes siGlowBreathe {
+  0%,100% { opacity: 0.72; transform: scale(1);    }
+  50%     { opacity: 1.00; transform: scale(1.09); }
+}
+
+/* Orbit ring: conic gradient border that rotates in */
+.si-orbit-ring {
+  position: absolute;
+  width: 114px;
+  height: 114px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--bg, #05060F), var(--bg, #05060F)) padding-box,
+    conic-gradient(
+      rgba(155, 95,255,0.00)   0deg,
+      rgba(155, 95,255,0.64)  66deg,
+      rgba(232, 90,160,0.56) 136deg,
+      rgba(232,197, 90,0.42) 208deg,
+      rgba( 90,232,197,0.22) 280deg,
+      rgba(155, 95,255,0.00) 360deg
+    ) border-box;
+  opacity: 0;
+  animation: siOrbitIn 0.52s cubic-bezier(0.22,1,0.36,1) 0.28s both;
+}
+
+@keyframes siOrbitIn {
+  from { opacity: 0; transform: rotate(-55deg) scale(0.82); }
+  to   { opacity: 1; transform: rotate(0deg)   scale(1);    }
+}
+
+/* SVG logo */
+.si-logo {
+  width: 83px;
+  height: 83px;
+  position: relative;
+  z-index: 2;
+  animation: siLogoGlow 2.6s ease-in-out 0.90s infinite;
+}
+
+@keyframes siLogoGlow {
+  0%,100% {
+    filter:
+      drop-shadow(0 0 7px  rgba(155, 95,255,0.62))
+      drop-shadow(0 0 20px rgba(155, 95,255,0.18));
+  }
+  50% {
+    filter:
+      drop-shadow(0 0 15px rgba(155, 95,255,0.98))
+      drop-shadow(0 0 38px rgba(232, 90,160,0.46));
+  }
+}
+
+/* Blurred glow path (draws just ahead of crisp path) */
+.si-s-glow {
+  stroke-dasharray: 310;
+  stroke-dashoffset: 310;
+  opacity: 0.48;
+  animation: strokeDraw 0.42s cubic-bezier(0.37,0,0.63,1) 0.05s both;
+}
+
+/* Main S-path */
+.si-s-path {
+  stroke-dasharray: 310;
+  stroke-dashoffset: 310;
+  animation: strokeDraw 0.42s cubic-bezier(0.37,0,0.63,1) 0.08s both;
+}
+
+/* Endpoint dots: flash burst then settle */
+.si-dot--top {
+  opacity: 0;
+  transform-origin: 35px 22px;
+  animation: siDotFlash 0.44s cubic-bezier(0.34,1.56,0.64,1) 0.44s both;
+}
+.si-dot--bot {
+  opacity: 0;
+  transform-origin: 65px 78px;
+  animation: siDotFlash 0.44s cubic-bezier(0.34,1.56,0.64,1) 0.52s both;
+}
+
+@keyframes siDotFlash {
+  0%   { opacity: 0; transform: scale(0);    }
+  52%  { opacity: 1; transform: scale(2.05); }
+  78%  {             transform: scale(0.88); }
+  100% { opacity: 1; transform: scale(1);    }
+}
+
+/* ── Wordmark ───────────────────── */
+
+/* Overflow-clip wrapper */
+.si-wordmark-outer {
+  position: relative;
+  overflow: hidden;
+  padding: 2px 1px 5px;
+}
+
+/* Light scan beam sweeping left → right */
+.si-scan-beam {
+  position: absolute;
+  top: 0; bottom: 0; left: 0;
+  width: 76px;
+  pointer-events: none;
+  z-index: 3;
+  background: linear-gradient(
+    90deg,
+    transparent               0%,
+    rgba(155, 95,255,0.15)  22%,
+    rgba(255,255,255,0.62)  50%,
+    rgba(232,197, 90,0.18)  78%,
+    transparent             100%
+  );
+  animation: siScanSweep 0.38s cubic-bezier(0.37,0,0.63,1) 0.56s both;
+}
+
+@keyframes siScanSweep {
+  from { transform: translateX(-82px); }
+  to   { transform: translateX(300px); }
+}
+
+/* Wordmark: all letters appear simultaneously as scan passes */
+.si-wordmark {
+  font-family: 'Syne', sans-serif;
+  font-size: 44px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  padding-right: 0.22em; /* balance right side */
+  background: linear-gradient(135deg, #9B5FFF 0%, #E85AA0 50%, #E8C55A 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  opacity: 0;
+  animation: fadeIn 0.01s 0.63s both;
+}
+
+/* Tagline: letter-spacing condenses from wide to normal */
+.si-tagline {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 300;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.24);
+  margin-top: 8px;
+  opacity: 0;
+  animation: siTaglineReveal 0.46s cubic-bezier(0.37,0,0.63,1) 0.68s both;
+}
+
+@keyframes siTaglineReveal {
+  from { opacity: 0; transform: translateY(5px); letter-spacing: 0.44em; }
+  to   { opacity: 1; transform: translateY(0);   letter-spacing: 0.28em; }
+}
