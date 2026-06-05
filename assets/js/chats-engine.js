@@ -139,12 +139,35 @@ var ChatsEngine = (function () {
     return JSON.parse(JSON.stringify(INITIAL_MESSAGES));
   }
 
-  // Save messages to LocalStorage cache
+  // Save messages to LocalStorage cache.
+  // Hard cap of 200 messages per channel prevents the 5 MB localStorage
+  // quota from being exceeded as conversations grow. On QuotaExceededError
+  // the fallback trims to 50 per channel and retries once.
+  var MAX_MSGS_PER_CHANNEL = 200;
+
   function cacheMessages(msgs) {
+    // Trim oversized channels in-place before serialising
+    Object.keys(msgs).forEach(function (cid) {
+      if (msgs[cid] && msgs[cid].length > MAX_MSGS_PER_CHANNEL) {
+        msgs[cid] = msgs[cid].slice(-MAX_MSGS_PER_CHANNEL);
+      }
+    });
     try {
       localStorage.setItem(CACHE_KEY, JSON.stringify(msgs));
     } catch (e) {
-      console.warn('Failed to write chats cache', e);
+      // Quota exceeded — trim more aggressively and retry once
+      console.warn('Chats cache quota exceeded, trimming to 50 msgs/channel', e);
+      try {
+        var thinMsgs = {};
+        Object.keys(msgs).forEach(function (cid) {
+          thinMsgs[cid] = (msgs[cid] || []).slice(-50);
+        });
+        localStorage.setItem(CACHE_KEY, JSON.stringify(thinMsgs));
+      } catch (e2) {
+        // Still over quota (too many channels) — clear the cache entirely
+        console.warn('Chats cache unrecoverable, cleared', e2);
+        localStorage.removeItem(CACHE_KEY);
+      }
     }
   }
 
@@ -1859,14 +1882,23 @@ var ChatsEngine = (function () {
 
     if (!window.supa || !window.ME || state.realtimeChannel) return;
     try {
-      state.realtimeChannel = supa.channel('realtime:public:messages')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, function (payload) {
+      // Filter to channel_id = ME.id so each client only receives messages
+      // addressed TO them. Without this filter every client receives every
+      // message from every conversation — O(users × messages) websocket
+      // traffic that crashes the client and overloads the DB under load.
+      state.realtimeChannel = supa.channel('messages-inbox-' + ME.id)
+        .on('postgres_changes', {
+          event: 'INSERT', schema: 'public', table: 'messages',
+          filter: 'channel_id=eq.' + ME.id
+        }, function (payload) {
           var newRow = payload.new;
           if (!newRow) return;
 
-          // Avoid duplicating messages sent by oneself
+          // Avoid duplicating messages sent by oneself (rare edge case on
+          // multi-device sessions where both devices share the same ME.id)
           if (newRow.sender_id === ME.id) return;
 
+          // For DMs addressed to ME: the logical thread is the sender's id
           var threadId = newRow.channel_id;
           if (newRow.channel_id === ME.id) {
             threadId = newRow.sender_id;
@@ -1923,10 +1955,14 @@ var ChatsEngine = (function () {
             renderChatList();
           }
         })
-        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, function (payload) {
+        .on('postgres_changes', {
+          event: 'UPDATE', schema: 'public', table: 'messages',
+          filter: 'channel_id=eq.' + ME.id
+        }, function (payload) {
           var updatedRow = payload.new;
           if (!updatedRow) return;
 
+          // thread is always keyed by sender when channel = ME
           var threadId = updatedRow.channel_id;
           if (updatedRow.channel_id === ME.id) {
             threadId = updatedRow.sender_id;
