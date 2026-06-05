@@ -1499,6 +1499,29 @@ var ChatsEngine = (function () {
     if (membersLbl) membersLbl.textContent = T('teamMembersLabel');
     if (confirmBtn) confirmBtn.textContent = T('ccBtnConfirm');
 
+    // Admin-only: inject "Start DM Search" switcher button
+    var moBox = document.querySelector('#moCreateChat .mo-box');
+    var existing = document.getElementById('btnSwitchToDmSearch');
+    if (existing) existing.remove();
+    if (moBox && window.PROFILE && window.PROFILE.is_admin === true) {
+      var switchBtn = document.createElement('button');
+      switchBtn.id = 'btnSwitchToDmSearch';
+      switchBtn.style.cssText = 'width:100%;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.25);color:var(--vl2);border-radius:8px;padding:8px;font-size:11px;font-family:var(--fh);font-weight:700;cursor:pointer;margin-bottom:12px;transition:background .2s';
+      switchBtn.textContent = '🔎 Начать личную переписку (Поиск по БД)';
+      switchBtn.addEventListener('mouseover', function () { switchBtn.style.background = 'rgba(124,58,237,0.22)'; });
+      switchBtn.addEventListener('mouseout',  function () { switchBtn.style.background = 'rgba(124,58,237,0.12)'; });
+      switchBtn.addEventListener('click', function () {
+        if (window.closeMo) closeMo('moCreateChat');
+        if (window.openMo)  openMo('moAdminSearchUser');
+        var inp = document.getElementById('adminSearchUserIn');
+        if (inp) { inp.value = ''; setTimeout(function () { inp.focus(); }, 80); }
+        var res = document.getElementById('adminSearchUserResults');
+        if (res) res.innerHTML = '';
+      });
+      // Insert before the first child (channel name field)
+      moBox.insertBefore(switchBtn, moBox.firstChild.nextSibling.nextSibling);
+    }
+
     _refreshMemberPicker();
     openMo('moCreateChat');
   }
@@ -1648,6 +1671,104 @@ var ChatsEngine = (function () {
         }
       });
     }
+
+    // ── Admin User-Search modal wiring ──────────────────────────────────────
+    var moAdminSearch = document.getElementById('moAdminSearchUser');
+    if (moAdminSearch) {
+      // Backdrop click closes
+      moAdminSearch.addEventListener('click', function (e) {
+        if (e.target === moAdminSearch && window.closeMo) closeMo('moAdminSearchUser');
+      });
+    }
+
+    var _asuTimer = null;
+    var searchInput = document.getElementById('adminSearchUserIn');
+    if (searchInput) {
+      searchInput.addEventListener('input', function () {
+        clearTimeout(_asuTimer);
+        _asuTimer = setTimeout(async function () {
+          var val = searchInput.value.trim().replace(/^@/, '');
+          var resultsEl = document.getElementById('adminSearchUserResults');
+          if (!resultsEl) return;
+
+          if (!val) { resultsEl.innerHTML = ''; return; }
+          if (!window.supa || !window.ME) {
+            resultsEl.innerHTML = '<div style="font-size:12px;color:var(--mu2);padding:6px 0">Нет подключения к базе данных.</div>';
+            return;
+          }
+
+          resultsEl.innerHTML = '<div style="font-size:12px;color:var(--mu2);padding:6px 0">Поиск…</div>';
+
+          try {
+            var res = await window.supa
+              .from('profiles')
+              .select('id, username, avatar_color')
+              .ilike('username', '%' + val + '%')
+              .neq('id', window.ME.id)
+              .limit(10);
+
+            if (res.error) throw res.error;
+
+            var users = res.data || [];
+            if (users.length === 0) {
+              resultsEl.innerHTML = '<div style="font-size:12px;color:var(--mu2);padding:6px 0">Пользователи не найдены.</div>';
+              return;
+            }
+
+            resultsEl.innerHTML = '';
+            users.forEach(function (user) {
+              var avGrad = window.ProfileEditEngine
+                ? window.ProfileEditEngine.getAvatarGradient(user.avatar_color || 0)
+                : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
+              var letter = (user.username || '?').replace('@', '').charAt(0).toUpperCase();
+
+              var row = document.createElement('div');
+              row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);cursor:pointer;transition:background .15s';
+              row.addEventListener('mouseover', function () { row.style.background = 'rgba(124,58,237,0.14)'; });
+              row.addEventListener('mouseout',  function () { row.style.background = 'rgba(255,255,255,0.04)'; });
+
+              var av = document.createElement('div');
+              av.style.cssText = 'width:32px;height:32px;border-radius:50%;background:' + avGrad + ';display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0';
+              av.textContent = letter;
+
+              var info = document.createElement('div');
+              info.style.cssText = 'display:flex;flex-direction:column;gap:1px;min-width:0';
+              var nameEl = document.createElement('div');
+              nameEl.style.cssText = 'font-size:13px;font-weight:600;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
+              nameEl.textContent = '@' + user.username;
+              info.appendChild(nameEl);
+
+              row.appendChild(av);
+              row.appendChild(info);
+
+              row.addEventListener('click', function () {
+                var contacts = getContactsList();
+                if (!contacts.some(function (c) { return c.id === user.id; })) {
+                  contacts.push({
+                    id: user.id,
+                    name: '@' + user.username,
+                    username: '@' + user.username,
+                    online: false,
+                    avColor: user.avatar_color || 0,
+                    preview: 'Чат начат администратором.'
+                  });
+                  saveContactsList(contacts);
+                }
+                renderChatList();
+                if (window.closeMo) closeMo('moAdminSearchUser');
+                selectChannel(user.id);
+              });
+
+              resultsEl.appendChild(row);
+            });
+          } catch (e) {
+            var resultsEl2 = document.getElementById('adminSearchUserResults');
+            if (resultsEl2) resultsEl2.innerHTML = '<div style="font-size:12px;color:var(--red);padding:6px 0">Ошибка: ' + (e.message || 'неизвестная ошибка') + '</div>';
+          }
+        }, 300);
+      });
+    }
+    // ── end Admin User-Search wiring ────────────────────────────────────────
 
     function _setHint(msg, type) {
       if (!hint) return;
