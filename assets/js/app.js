@@ -343,6 +343,10 @@ document.addEventListener('DOMContentLoaded', function () {
     annClose.addEventListener('click', function () {
       var banner = document.getElementById('announcementBanner');
       if (banner) banner.style.display = 'none';
+      var textEl = document.getElementById('announcementText');
+      if (textEl && textEl.textContent) {
+        localStorage.setItem('spark_closed_announcement', textEl.textContent.trim());
+      }
     });
   }
 
@@ -1508,13 +1512,22 @@ async function loadAnnouncement() {
   if (!supa) return;
   try {
     var res = await supa.from('system_announcements').select('message').eq('id', 1).single();
+    var banner = document.getElementById('announcementBanner');
+    var textEl = document.getElementById('announcementText');
     if (res.data && res.data.message) {
-      var banner = document.getElementById('announcementBanner');
-      var textEl = document.getElementById('announcementText');
+      var activeMsg = res.data.message.trim();
+      var closedMsg = localStorage.getItem('spark_closed_announcement');
+      if (closedMsg === activeMsg) {
+        if (banner) banner.style.display = 'none';
+        return;
+      }
       if (banner && textEl) {
         textEl.textContent = res.data.message;
         banner.style.display = 'flex';
       }
+    } else {
+      if (banner) banner.style.display = 'none';
+      localStorage.removeItem('spark_closed_announcement');
     }
   } catch (e) {
     // Non-critical — silently ignore
