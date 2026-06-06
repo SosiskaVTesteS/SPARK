@@ -5,6 +5,36 @@
 var _pendingAdminSignIn = null; // holds { email, password } while 2FA modal is open
 
 document.addEventListener('DOMContentLoaded', function () {
+  // Capture ?auto= param so profile.html / leaderboard.html redirects survive
+  // the auth flow (enterApp() reads this after login).
+  try {
+    var _autoPanel = new URLSearchParams(window.location.search).get('auto');
+    if (_autoPanel) {
+      sessionStorage.setItem('spark_auto_panel', _autoPanel);
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  } catch (e) {}
+
+  // Event delegation: clicks on elements with data-open-mo open the named modal.
+  // Used as a robust fallback for dynamically-rendered settings items.
+  document.addEventListener('click', function (e) {
+    var trigger = e.target.closest('[data-open-mo]');
+    if (trigger) {
+      e.stopPropagation();
+      openMo(trigger.dataset.openMo);
+    }
+  });
+
+  // Support "Написать письмо" link: ensure window.location.href is used
+  // in addition to the native href so behaviour matches QA requirement.
+  var supportMailLink = document.getElementById('supportMailLink');
+  if (supportMailLink) {
+    supportMailLink.addEventListener('click', function (e) {
+      e.preventDefault();
+      window.location.href = 'mailto:spark.supp.team@gmail.com';
+    });
+  }
+
   document.querySelectorAll('[data-auth-tab]').forEach(function (btn) {
     btn.addEventListener('click', function () {
       switchAuth(btn.dataset.authTab);
@@ -1501,6 +1531,15 @@ function enterApp() {
   syncUnlockedContacts();
   // Загружаем системное объявление
   loadAnnouncement();
+
+  // Open the panel requested by profile.html / leaderboard.html redirects.
+  try {
+    var _savedPanel = sessionStorage.getItem('spark_auto_panel');
+    if (_savedPanel) {
+      sessionStorage.removeItem('spark_auto_panel');
+      setTimeout(function () { openPanel(_savedPanel); }, 300);
+    }
+  } catch (e) {}
 }
 
 // ════ СИСТЕМНОЕ ОБЪЯВЛЕНИЕ ════
@@ -2031,7 +2070,7 @@ function profileHTML(sfx) {
     + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--mu)"><polyline points="9 18 15 12 9 6"/></svg></div>'
     + '<a class="sset" href="about.html" style="text-decoration:none;color:inherit"><span>' + (typeof T === 'function' && T('aboutUs') !== 'aboutUs' ? T('aboutUs') : (window.LANG === 'ru' ? 'О нас' : 'About us')) + '</span>'
     + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--mu)"><polyline points="9 18 15 12 9 6"/></svg></a>'
-    + '<div class="sset" onclick="openMo(\'moSupport\')"><span>' + (window.LANG === 'ru' ? 'Поддержка' : 'Support') + '</span>'
+    + '<div class="sset" data-open-mo="moSupport" onclick="openMo(\'moSupport\')"><span>' + (window.LANG === 'ru' ? 'Поддержка' : 'Support') + '</span>'
     + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--mu)"><polyline points="9 18 15 12 9 6"/></svg></div>'
     + (PROFILE.is_admin
         ? '<a class="sset" href="admin.html" style="text-decoration:none;color:inherit">'
@@ -3288,6 +3327,9 @@ async function doPublish() {
       }).select().single();
       if (r.error) throw r.error;
       if (r.data) insertLive(r.data, uname, letter);
+      closeMo('moCreate');
+      toast('🚀 ' + (LANG === 'ru' ? 'Идея опубликована!' : 'Idea published!'), 'var(--ac)');
+      return;
     } catch (e) {
       console.warn('insert error', e);
       toast('❌ Publish failed. Try again.', 'var(--red)');

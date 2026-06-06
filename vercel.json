@@ -1,6 +1,14 @@
 {
   "rewrites": [
     {
+      "source": "/profile",
+      "destination": "/profile.html"
+    },
+    {
+      "source": "/leaderboard",
+      "destination": "/leaderboard.html"
+    },
+    {
       "source": "/rest/v1/:match*",
       "destination": "https://ppehttbtrlavnrytoweu.supabase.co/rest/v1/:match*"
     },

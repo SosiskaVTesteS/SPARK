@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>SPARK — Profile</title>
+<script>
+  // Redirect to the main app with an instruction to open the profile panel.
+  // The app reads the `auto` param on boot and calls openPanel() accordingly.
+  var dest = '/?auto=profile';
+  // Preserve any hash fragment (e.g. Supabase auth callback tokens).
+  if (window.location.hash) dest += window.location.hash;
+  window.location.replace(dest);
+</script>
+</head>
+<body></body>
+</html>
