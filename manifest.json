@@ -1,0 +1,37 @@
+{
+  "name": "SPARK — Idea Exchange",
+  "short_name": "SPARK",
+  "description": "Publish ideas, discover market signals, and invest with SPK.",
+  "theme_color": "#7B5CFA",
+  "background_color": "#080C1C",
+  "display": "standalone",
+  "orientation": "any",
+  "scope": "/",
+  "start_url": "/",
+  "lang": "en",
+  "categories": ["finance", "productivity", "social"],
+  "icons": [
+    {
+      "src": "assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/icons/icon-192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "assets/icons/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

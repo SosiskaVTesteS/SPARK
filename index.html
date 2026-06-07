@@ -4,8 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23080C1C'/><path d='M35 22C65 22 72 40 50 50C28 60 34 78 65 78' stroke='%23A07AFF' stroke-width='10' stroke-linecap='round' fill='none'/><circle cx='35' cy='22' r='6' fill='%239B5FFF'/><circle cx='65' cy='78' r='6' fill='%23E8C55A'/></svg>">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png">
 <meta name="description" content="SPARK is an idea exchange platform where creators publish startup ideas and investors back them with SPK.">
 <meta name="theme-color" content="#05060F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SPARK">
 <meta name="robots" content="index,follow">
 <meta property="og:type" content="website">
 <meta property="og:title" content="SPARK — Idea Exchange">
@@ -31,6 +36,7 @@
 <link rel="stylesheet" href="assets/css/main.css">
 <link rel="stylesheet" href="assets/css/animations.css">
 <link rel="stylesheet" href="assets/css/chats.css">
+<link rel="stylesheet" href="assets/css/pwa.css">
 <!-- Theme engine: runs before first paint to avoid colour flash -->
 <script src="assets/js/theme.js"></script>
 <!-- OnboardingEngine v1 — 9-slide pre-registration guide (новый, расширенный) -->
@@ -929,5 +935,72 @@ html.auth-active, html.auth-active body { overflow: hidden !important; height: 1
 <script src="assets/js/onboarding.js" defer></script>
 <script src="assets/js/app.js" defer></script>
 <script src="assets/js/miniprofile.js" defer></script>
+<script src="assets/js/pwa.js"></script>
+
+<!-- ════ PWA: Install banner ════ -->
+<div id="pwaInstallBanner" role="complementary" aria-label="Установить приложение">
+  <div class="pwa-banner__icon" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+    </svg>
+  </div>
+  <div class="pwa-banner__text">
+    <div class="pwa-banner__title">Установить SPARK</div>
+    <div class="pwa-banner__sub">Работает офлайн · Быстрее · Без браузера</div>
+  </div>
+  <div class="pwa-banner__actions">
+    <button class="pwa-banner__btn pwa-banner__btn--install" id="pwaInstallBtn">Установить</button>
+    <button class="pwa-banner__btn pwa-banner__btn--dismiss" id="pwaInstallDismiss">Не сейчас</button>
+  </div>
+</div>
+
+<!-- ════ PWA: Update toast ════ -->
+<div id="pwaUpdateToast" role="alert" aria-live="polite">
+  <div class="pwa-toast__dot" aria-hidden="true"></div>
+  <div class="pwa-toast__msg"><strong>Обновление SPARK</strong> готово к установке</div>
+  <button id="pwaUpdateBtn">Обновить</button>
+  <button id="pwaToastClose" aria-label="Закрыть">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+  </button>
+</div>
+
+<!-- ════ PWA: iOS install hint ════ -->
+<div id="pwaIOSHint" aria-label="Инструкция по установке на iOS">
+  <div class="pwa-ios__header">
+    <div class="pwa-ios__title">Установить SPARK на iPhone</div>
+    <button id="pwaIOSClose" aria-label="Закрыть">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+  <div class="pwa-ios__steps">
+    <div class="pwa-ios__step">
+      <div class="pwa-ios__step-num">1</div>
+      <div class="pwa-ios__step-text">
+        Нажмите
+        <span class="pwa-ios__icon" aria-label="Кнопка Поделиться">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+        </span>
+        <strong>«Поделиться»</strong> в нижней панели Safari
+      </div>
+    </div>
+    <div class="pwa-ios__step">
+      <div class="pwa-ios__step-num">2</div>
+      <div class="pwa-ios__step-text">
+        Прокрутите вниз и выберите<br>
+        <strong>«На экран Домой»</strong>
+        <span class="pwa-ios__arrow">→</span>
+        <strong>«Добавить»</strong>
+      </div>
+    </div>
+    <div class="pwa-ios__step">
+      <div class="pwa-ios__step-num">3</div>
+      <div class="pwa-ios__step-text">SPARK появится на главном экране как нативное приложение</div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
