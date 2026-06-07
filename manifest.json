@@ -10,6 +10,7 @@
   "start_url": "/",
   "lang": "en",
   "categories": ["finance", "productivity", "social"],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "assets/icons/icon-192.png",

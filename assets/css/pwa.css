@@ -337,3 +337,142 @@
   margin: 0 3px;
   color: rgba(255,255,255,0.45);
 }
+
+/* ── OEM browser warning state ────────────────────────────────────────────── */
+#pwaInstallBanner[data-mode="oem"] {
+  border-color: rgba(232, 197, 90, 0.35);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(232,197,90,0.08) inset;
+}
+
+.pwa-banner__icon--warn {
+  background: linear-gradient(135deg, #C87A10, #E8C55A) !important;
+  box-shadow: 0 0 18px rgba(232,197,90,0.45) !important;
+  color: #080C1C;
+}
+
+.pwa-banner__icon--warn svg {
+  stroke: #080C1C;
+  width: 20px;
+  height: 20px;
+}
+
+.pwa-banner__btn--copy {
+  background: rgba(232,197,90,0.1);
+  color: #E8C55A;
+  border: 1px solid rgba(232,197,90,0.3);
+  padding: 8px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: var(--fh, 'Syne', sans-serif);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  transition: background 0.18s ease, border-color 0.18s ease;
+  white-space: nowrap;
+}
+
+.pwa-banner__btn--copy:hover {
+  background: rgba(232,197,90,0.18);
+  border-color: rgba(232,197,90,0.45);
+}
+
+/* ── Android WebView hint (same structure as iOS hint) ────────────────────── */
+#pwaWebViewHint {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 9800;
+  background: linear-gradient(180deg, rgba(12,16,36,0.97) 0%, rgba(8,12,28,0.99) 100%);
+  border-top: 1px solid rgba(232,197,90,0.25);
+  border-radius: 20px 20px 0 0;
+  padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px));
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow: 0 -8px 40px rgba(0,0,0,0.6);
+  transform: translateY(100%);
+  transition: transform 0.4s cubic-bezier(0.34,1.2,0.64,1);
+}
+
+#pwaWebViewHint.visible {
+  transform: translateY(0);
+}
+
+.pwa-wv__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.pwa-wv__title {
+  font-family: var(--fh, 'Syne', sans-serif);
+  font-size: 16px;
+  font-weight: 800;
+  color: #E8C55A;
+  letter-spacing: -0.01em;
+}
+
+#pwaWebViewClose {
+  width: 28px;
+  height: 28px;
+  background: rgba(255,255,255,0.07);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  color: rgba(255,255,255,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.18s, color 0.18s;
+  padding: 0;
+}
+
+#pwaWebViewClose:hover {
+  background: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.8);
+}
+
+.pwa-wv__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pwa-wv__step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(232,197,90,0.04);
+  border: 1px solid rgba(232,197,90,0.1);
+  border-radius: 12px;
+}
+
+.pwa-wv__step-num {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #C87A10, #E8C55A);
+  color: #080C1C;
+  font-family: var(--fh, 'Syne', sans-serif);
+  font-size: 12px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 0 10px rgba(232,197,90,0.35);
+}
+
+.pwa-wv__step-text {
+  font-family: var(--fb, 'DM Sans', sans-serif);
+  font-size: 13px;
+  color: rgba(255,255,255,0.8);
+  line-height: 1.5;
+  padding-top: 3px;
+}
+
+.pwa-wv__step-text strong {
+  color: #fff;
+}
