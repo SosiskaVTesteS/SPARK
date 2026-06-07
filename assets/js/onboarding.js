@@ -691,7 +691,7 @@ var SparkTour = (function () {
   var _tip         = null;  // tooltip card
   var _sheet       = null;  // mobile bottom-sheet
   var _target      = null;  // current highlighted element
-  var _savedStyles = null;  // {position,zIndex,isolation,outline} of _target
+  var _savedStyles = null;  // {position,zIndex,isolation,outline,pointerEvents} of _target
   var _idx         = 0;
   var _steps       = [];
   var _raf         = null;  // requestAnimationFrame id for ring tracking
@@ -1192,29 +1192,48 @@ var SparkTour = (function () {
      SPOTLIGHT  core logic
      ───────────────────────────────────────────────────── */
 
-  /* Elevate target element above overlay */
+  /* Elevate target element above overlay — but keep it non-interactive.
+     pointer-events:none ensures clicks at the spotlight gap fall through
+     to the overlay panels (which absorb them) rather than firing the
+     element's own handlers. The global capture blocker is the second
+     line of defence for any geometry that slips past the panels. */
   function _liftTarget(el) {
     if (!el) return;
     var cs = window.getComputedStyle(el);
     _savedStyles = {
-      position:  el.style.position,
-      zIndex:    el.style.zIndex,
-      isolation: el.style.isolation,
-      outline:   el.style.outline
+      position:     el.style.position,
+      zIndex:       el.style.zIndex,
+      isolation:    el.style.isolation,
+      outline:      el.style.outline,
+      pointerEvents: el.style.pointerEvents
     };
-    el.style.position  = (cs.position === 'static') ? 'relative' : cs.position;
-    el.style.zIndex    = '99983';
-    el.style.isolation = 'isolate';
+    el.style.position     = (cs.position === 'static') ? 'relative' : cs.position;
+    el.style.zIndex       = '99983';
+    el.style.isolation    = 'isolate';
+    el.style.pointerEvents = 'none';
   }
 
-  /* Restore target to original styles */
+  /* Restore target to original styles — guaranteed idempotent */
   function _dropTarget(el) {
     if (!el || !_savedStyles) return;
-    el.style.position  = _savedStyles.position;
-    el.style.zIndex    = _savedStyles.zIndex;
-    el.style.isolation = _savedStyles.isolation;
-    el.style.outline   = _savedStyles.outline;
+    el.style.position     = _savedStyles.position;
+    el.style.zIndex       = _savedStyles.zIndex;
+    el.style.isolation    = _savedStyles.isolation;
+    el.style.outline      = _savedStyles.outline;
+    el.style.pointerEvents = _savedStyles.pointerEvents;
     _savedStyles = null;
+  }
+
+  /* Capture-phase blocker: intercepts ALL clicks/touches not originating
+     inside the tour UI (.spk-t3-tip or .spk-t3-sheet). Registered at
+     launch() and removed at _finish() so it has zero lifetime outside
+     the active tour. */
+  function _blockInteraction(e) {
+    var t = e.target;
+    if (_tip   && _tip.contains(t))   return;
+    if (_sheet && _sheet.contains(t)) return;
+    e.stopPropagation();
+    e.preventDefault();
   }
 
   /* Place four panels around a bounding rect */
@@ -1702,6 +1721,10 @@ var SparkTour = (function () {
     _mark();
     _cleanStep();
 
+    /* Lift the interaction block immediately so the page is usable again */
+    document.removeEventListener('click',      _blockInteraction, { capture: true });
+    document.removeEventListener('touchstart', _blockInteraction, { capture: true });
+
     /* reset any profile-panel lift when the tour ends (desktop drawer + mobile panel) */
     _closeProfilePanel();
 
@@ -1733,6 +1756,9 @@ var SparkTour = (function () {
     _steps = _buildSteps();
     _idx   = 0;
     _buildOverlay();
+    /* Block all page interaction for the duration of the tour */
+    document.addEventListener('click',      _blockInteraction, { capture: true, passive: false });
+    document.addEventListener('touchstart', _blockInteraction, { capture: true, passive: false });
     /* Defer render so app UI has fully painted */
     setTimeout(function(){
       _render(0);

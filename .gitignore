@@ -22,3 +22,5 @@ taster_temp/
 # Личная документация — не для репо
 *.txt
 !robots.txt
+
+testsprite_tests\tmp\config.json
