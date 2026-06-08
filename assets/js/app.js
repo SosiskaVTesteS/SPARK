@@ -2574,7 +2574,7 @@ async function getUserIdeas() {
         .select('id, title, description, min_bet, total_invested, investment_history, expires_at, created_at, author_id, reactions, status')
         .eq('author_id', ME.id)
         .order('created_at', { ascending: false });
-      if (r.data) {
+      if (r.data && ME) {
         var profilesMap = {};
         profilesMap[ME.id] = PROFILE.username;
         return r.data.map(function(row) {
@@ -3045,6 +3045,18 @@ function renderPgn(tp) {
   });
 }
 
+// Latched true on first PGRST202 — switches all subsequent react() calls to legacy path
+var _reactRpcMissing = false;
+
+function _isRpcMissingError(err) {
+  if (!err) return false;
+  var code = String(err.code || '');
+  var msg = String(err.message || '') + String(err.hint || '');
+  return code === 'PGRST202' ||
+    msg.indexOf('react_to_idea') !== -1 ||
+    msg.indexOf('Could not find the function') !== -1;
+}
+
 function _renderReactContainer(ideaId) {
   var container = document.getElementById('rc-' + ideaId);
   if (!container) return;
@@ -3098,9 +3110,22 @@ function react(ideaId, emoji, btn) {
   setTimeout(function () { btn.classList.remove('pop'); }, 300);
   _renderReactContainer(ideaId);
 
-  // --- Async atomic DB sync via RPC ---
+  // --- Async atomic DB sync via RPC (with legacy fallback) ---
   if (supa) {
     (async function () {
+      // Snapshot rs.counts NOW (post-optimistic-update, before any await).
+      // Using this frozen copy in legacy .update() prevents a rapid second click
+      // from mutating rs.counts before Supabase serialises the HTTP request.
+      var postCounts = Object.assign({}, rs.counts);
+
+      // Legacy path: RPC confirmed missing on this Supabase instance — use direct update
+      if (_reactRpcMissing) {
+        safeSupabaseCall('database', function () {
+          return supa.from('ideas').update({ reactions: postCounts }).eq('id', ideaId);
+        }, { silent: true });
+        return;
+      }
+
       var failed = false;
       var lastServerCounts = null;
 
@@ -3109,6 +3134,14 @@ function react(ideaId, emoji, btn) {
           return supa.rpc('react_to_idea', { p_idea_id: ideaId, p_emoji: toDecrement, p_increment: -1 });
         }, { silent: true });
         if (!r1.ok) {
+          if (_isRpcMissingError(r1.error)) {
+            _reactRpcMissing = true;
+            console.warn('[SPARK] react_to_idea RPC not found — falling back to legacy reactions.update()');
+            safeSupabaseCall('database', function () {
+              return supa.from('ideas').update({ reactions: postCounts }).eq('id', ideaId);
+            }, { silent: true });
+            return;
+          }
           failed = true;
         } else if (r1.data && r1.data.data) {
           lastServerCounts = r1.data.data;
@@ -3120,6 +3153,14 @@ function react(ideaId, emoji, btn) {
           return supa.rpc('react_to_idea', { p_idea_id: ideaId, p_emoji: toIncrement, p_increment: 1 });
         }, { silent: true });
         if (!r2.ok) {
+          if (_isRpcMissingError(r2.error)) {
+            _reactRpcMissing = true;
+            console.warn('[SPARK] react_to_idea RPC not found — falling back to legacy reactions.update()');
+            safeSupabaseCall('database', function () {
+              return supa.from('ideas').update({ reactions: postCounts }).eq('id', ideaId);
+            }, { silent: true });
+            return;
+          }
           failed = true;
         } else if (r2.data && r2.data.data) {
           lastServerCounts = r2.data.data;

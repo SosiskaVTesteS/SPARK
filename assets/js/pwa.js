@@ -280,9 +280,14 @@
   });
 
   // ── beforeinstallprompt ───────────────────────────────────────────────────
+  // e.preventDefault() suppresses Chrome's own mini-infobar so we can show our
+  // custom banner instead.  The stored _installEvent is used by the install
+  // button's click handler to call .prompt() — this is the correct custom-UX
+  // pattern.  The console warning "Banner not shown: ...preventDefault() called"
+  // is Chrome confirming the suppression and is expected / intentional.
 
   window.addEventListener('beforeinstallprompt', function (e) {
-    e.preventDefault();
+    e.preventDefault();   // intentional — we own the install UX via #pwaInstallBtn
     _installEvent = e;
     try { if (localStorage.getItem('spark_pwa_dismissed')) return; } catch (e2) {}
     showInstallBanner();
