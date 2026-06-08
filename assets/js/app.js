@@ -3713,8 +3713,9 @@ function initRealtime() {
                   var mb2 = LIVE[idx].minBet || 10;
                   LIVE[idx].pct = newPool2 > 0 ? Math.min(Math.round((newPool2 / Math.max(mb2 * 5, 1)) * 100), 999) : 0;
                 }
-                // Sync reactions from poll — updates reaction buttons without triggering a full re-render
-                if (updated.reactions && typeof updated.reactions === 'object') {
+                // Sync reactions from poll — skip while a local reaction is in-flight to avoid
+                // overwriting the optimistic update with stale DB data (fixes count flicker bug)
+                if (updated.reactions && typeof updated.reactions === 'object' && !_reactInflight.has(updated.id)) {
                   var rsP = getRS(updated.id);
                   EMOJIS.forEach(function (e) {
                     if (updated.reactions[e] !== undefined) {
@@ -3774,7 +3775,8 @@ function initRealtime() {
             LIVE[idx].pct = newPool2 > 0 ? Math.min(Math.round((newPool2 / Math.max(mb2 * 5, 1)) * 100), 999) : 0;
           }
           // Sync reaction counts from realtime payload so other users' reactions appear live
-          if (updated.reactions && typeof updated.reactions === 'object') {
+          // Skip while a local reaction is in-flight — the RPC response handles the authoritative sync
+          if (updated.reactions && typeof updated.reactions === 'object' && !_reactInflight.has(updated.id)) {
             var rsRt = getRS(updated.id);
             EMOJIS.forEach(function (e) {
               if (updated.reactions[e] !== undefined) {
