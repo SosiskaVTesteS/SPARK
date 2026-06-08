@@ -3045,33 +3045,7 @@ function renderPgn(tp) {
   });
 }
 
-function react(ideaId, emoji, btn) {
-  var rs = getRS(ideaId);
-  var prev = rs.pick;
-  if (prev === emoji) {
-    rs.counts[emoji] = Math.max(0, (rs.counts[emoji] || 0) - 1);
-    rs.pick = null;
-    try {
-      localStorage.removeItem('spark_pick_' + ideaId);
-    } catch (e) {}
-    if (supa) {
-      safeSupabaseCall('database', function() { return supa.from('ideas').update({ reactions: rs.counts }).eq('id', ideaId); }, { silent: true });
-    }
-  } else {
-    if (prev) {
-      rs.counts[prev] = Math.max(0, (rs.counts[prev] || 0) - 1);
-    }
-    rs.counts[emoji] = (rs.counts[emoji] || 0) + 1;
-    rs.pick = emoji;
-    try {
-      localStorage.setItem('spark_pick_' + ideaId, emoji);
-    } catch (e) {}
-    if (supa) {
-      safeSupabaseCall('database', function() { return supa.from('ideas').update({ reactions: rs.counts }).eq('id', ideaId); }, { silent: true });
-    }
-  }
-  btn.classList.add('pop');
-  setTimeout(function () { btn.classList.remove('pop'); }, 300);
+function _renderReactContainer(ideaId) {
   var container = document.getElementById('rc-' + ideaId);
   if (!container) return;
   var oldPos = {};
@@ -3091,8 +3065,88 @@ function react(ideaId, emoji, btn) {
       });
     });
   });
+  var rsLocal = getRS(ideaId);
   var card = document.querySelector('.card[data-cid="' + ideaId + '"]');
-  if (card) card.classList.toggle('fire', (rs.counts['🔥'] || 0) >= FIRE_T);
+  if (card) card.classList.toggle('fire', (rsLocal.counts['🔥'] || 0) >= FIRE_T);
+}
+
+function react(ideaId, emoji, btn) {
+  var rs = getRS(ideaId);
+  var prev = rs.pick;
+
+  // Snapshot for optimistic-rollback
+  var snapCounts = Object.assign({}, rs.counts);
+  var snapPick = prev;
+
+  // Which emojis to decrement / increment in DB
+  var toDecrement = (prev === emoji) ? emoji : prev;   // null when no previous pick
+  var toIncrement = (prev === emoji) ? null : emoji;   // null when toggling off
+
+  // --- Optimistic update ---
+  if (prev === emoji) {
+    rs.counts[emoji] = Math.max(0, (rs.counts[emoji] || 0) - 1);
+    rs.pick = null;
+    try { localStorage.removeItem('spark_pick_' + ideaId); } catch (e) {}
+  } else {
+    if (prev) rs.counts[prev] = Math.max(0, (rs.counts[prev] || 0) - 1);
+    rs.counts[emoji] = (rs.counts[emoji] || 0) + 1;
+    rs.pick = emoji;
+    try { localStorage.setItem('spark_pick_' + ideaId, emoji); } catch (e) {}
+  }
+
+  btn.classList.add('pop');
+  setTimeout(function () { btn.classList.remove('pop'); }, 300);
+  _renderReactContainer(ideaId);
+
+  // --- Async atomic DB sync via RPC ---
+  if (supa) {
+    (async function () {
+      var failed = false;
+      var lastServerCounts = null;
+
+      if (toDecrement) {
+        var r1 = await safeSupabaseCall('database', function () {
+          return supa.rpc('react_to_idea', { p_idea_id: ideaId, p_emoji: toDecrement, p_increment: -1 });
+        }, { silent: true });
+        if (!r1.ok) {
+          failed = true;
+        } else if (r1.data && r1.data.data) {
+          lastServerCounts = r1.data.data;
+        }
+      }
+
+      if (!failed && toIncrement) {
+        var r2 = await safeSupabaseCall('database', function () {
+          return supa.rpc('react_to_idea', { p_idea_id: ideaId, p_emoji: toIncrement, p_increment: 1 });
+        }, { silent: true });
+        if (!r2.ok) {
+          failed = true;
+        } else if (r2.data && r2.data.data) {
+          lastServerCounts = r2.data.data;
+        }
+      }
+
+      if (failed) {
+        // Rollback optimistic state
+        rs.counts = snapCounts;
+        rs.pick = snapPick;
+        try {
+          if (snapPick) localStorage.setItem('spark_pick_' + ideaId, snapPick);
+          else localStorage.removeItem('spark_pick_' + ideaId);
+        } catch (e) {}
+        _renderReactContainer(ideaId);
+        if (typeof toast === 'function') toast('Reaction failed — please try again.', 'var(--red)');
+      } else if (lastServerCounts) {
+        // Sync authoritative server counts (preserves pick set above)
+        EMOJIS.forEach(function (e) {
+          if (lastServerCounts[e] !== undefined) {
+            rs.counts[e] = Math.max(0, Number(lastServerCounts[e]) || 0);
+          }
+        });
+        _renderReactContainer(ideaId);
+      }
+    })();
+  }
 }
 
 var CUR_IDEA = null;
