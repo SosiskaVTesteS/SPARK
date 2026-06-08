@@ -1088,6 +1088,11 @@ function dbRowToLiveIdea(row, profilesMap) {
   EMOJIS.forEach(function(e) {
     if (reactions[e] !== undefined) rsObj.counts[e] = Number(reactions[e]) || 0;
   });
+  // Clear stale localStorage pick: if DB shows count=0 for the stored pick emoji, the pick is outdated
+  if (rsObj.pick && (rsObj.counts[rsObj.pick] || 0) === 0) {
+    rsObj.pick = null;
+    try { localStorage.removeItem('spark_pick_' + row.id); } catch (e2) {}
+  }
   // Pick tag from title keywords
   var tag = detectTag(row.title || '');
   // Random-ish gradient based on id
@@ -1503,9 +1508,8 @@ function enterApp() {
   var launchOverlay = document.getElementById('launchOverlay');
   if (launchOverlay) launchOverlay.classList.add('gone');
   updateHeader();
-  renderProfile();
   initRealtime();
-  applyLang();
+  applyLang(); // applyLang already calls renderProfile() — no need to call it twice
   // Load real ideas from DB, then render trends and leaders
   loadIdeasFromDB();
 
@@ -2385,15 +2389,38 @@ async function renderAchievements(sfx) {
   }
 }
 
+var _repostCodeCache = null;    // { uid: string, code: string } | null
+var _repostCodeFetching = false; // prevents concurrent HTTP calls
+
 async function loadUserRepostCode(sfx) {
   if (!ME) return;
+
+  function _applyCode(code) {
+    ['D', 'M'].forEach(function (s) {
+      var sp = document.getElementById('achCodeVal-' + s);
+      if (sp) sp.textContent = code;
+      var inl = document.getElementById('achCodeInline-' + s);
+      if (inl) inl.textContent = code;
+    });
+  }
+
+  // Serve from cache if we already have the code for this user
+  if (_repostCodeCache && _repostCodeCache.uid === ME.id) {
+    _applyCode(_repostCodeCache.code);
+    return;
+  }
+
+  // Another call is already in-flight — skip to avoid duplicate requests
+  if (_repostCodeFetching) return;
+  _repostCodeFetching = true;
+
   var r = await callEdgeFunction('verify-repost', { repost_link: '__get_code__' });
+  _repostCodeFetching = false;
+
   if (!r.ok || !r.data || !r.data.code) return;
   var code = r.data.code;
-  var span = document.getElementById('achCodeVal-' + sfx);
-  if (span) span.textContent = code;
-  var inline = document.getElementById('achCodeInline-' + sfx);
-  if (inline) inline.textContent = code;
+  _repostCodeCache = { uid: ME.id, code: code };
+  _applyCode(code);
 }
 
 async function doClaimAchievement(achId, rank) {
@@ -3047,6 +3074,8 @@ function renderPgn(tp) {
 
 // Latched true on first PGRST202 — switches all subsequent react() calls to legacy path
 var _reactRpcMissing = false;
+// Set of ideaIds with an async RPC in flight — prevents double-click race
+var _reactInflight = new Set();
 
 function _isRpcMissingError(err) {
   if (!err) return false;
@@ -3083,6 +3112,9 @@ function _renderReactContainer(ideaId) {
 }
 
 function react(ideaId, emoji, btn) {
+  // Block concurrent async operations on the same idea (double-click guard)
+  if (_reactInflight.has(ideaId)) return;
+
   var rs = getRS(ideaId);
   var prev = rs.pick;
 
@@ -3106,85 +3138,97 @@ function react(ideaId, emoji, btn) {
     try { localStorage.setItem('spark_pick_' + ideaId, emoji); } catch (e) {}
   }
 
-  btn.classList.add('pop');
-  setTimeout(function () { btn.classList.remove('pop'); }, 300);
   _renderReactContainer(ideaId);
+  // btn is now detached (innerHTML was replaced) — find the freshly rendered button for the pop animation
+  var rc = document.getElementById('rc-' + ideaId);
+  if (rc) {
+    var popBtn = rc.querySelector('.rbbl[data-e="' + emoji + '"]');
+    if (popBtn) {
+      popBtn.classList.add('pop');
+      setTimeout(function () { popBtn.classList.remove('pop'); }, 300);
+    }
+  }
 
   // --- Async atomic DB sync via RPC (with legacy fallback) ---
   if (supa) {
     (async function () {
-      // Snapshot rs.counts NOW (post-optimistic-update, before any await).
-      // Using this frozen copy in legacy .update() prevents a rapid second click
-      // from mutating rs.counts before Supabase serialises the HTTP request.
-      var postCounts = Object.assign({}, rs.counts);
+      _reactInflight.add(ideaId);
+      try {
+        // Snapshot rs.counts NOW (post-optimistic-update, before any await).
+        // Using this frozen copy in legacy .update() prevents a rapid second click
+        // from mutating rs.counts before Supabase serialises the HTTP request.
+        var postCounts = Object.assign({}, rs.counts);
 
-      // Legacy path: RPC confirmed missing on this Supabase instance — use direct update
-      if (_reactRpcMissing) {
-        safeSupabaseCall('database', function () {
-          return supa.from('ideas').update({ reactions: postCounts }).eq('id', ideaId);
-        }, { silent: true });
-        return;
-      }
-
-      var failed = false;
-      var lastServerCounts = null;
-
-      if (toDecrement) {
-        var r1 = await safeSupabaseCall('database', function () {
-          return supa.rpc('react_to_idea', { p_idea_id: ideaId, p_emoji: toDecrement, p_increment: -1 });
-        }, { silent: true });
-        if (!r1.ok) {
-          if (_isRpcMissingError(r1.error)) {
-            _reactRpcMissing = true;
-            console.warn('[SPARK] react_to_idea RPC not found — falling back to legacy reactions.update()');
-            safeSupabaseCall('database', function () {
-              return supa.from('ideas').update({ reactions: postCounts }).eq('id', ideaId);
-            }, { silent: true });
-            return;
-          }
-          failed = true;
-        } else if (r1.data && r1.data.data) {
-          lastServerCounts = r1.data.data;
+        // Legacy path: RPC confirmed missing on this Supabase instance — use direct update
+        if (_reactRpcMissing) {
+          safeSupabaseCall('database', function () {
+            return supa.from('ideas').update({ reactions: postCounts }).eq('id', ideaId);
+          }, { silent: true });
+          return;
         }
-      }
 
-      if (!failed && toIncrement) {
-        var r2 = await safeSupabaseCall('database', function () {
-          return supa.rpc('react_to_idea', { p_idea_id: ideaId, p_emoji: toIncrement, p_increment: 1 });
-        }, { silent: true });
-        if (!r2.ok) {
-          if (_isRpcMissingError(r2.error)) {
-            _reactRpcMissing = true;
-            console.warn('[SPARK] react_to_idea RPC not found — falling back to legacy reactions.update()');
-            safeSupabaseCall('database', function () {
-              return supa.from('ideas').update({ reactions: postCounts }).eq('id', ideaId);
-            }, { silent: true });
-            return;
+        var failed = false;
+        var lastServerCounts = null;
+
+        if (toDecrement) {
+          var r1 = await safeSupabaseCall('database', function () {
+            return supa.rpc('react_to_idea', { p_idea_id: ideaId, p_emoji: toDecrement, p_increment: -1 });
+          }, { silent: true });
+          if (!r1.ok) {
+            if (_isRpcMissingError(r1.error)) {
+              _reactRpcMissing = true;
+              console.warn('[SPARK] react_to_idea RPC not found — falling back to legacy reactions.update()');
+              safeSupabaseCall('database', function () {
+                return supa.from('ideas').update({ reactions: postCounts }).eq('id', ideaId);
+              }, { silent: true });
+              return;
+            }
+            failed = true;
+          } else if (r1.data && r1.data.data) {
+            lastServerCounts = r1.data.data;
           }
-          failed = true;
-        } else if (r2.data && r2.data.data) {
-          lastServerCounts = r2.data.data;
         }
-      }
 
-      if (failed) {
-        // Rollback optimistic state
-        rs.counts = snapCounts;
-        rs.pick = snapPick;
-        try {
-          if (snapPick) localStorage.setItem('spark_pick_' + ideaId, snapPick);
-          else localStorage.removeItem('spark_pick_' + ideaId);
-        } catch (e) {}
-        _renderReactContainer(ideaId);
-        if (typeof toast === 'function') toast('Reaction failed — please try again.', 'var(--red)');
-      } else if (lastServerCounts) {
-        // Sync authoritative server counts (preserves pick set above)
-        EMOJIS.forEach(function (e) {
-          if (lastServerCounts[e] !== undefined) {
-            rs.counts[e] = Math.max(0, Number(lastServerCounts[e]) || 0);
+        if (!failed && toIncrement) {
+          var r2 = await safeSupabaseCall('database', function () {
+            return supa.rpc('react_to_idea', { p_idea_id: ideaId, p_emoji: toIncrement, p_increment: 1 });
+          }, { silent: true });
+          if (!r2.ok) {
+            if (_isRpcMissingError(r2.error)) {
+              _reactRpcMissing = true;
+              console.warn('[SPARK] react_to_idea RPC not found — falling back to legacy reactions.update()');
+              safeSupabaseCall('database', function () {
+                return supa.from('ideas').update({ reactions: postCounts }).eq('id', ideaId);
+              }, { silent: true });
+              return;
+            }
+            failed = true;
+          } else if (r2.data && r2.data.data) {
+            lastServerCounts = r2.data.data;
           }
-        });
-        _renderReactContainer(ideaId);
+        }
+
+        if (failed) {
+          // Rollback optimistic state
+          rs.counts = snapCounts;
+          rs.pick = snapPick;
+          try {
+            if (snapPick) localStorage.setItem('spark_pick_' + ideaId, snapPick);
+            else localStorage.removeItem('spark_pick_' + ideaId);
+          } catch (e) {}
+          _renderReactContainer(ideaId);
+          if (typeof toast === 'function') toast('Reaction failed — please try again.', 'var(--red)');
+        } else if (lastServerCounts) {
+          // Sync authoritative server counts (preserves pick set above)
+          EMOJIS.forEach(function (e) {
+            if (lastServerCounts[e] !== undefined) {
+              rs.counts[e] = Math.max(0, Number(lastServerCounts[e]) || 0);
+            }
+          });
+          _renderReactContainer(ideaId);
+        }
+      } finally {
+        _reactInflight.delete(ideaId);
       }
     })();
   }
@@ -3649,10 +3693,10 @@ function initRealtime() {
           }
         }
         
-        // Fetch updates for visible ideas
+        // Fetch updates for visible ideas (reactions included so polling clients see other users' reactions)
         var visibleIds = LIVE.slice((page - 1) * PER, page * PER).map(function(x) { return x.id; });
         if (visibleIds.length > 0) {
-          var { data } = await supa.from('ideas').select('id, total_invested, investment_history').in('id', visibleIds);
+          var { data } = await supa.from('ideas').select('id, total_invested, investment_history, reactions').in('id', visibleIds);
           if (data && data.length) {
             var changed = false;
             data.forEach(function(updated) {
@@ -3668,6 +3712,16 @@ function initRealtime() {
                   var newPool2 = Number(LIVE[idx].pool) || 0;
                   var mb2 = LIVE[idx].minBet || 10;
                   LIVE[idx].pct = newPool2 > 0 ? Math.min(Math.round((newPool2 / Math.max(mb2 * 5, 1)) * 100), 999) : 0;
+                }
+                // Sync reactions from poll — updates reaction buttons without triggering a full re-render
+                if (updated.reactions && typeof updated.reactions === 'object') {
+                  var rsP = getRS(updated.id);
+                  EMOJIS.forEach(function (e) {
+                    if (updated.reactions[e] !== undefined) {
+                      rsP.counts[e] = Math.max(0, Number(updated.reactions[e]) || 0);
+                    }
+                  });
+                  _renderReactContainer(updated.id);
                 }
               }
             });
@@ -3707,7 +3761,7 @@ function initRealtime() {
           toast('✨ New: ' + (r.title || '').slice(0, 26), 'var(--ac2)');
         }
       }).on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'ideas' }, function (p2) {
-        // Update existing idea in LIVE with fresh investment data
+        // Update existing idea in LIVE with fresh investment + reaction data
         var updated = p2.new;
         var idx = LIVE.findIndex(function(x) { return x.id === updated.id; });
         if (idx !== -1) {
@@ -3718,6 +3772,16 @@ function initRealtime() {
             var newPool2 = Number(LIVE[idx].pool) || 0;
             var mb2 = LIVE[idx].minBet || 10;
             LIVE[idx].pct = newPool2 > 0 ? Math.min(Math.round((newPool2 / Math.max(mb2 * 5, 1)) * 100), 999) : 0;
+          }
+          // Sync reaction counts from realtime payload so other users' reactions appear live
+          if (updated.reactions && typeof updated.reactions === 'object') {
+            var rsRt = getRS(updated.id);
+            EMOJIS.forEach(function (e) {
+              if (updated.reactions[e] !== undefined) {
+                rsRt.counts[e] = Math.max(0, Number(updated.reactions[e]) || 0);
+              }
+            });
+            _renderReactContainer(updated.id);
           }
           // Re-render only if the updated idea is visible on current page
           var visibleIds = LIVE.slice((page - 1) * PER, page * PER).map(function(x) { return x.id; });
@@ -3865,6 +3929,7 @@ function bindAuthListener() {
       PROFILE = { username: '@user', spk_balance: 0, ideas_count: 0, rank: null, investments_count: 0, bio: '', avatar_color: 0, is_admin: false };
       ADMIN_USER_IDS.clear();
       appEntered = false;
+      _repostCodeCache = null;
       document.documentElement.classList.remove('spark-presession');
       document.documentElement.classList.add('auth-active');
       var authScreen = document.getElementById('authScreen');
@@ -3956,7 +4021,7 @@ async function bootApp() {
   if (supa) {
     var restored = await restoreSession();
     if (restored) {
-      applyLang();
+      // enterApp() inside restoreSession already called applyLang() — skip duplicate
       return;
     }
   }

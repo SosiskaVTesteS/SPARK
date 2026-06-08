@@ -146,7 +146,9 @@ function getRS(id) {
     try {
       storedPick = localStorage.getItem('spark_pick_' + id);
     } catch (e) {}
-    RS[id] = { counts: Object.fromEntries(EMOJIS.map(function (e) { return [e, 0]; })), pick: storedPick || null };
+    // Guard against corrupted localStorage (must be a known emoji or null)
+    if (storedPick && EMOJIS.indexOf(storedPick) === -1) storedPick = null;
+    RS[id] = { counts: Object.fromEntries(EMOJIS.map(function (e) { return [e, 0]; })), pick: storedPick };
   }
   return RS[id];
 }
