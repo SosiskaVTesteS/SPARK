@@ -3858,7 +3858,7 @@ function switchChatTab(tab) {
   if (topics) topics.classList.toggle('active', tab === 'topics');
 }
 
-function openMo(id) { var el = document.getElementById(id); if (el) { el.classList.add('open'); triggerVibration(15); } }
+function openMo(id) { var el = document.getElementById(id); if (el) { el.classList.add('open'); window.history.pushState({ type: 'modal', id: id }, ''); triggerVibration(15); } }
 function closeMo(id) { var el = document.getElementById(id); if (el) { el.classList.remove('open'); triggerVibration(10); } }
 window.openMo = openMo;
 window.closeMo = closeMo;
@@ -4387,4 +4387,32 @@ document.addEventListener('DOMContentLoaded', function() {
   if (window.ChatsEngine) {
     ChatsEngine.init();
   }
+
+  // Handle Android / browser hardware back button for modals and chat view
+  window.addEventListener('popstate', function () {
+    // 1. Close active mobile chat view
+    var chatPane = document.getElementById('chatActivePane');
+    if (chatPane && chatPane.classList.contains('open-active')) {
+      var backBtn = document.getElementById('chatBackBtnMob');
+      if (backBtn) {
+        backBtn.click();
+        return;
+      }
+    }
+
+    // 2. Close any generic open modals
+    var openModals = document.querySelectorAll('.mo.open');
+    if (openModals.length > 0) {
+      openModals.forEach(function (modal) {
+        closeMo(modal.id);
+      });
+      return;
+    }
+
+    // 3. Close delete-modal if active
+    var moDel = document.getElementById('delete-modal');
+    if (moDel && moDel.classList.contains('active')) {
+      moDel.classList.remove('active');
+    }
+  });
 });

@@ -14,11 +14,12 @@ var ChatsEngine = (function () {
 
   // State Model
   var state = {
-    activeChannelId: null,      // e.g. '@maria_builds' or 'defi-prophets'
+    activeChannelId: null,              // e.g. '@maria_builds' or 'defi-prophets'
     searchQuery: '',
-    composedAttachment: null,   // Holds { title, sub, url }
+    composedAttachment: null,           // Holds { title, sub, url }
     realtimeChannel: null,
-    presenceChannel: null,      // Track presence
+    presenceChannel: null,              // Track presence
+    activeChannelSubscription: null,    // Per-channel group/public WebSocket sub
     modalTab: 'TEAM',
     initialized: false,
     isTabActive: true,
@@ -820,7 +821,7 @@ var ChatsEngine = (function () {
       + '  </div>'
       /* Input prompt */
       + '  <div class="chat-input-row">'
-      + '    <input type="text" class="chat-text-input" id="chatTextInput" placeholder="Type your trading intelligence message..." autocomplete="off">'
+      + '    <textarea class="chat-text-input" id="chatTextInput" placeholder="Type your trading intelligence message..." autocomplete="off" rows="1"></textarea>'
       + '    <button class="chat-send-btn" id="chatSendBtn" title="Send message">'
       + '      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>'
       + '    </button>'
@@ -854,7 +855,7 @@ var ChatsEngine = (function () {
         if (content === 'Signal channel opened. Security synchronized.') {
           content = window.T ? window.T('chatSysInit') : content;
         }
-        return '<div class="chat-system-message">' + _esc(content) + '</div>';
+        return '<div class="chat-system-message" data-msg-id="' + m.id + '">' + _esc(content) + '</div>';
       }
 
       var isSent = m.sender_id === 'me' || (window.ME && m.sender_id === ME.id);
@@ -943,7 +944,7 @@ var ChatsEngine = (function () {
         + '    <div' + senderTriggerAttr + '>' + _esc(m.sender_name) + '</div>'
         + '    <div class="chat-msg-bubble">'
         +        reactionsMenu
-        +        (m.media_url ? '' : _esc(m.content))
+        +        (m.media_url ? '' : '<span class="message-text-block">' + _esc(m.content) + '</span>')
         +        mediaCard
         +        deleteMenu
         + '    </div>'
@@ -983,20 +984,30 @@ var ChatsEngine = (function () {
     var sendBtn = document.getElementById('chatSendBtn');
     var inputEl = document.getElementById('chatTextInput');
     if (sendBtn && inputEl) {
+      // Reset height on initial wire
+      inputEl.style.height = '20px';
+      inputEl.addEventListener('input', function () {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+      });
+
       var handleSend = function () {
         var val = inputEl.value.trim();
         if (!val && !state.composedAttachment) return;
-        
+
         sendMessage(val, state.composedAttachment ? state.composedAttachment.url : null, state.composedAttachment ? state.composedAttachment.title : null);
-        
+
         inputEl.value = '';
+        inputEl.style.height = '20px';
         state.composedAttachment = null;
         _updateComposeAttachmentUI();
       };
-      
+
       sendBtn.addEventListener('click', handleSend);
       inputEl.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') {
+        // Send on Enter; insert newline on Shift+Enter
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
           handleSend();
         }
       });
@@ -1198,11 +1209,89 @@ var ChatsEngine = (function () {
     }
   }
 
+  // Subscribe to realtime updates for a non-DM (group / public) channel
+  function subscribeToActiveChannel(channelId) {
+    if (!window.supa || !window.ME) return;
+
+    if (state.activeChannelSubscription) {
+      state.activeChannelSubscription.unsubscribe();
+      state.activeChannelSubscription = null;
+    }
+
+    if (!channelId) return;
+    var isDM = !channelId.startsWith('#') && !['defi-prophets', 'ai-signals', 'spark-devs'].includes(channelId);
+
+    if (!isDM) {
+      try {
+        state.activeChannelSubscription = supa.channel('messages-group-' + channelId)
+          .on('postgres_changes', {
+            event: 'INSERT', schema: 'public', table: 'messages',
+            filter: 'channel_id=eq.' + channelId
+          }, function (payload) {
+            var newRow = payload.new;
+            if (!newRow || newRow.sender_id === ME.id) return;
+
+            var msgs = getCachedMessages();
+            if (!msgs[channelId]) msgs[channelId] = [];
+
+            var deletedIds = getDeletedMessageIds();
+            var dup = msgs[channelId].some(function (m) { return m.id === newRow.id; });
+            if (dup || deletedIds.includes(newRow.id)) return;
+
+            msgs[channelId].push({
+              id:                  newRow.id,
+              sender_id:           newRow.sender_id,
+              sender_name:         newRow.sender_name,
+              sender_avatar_color: newRow.sender_avatar_color,
+              content:             newRow.content,
+              media_url:           newRow.media_url,
+              created_at:          new Date(newRow.created_at).getTime(),
+              reactions:           newRow.reactions || {},
+              read:                newRow.read || false
+            });
+
+            cacheMessages(msgs);
+
+            if (state.activeChannelId === channelId) {
+              renderActiveConversation();
+            } else {
+              renderChatList();
+            }
+          })
+          .on('postgres_changes', {
+            event: 'UPDATE', schema: 'public', table: 'messages',
+            filter: 'channel_id=eq.' + channelId
+          }, function (payload) {
+            var updatedRow = payload.new;
+            if (!updatedRow) return;
+
+            var msgs = getCachedMessages();
+            var thread = msgs[channelId] || [];
+            var msg = thread.find(function (m) { return m.id === updatedRow.id; });
+            if (msg) {
+              msg.reactions = updatedRow.reactions || {};
+              msg.read = updatedRow.read;
+              cacheMessages(msgs);
+              if (state.activeChannelId === channelId) {
+                renderActiveConversation();
+              }
+            }
+          })
+          .subscribe();
+      } catch (e) {
+        console.warn('Group subscription failed:', e);
+      }
+    }
+  }
+
   // Select DM contact or group channel
   function selectChannel(id) {
     state.activeChannelId = id;
     renderChatList();
     renderActiveConversation();
+
+    // Subscribe to realtime updates for group/public channels
+    subscribeToActiveChannel(id);
 
     // On mobile, slide in the conversation overlay and hide the taskbar
     if (window.innerWidth <= 768) {
@@ -1212,6 +1301,7 @@ var ChatsEngine = (function () {
       if (mobBar) mobBar.classList.add('hide-bar');
       var chatsPanel = document.getElementById('panel-chats');
       if (chatsPanel) chatsPanel.classList.add('fullscreen-chat');
+      window.history.pushState({ type: 'chat', channelId: id }, '');
     }
 
     // Load Supabase Database messages asynchronously for this channel if configured
@@ -1354,7 +1444,10 @@ var ChatsEngine = (function () {
 
     // Clear input field immediately before rendering to prevent race conditions in preservation
     var inputEl = document.getElementById('chatTextInput');
-    if (inputEl) inputEl.value = '';
+    if (inputEl) {
+      inputEl.value = '';
+      inputEl.style.height = '20px';
+    }
 
     var senderName = window.PROFILE ? PROFILE.username : '@user';
     var senderColor = window.PROFILE ? PROFILE.avatar_color : 0;
@@ -2065,6 +2158,9 @@ var ChatsEngine = (function () {
       if (window.supa && window.ME) {
         _initRealtimeSubscription();
         _initPresenceSubscription();
+        if (state.activeChannelId) {
+          subscribeToActiveChannel(state.activeChannelId);
+        }
       }
       return;
     }
@@ -2138,6 +2234,9 @@ var ChatsEngine = (function () {
     if (window.supa && window.ME) {
       _initRealtimeSubscription();
       _initPresenceSubscription();
+      if (state.activeChannelId) {
+        subscribeToActiveChannel(state.activeChannelId);
+      }
       updateUnreadBadge();
     }
   }
