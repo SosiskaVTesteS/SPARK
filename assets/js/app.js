@@ -608,7 +608,9 @@ async function doSignIn() {
     enterApp();
   } catch (e) {
     console.error(e);
-    var msg = isAuthError(e) ? integrationMessage('auth') : (e.message || 'Sign in failed');
+    var isNetworkOrParseErr = (e instanceof SyntaxError) ||
+      (e.message && (e.message.indexOf('is not valid JSON') !== -1 || e.message.indexOf('Failed to fetch') !== -1));
+    var msg = (isAuthError(e) || isNetworkOrParseErr) ? integrationMessage('auth') : (e.message || 'Sign in failed');
     toast(msg, 'var(--red)');
     setAuthErr(msg);
   } finally {
