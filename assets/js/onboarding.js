@@ -1722,8 +1722,9 @@ var SparkTour = (function () {
     _cleanStep();
 
     /* Lift the interaction block immediately so the page is usable again */
-    document.removeEventListener('click',      _blockInteraction, { capture: true });
-    document.removeEventListener('touchstart', _blockInteraction, { capture: true });
+    ['click', 'touchstart', 'mousedown', 'mouseup', 'pointerdown', 'pointerup', 'touchend'].forEach(function(evt) {
+      document.removeEventListener(evt, _blockInteraction, { capture: true });
+    });
 
     /* reset any profile-panel lift when the tour ends (desktop drawer + mobile panel) */
     _closeProfilePanel();
@@ -1757,8 +1758,9 @@ var SparkTour = (function () {
     _idx   = 0;
     _buildOverlay();
     /* Block all page interaction for the duration of the tour */
-    document.addEventListener('click',      _blockInteraction, { capture: true, passive: false });
-    document.addEventListener('touchstart', _blockInteraction, { capture: true, passive: false });
+    ['click', 'touchstart', 'mousedown', 'mouseup', 'pointerdown', 'pointerup', 'touchend'].forEach(function(evt) {
+      document.addEventListener(evt, _blockInteraction, { capture: true, passive: false });
+    });
     /* Defer render so app UI has fully painted */
     setTimeout(function(){
       _render(0);

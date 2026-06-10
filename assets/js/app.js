@@ -3,6 +3,7 @@
 // The 2FA secret lives only in the verify_admin_secret() Supabase RPC — never here.
 // To grant admin access: UPDATE profiles SET is_admin = true WHERE id = '<uuid>';
 var _pendingAdminSignIn = null; // holds { email, password } while 2FA modal is open
+var _activePanel = 'feed';
 
 document.addEventListener('DOMContentLoaded', function () {
   // Capture ?auto= param so profile.html / leaderboard.html redirects survive
@@ -25,15 +26,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
-  // Support "Написать письмо" link: ensure window.location.href is used
-  // in addition to the native href so behaviour matches QA requirement.
-  var supportMailLink = document.getElementById('supportMailLink');
-  if (supportMailLink) {
-    supportMailLink.addEventListener('click', function (e) {
-      e.preventDefault();
-      window.location.href = 'mailto:spark.supp.team@gmail.com';
-    });
-  }
+  // supportMailLink: native href="mailto:..." handled by inline onclick="closeMo('moSupport')"
 
   document.querySelectorAll('[data-auth-tab]').forEach(function (btn) {
     btn.addEventListener('click', function () {
@@ -60,12 +53,7 @@ document.addEventListener('DOMContentLoaded', function () {
   if (btnPostIdea) btnPostIdea.addEventListener('click', openCreate);
   var dpOverlay = document.getElementById('dpOverlay');
   if (dpOverlay) dpOverlay.addEventListener('click', bgCloseDesk);
-  var moCreate = document.getElementById('moCreate');
-  if (moCreate) {
-    moCreate.addEventListener('click', function (event) {
-      if (event.target === moCreate) closeMo('moCreate');
-    });
-  }
+  // moCreate: outside-click close disabled to prevent losing typed content
   var moInvest = document.getElementById('moInvest');
   if (moInvest) {
     moInvest.addEventListener('click', function (event) {
@@ -1541,7 +1529,7 @@ function enterApp() {
     var _savedPanel = sessionStorage.getItem('spark_auto_panel');
     if (_savedPanel) {
       sessionStorage.removeItem('spark_auto_panel');
-      setTimeout(function () { openPanel(_savedPanel); }, 300);
+      setTimeout(function () { openPanel(_savedPanel, false); }, 300);
     }
   } catch (e) {}
 }
@@ -1634,6 +1622,10 @@ function updateHeader() {
   if (un) un.textContent = PROFILE.username;
   if (spk) spk.textContent = PROFILE.spk_balance.toLocaleString() + ' SPK';
   if (bal) bal.textContent = PROFILE.spk_balance.toLocaleString() + ' SPK';
+  // Keep profile/sidebar wallet cards in sync
+  document.querySelectorAll('.wamt').forEach(function (el) {
+    el.innerHTML = PROFILE.spk_balance.toLocaleString() + ' <small>SPK</small>';
+  });
 }
 
 function showVerify(email, nick) {
@@ -1817,6 +1809,7 @@ function applyStaticI18n() {
   setText('#moCreate .mf:nth-of-type(3) label', T('duration'));
   setText('#btnPub', T('holdPublish'));
   setText('#moCreate .hbtn-hint', T('holdHint'));
+  setText('#btnPubCancel', T('caCancel'));
   setPlaceholder('#ciTitle', LANG === 'ru' ? 'В чем идея?' : "What's the idea?");
   setPlaceholder('#ciDesc', LANG === 'ru' ? 'Опишите...' : 'Describe it...');
 
@@ -2800,7 +2793,13 @@ function initMyIdeasCarousel(root) {
 function toggleDeskProf() {
   var o = document.getElementById('dpOverlay');
   var b = document.getElementById('btnProfDesk');
-  if (o) o.classList.toggle('open');
+  if (o) {
+    var opening = !o.classList.contains('open');
+    o.classList.toggle('open');
+    if (opening) {
+      window.history.pushState({ type: 'modal', id: 'dpOverlay' }, '');
+    }
+  }
   if (b) b.classList.toggle('active', o && o.classList.contains('open'));
 }
 
@@ -3446,7 +3445,7 @@ async function doPublish() {
   var letter = uname.replace('@', '').charAt(0).toUpperCase();
   if (supa) {
     try {
-      var modR = await callEdgeFunction('moderate-content', { text: title + ' ' + desc });
+      var modR = await callEdgeFunction('moderate-content', { text: (title + ' ' + desc).slice(0, 400) });
       if (modR.ok && modR.data && modR.data.allowed === false) {
         toast('[SYSTEM ERROR]: Публикация отклонена. Контент нарушает протокол безопасности сети SPARK', 'var(--red)');
         return;
@@ -3816,8 +3815,15 @@ function triggerVibration(pattern) {
   }
 }
 
-function openPanel(name) {
+function openPanel(name, pushHistory) {
+  if (name === _activePanel) return;
   triggerVibration(10);
+
+  if (pushHistory !== false) {
+    window.history.pushState({ type: 'panel', name: name }, '');
+  }
+  _activePanel = name;
+
   document.querySelectorAll('.mob-tab').forEach(function (t) { t.classList.remove('active'); });
   var tab = document.querySelector('.mob-tab[data-panel="' + name + '"]');
   if (tab) tab.classList.add('active');
@@ -3826,6 +3832,12 @@ function openPanel(name) {
     var p = document.getElementById('panel-' + id);
     if (p) p.classList.remove('open');
   });
+
+  // Sync desktop chats button active state
+  var btnChatsDesk = document.getElementById('btnChatsDesk');
+  if (btnChatsDesk) {
+    btnChatsDesk.classList.toggle('active', name === 'chats');
+  }
 
   // Toggle header visibility on mobile based on whether the feed panel is open
   var header = document.querySelector('header');
@@ -4345,6 +4357,7 @@ document.addEventListener('DOMContentLoaded', function() {
         p.classList.remove('open');
         if (feed) feed.style.display = '';
         btnChatsDesk.classList.remove('active');
+        _activePanel = 'feed';
       } else {
         // Toggle on
         openPanel('chats');
@@ -4365,6 +4378,7 @@ document.addEventListener('DOMContentLoaded', function() {
       });
       var btnChatsDesk = document.getElementById('btnChatsDesk');
       if (btnChatsDesk) btnChatsDesk.classList.remove('active');
+      _activePanel = 'feed';
     });
   }
 
@@ -4380,6 +4394,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (feed) feed.style.display = '';
         var btnChatsDesk = document.getElementById('btnChatsDesk');
         if (btnChatsDesk) btnChatsDesk.classList.remove('active');
+        _activePanel = 'feed';
       }
     });
   }
@@ -4389,7 +4404,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // Handle Android / browser hardware back button for modals and chat view
-  window.addEventListener('popstate', function () {
+  window.addEventListener('popstate', function (event) {
     // 1. Close active mobile chat view
     var chatPane = document.getElementById('chatActivePane');
     if (chatPane && chatPane.classList.contains('open-active')) {
@@ -4400,7 +4415,16 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
 
-    // 2. Close any generic open modals
+    // 2. Close desktop profile overlay if open
+    var dpOverlay = document.getElementById('dpOverlay');
+    if (dpOverlay && dpOverlay.classList.contains('open')) {
+      dpOverlay.classList.remove('open');
+      var b = document.getElementById('btnProfDesk');
+      if (b) b.classList.remove('active');
+      return;
+    }
+
+    // 3. Close any generic open modals
     var openModals = document.querySelectorAll('.mo.open');
     if (openModals.length > 0) {
       openModals.forEach(function (modal) {
@@ -4409,10 +4433,18 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
-    // 3. Close delete-modal if active
+    // 4. Close delete-modal if active
     var moDel = document.getElementById('delete-modal');
     if (moDel && moDel.classList.contains('active')) {
       moDel.classList.remove('active');
+      return;
+    }
+
+    // 5. Handle panel history state
+    if (event.state && event.state.type === 'panel') {
+      openPanel(event.state.name, false);
+    } else {
+      openPanel('feed', false);
     }
   });
 });
