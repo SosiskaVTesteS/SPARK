@@ -279,6 +279,12 @@ Deno.serve(async (req) => {
     return json({ message: 'Invalid registration details' }, 400);
   }
 
+  // БАГ #5: единые правила username с формой редактирования профиля —
+  // буквы, цифры, подчёркивание и дефис, минимум 3 символа.
+  if (nickname.length < 3 || !/^[a-zA-Z0-9_-]+$/.test(nickname)) {
+    return json({ message: 'Username: only letters, numbers, _ and -, min 3 chars' }, 400);
+  }
+
   const admin = createClient(supabaseUrl, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });

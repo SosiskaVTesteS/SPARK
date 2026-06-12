@@ -146,7 +146,7 @@ document.addEventListener('DOMContentLoaded', function () {
   if (cardsList) {
     cardsList.addEventListener('click', function (event) {
       var investBtn = event.target.closest('[data-invest-id]');
-      if (investBtn) {
+      if (investBtn && !investBtn.disabled) {
         openInvest(investBtn.dataset.investId);
         return;
       }
@@ -712,6 +712,10 @@ async function doSignUp() {
   var pass2 = pass2El.value;
 
   if (!nick || !email || !pass || !pass2) { setAuthErr('Fill all fields'); return; }
+  // БАГ #5: правила username едины для регистрации и редактирования профиля
+  // (буквы, цифры, _ и -) — см. profile-edit.js и register-send-code
+  if (nick.length < 3) { setAuthErr(T('min3chars')); return; }
+  if (!/^[a-zA-Z0-9_-]+$/.test(nick)) { setAuthErr(T('onlyLettersNums')); return; }
   if (pass.length < 8) { setAuthErr('Password min 8 chars'); return; }
   if (pass !== pass2) { setAuthErr('Passwords do not match'); return; }
 
@@ -900,6 +904,11 @@ async function fetchProfile() {
     PROFILE.avatar_color = row.avatar_color || 0;
     PROFILE.is_admin = row.is_admin === true;
     if (PROFILE.is_admin) ADMIN_USER_IDS.add(ME.id);
+    // БАГ #1: онбординг показывается только один раз — статус хранится в БД
+    PROFILE.onboarding_completed = row.onboarding_completed === true;
+    if (PROFILE.onboarding_completed) {
+      try { localStorage.setItem('spark_tour3_seen', '1'); localStorage.setItem('spark_ob3_seen', '1'); } catch (e) {}
+    }
 
     // Check Daily Bonus Eligibility
     var eligible = false;
@@ -1004,7 +1013,7 @@ async function loadIdeasFromDB() {
 
   var r = await safeSupabaseCall('database', function () {
     return supa.from('ideas')
-      .select('id, title, description, min_bet, total_invested, investment_history, expires_at, created_at, author_id, reactions, status')
+      .select('id, title, description, min_bet, total_invested, investment_history, investor_ids, expires_at, created_at, author_id, reactions, status')
       .or('status.eq.active,status.eq.immune,status.is.null')
       .order('created_at', { ascending: false })
       .limit(50);
@@ -1042,12 +1051,24 @@ async function loadIdeasFromDB() {
   applyLiveActivityI18n();
 }
 
+// БАГ #7: уникальные инвесторы из ideas.investor_ids (uuid[]).
+// Если колонки ещё нет / массив пуст, а история инвестиций есть —
+// фолбэк на старое поведение (длина истории).
+function countUniqueInvestors(investorIds, history) {
+  if (Array.isArray(investorIds) && investorIds.length > 0) {
+    return new Set(investorIds).size;
+  }
+  return Array.isArray(history) ? history.length : 0;
+}
+
 // ═══ Convert a DB ideas row to LIVE array object ═══
 function dbRowToLiveIdea(row, profilesMap) {
   var uname = (profilesMap && profilesMap[row.author_id]) || '@user';
   var letter = uname.replace('@', '').charAt(0).toUpperCase();
   var history = Array.isArray(row.investment_history) ? row.investment_history : [];
-  var investorCount = history.length;
+  // БАГ #7: считаем УНИКАЛЬНЫХ инвесторов (investor_ids), а не число транзакций.
+  // Для старых идей (до миграции investor_ids) фолбэк — длина истории.
+  var investorCount = countUniqueInvestors(row.investor_ids, history);
   var pool = Number(row.total_invested) || 0;
   // Calculate pct as growth: (pool / minBet) relative to an arbitrary baseline
   var minBet = Number(row.min_bet) || 10;
@@ -1259,14 +1280,20 @@ async function renderLeaders() {
 
 async function doLogout(skipSignOut) {
   // First, completely obliterate all session and local storage to prevent any session restoring!
-  var savedLang = null;
+  // БАГ #1: флаги пройденного онбординга переживают logout (основное хранилище —
+  // profiles.onboarding_completed в БД, локальные ключи сохраняем как фолбэк).
+  var preservedKeys = ['spark_lang', 'spark_ob3_seen', 'spark_tour3_seen'];
   try {
-    savedLang = localStorage.getItem('spark_lang');
+    var preserved = {};
+    preservedKeys.forEach(function (k) {
+      var v = localStorage.getItem(k);
+      if (v !== null) preserved[k] = v;
+    });
     localStorage.clear();
     sessionStorage.clear();
-    if (savedLang) {
-      localStorage.setItem('spark_lang', savedLang);
-    }
+    Object.keys(preserved).forEach(function (k) {
+      localStorage.setItem(k, preserved[k]);
+    });
   } catch (err) {
     console.warn('storage clear error', err);
   }
@@ -1376,8 +1403,19 @@ async function doUnlockContact() {
   var authorId   = _pendingContactId;
   var authorName = _pendingContactName;
 
+  // БАГ #6: optimistic update — мгновенно списываем 30 SPK в UI,
+  // при ошибке сервера откатываем и показываем уведомление.
+  var balanceBeforeUnlock = PROFILE.spk_balance || 0;
+  function _rollbackUnlockBalance() {
+    PROFILE.spk_balance = balanceBeforeUnlock;
+    updateHeader();
+  }
+
   try {
     if (window.supa && window.ME) {
+      PROFILE.spk_balance = Math.max(0, balanceBeforeUnlock - cost);
+      updateHeader();
+
       var r = await safeSupabaseCall('database', function () {
         return supa.rpc('unlock_contact', { p_contact_id: authorId, p_cost: cost });
       }, { silent: true });
@@ -1385,6 +1423,7 @@ async function doUnlockContact() {
       var result = r.ok && r.data && r.data.data ? r.data.data : null;
 
       if (!result || !result.success) {
+        _rollbackUnlockBalance();
         var msg = result && result.message;
         var errText = msg === 'insufficient_balance' ? T('caErrBalance') : T('caErrGeneric');
         toast(errText, 'var(--red)');
@@ -1392,14 +1431,17 @@ async function doUnlockContact() {
         return;
       }
 
+      // Синхронизация с авторитетным балансом из ответа сервера
       PROFILE.spk_balance = Number(result.new_balance) || PROFILE.spk_balance;
       updateHeader();
+      renderLeaders(); // БАГ #14: лидерборд не должен расходиться с кошельком
     } else {
       // Offline-режим: локальное списание
       PROFILE.spk_balance = Math.max(0, (PROFILE.spk_balance || 0) - cost);
       updateHeader();
     }
   } catch (e) {
+    _rollbackUnlockBalance();
     toast(T('caErrGeneric'), 'var(--red)');
     if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = T('caConfirmBtn').replace('{cost}', cost); }
     return;
@@ -2184,7 +2226,9 @@ function achCardHTML(ach, rankData, sfx, extra) {
       if      (nextRank === 1) isReady = (progress.bio_length > 0 && !!progress.has_username);
       else if (nextRank === 2) isReady = (progress.bio_length > 50 && progress.avatar_color !== 0);
       else if (nextRank === 3) isReady = (progress.bio_length > 100);
-      else if (nextRank === 4) isReady = (currentRank >= 3);   // link check is server-side only
+      // БАГ #15: кнопка «Забрать» активна только при реальной ссылке в bio
+      // (те же паттерны, что проверяет бэкенд в claim_achievement_rank)
+      else if (nextRank === 4) isReady = (currentRank >= 3) && /https:\/\/|t\.me|vk\.com/i.test((window.PROFILE && PROFILE.bio) || '');
       else if (nextRank === 5) isReady = (progress.bio_length >= 160);
     } else if (ach.id === 'create_ideas') {
       isReady = ((progress.ideas_count || 0) >= progress.threshold);
@@ -2245,7 +2289,11 @@ function achCardHTML(ach, rankData, sfx, extra) {
       + starSvg + ' ' + T('achNextRank').replace('{label}', nxtLabel).replace('{reward}', rewardVal)
       + '</button>';
   } else {
-    btn = '<button class="ach-btn ach-btn-locked" disabled>' + lockSvg + ' ' + T('achLocked') + '</button>';
+    // БАГ #15: подсказка, почему ранг IV «Заполненного профиля» ещё заблокирован
+    var lockedTitle = (ach.id === 'fill_profile' && nextRank === 4 && currentRank >= 3)
+      ? ' title="' + T('achErrBioLink') + '"'
+      : '';
+    btn = '<button class="ach-btn ach-btn-locked" disabled' + lockedTitle + '>' + lockSvg + ' ' + T('achLocked') + '</button>';
   }
 
   // Repost form (adv_repost only, visible until all ranks are done)
@@ -2593,7 +2641,7 @@ async function getUserIdeas() {
   if (supa && ME) {
     try {
       var r = await supa.from('ideas')
-        .select('id, title, description, min_bet, total_invested, investment_history, expires_at, created_at, author_id, reactions, status')
+        .select('id, title, description, min_bet, total_invested, investment_history, investor_ids, expires_at, created_at, author_id, reactions, status')
         .eq('author_id', ME.id)
         .order('created_at', { ascending: false });
       if (r.data && ME) {
@@ -2919,15 +2967,20 @@ function animateAllGraphs(container) {
     return;
   }
   if (!_graphObserver) {
+    // БАГ #9: rootMargin 500px — графики отрисовываются ЗАРАНЕЕ, за пол-экрана
+    // до появления карточки, поэтому колёсико мыши больше не ловит рывки
+    // от innerHTML + getTotalLength() прямо в момент скролла.
     _graphObserver = new IntersectionObserver(function (entries, o) {
       entries.forEach(function (entry) {
         if (entry.isIntersecting) {
           var svg = entry.target;
-          try { drawInvestmentGraph(svg, JSON.parse(svg.dataset.history)); } catch (e) { drawInvestmentGraph(svg, [0, 0]); }
           o.unobserve(svg);
+          requestAnimationFrame(function () {
+            try { drawInvestmentGraph(svg, JSON.parse(svg.dataset.history)); } catch (e) { drawInvestmentGraph(svg, [0, 0]); }
+          });
         }
       });
-    }, { threshold: 0.05 });
+    }, { threshold: 0, rootMargin: '500px 0px 500px 0px' });
   }
   svgs.forEach(function (svg) { _graphObserver.observe(svg); });
 }
@@ -3025,7 +3078,12 @@ function cardHTML(x) {
     + '<div class="' + cmenClass + '" data-idea-id="' + x.id + '" data-immune="' + (isImmune ? '1' : '0') + '"' + (cmenTitle ? ' title="' + cmenTitle + '"' : '') + '><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></div></div>'
     + '<div class="ctitle">' + safeTitle + '</div><div class="cbody">' + safeBody + '</div>'
     + investGraphHTML(x)
-    + '<div class="cact"><button class="binv" data-invest-id="' + x.id + '">' + T('binv') + '</button>' + _contactBtnHTML(x) + '<button class="bshare" data-share-id="' + x.id + '" title="' + T('shareIdea') + '"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button></div>'
+    // БАГ #8: автор не может инвестировать в свою идею — disabled-кнопка «Моя идея»
+    + '<div class="cact">'
+    + (window.ME && x.author_id && x.author_id === ME.id
+        ? '<button class="binv" disabled style="opacity:0.35;cursor:default">' + T('myIdea') + '</button>'
+        : '<button class="binv" data-invest-id="' + x.id + '">' + T('binv') + '</button>')
+    + _contactBtnHTML(x) + '<button class="bshare" data-share-id="' + x.id + '" title="' + T('shareIdea') + '"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button></div>'
     + '<div class="creact" id="rc-' + x.id + '">' + reactHTML(x.id) + '</div></div>';
 }
 
@@ -3245,6 +3303,11 @@ function openInvest(id) {
   // id is a UUID string; find matching idea by string comparison
   var idea = LIVE.filter(function (x) { return String(x.id) === String(id); })[0];
   if (!idea) return;
+  // БАГ #8: фронтовая защита от инвестиции в собственную идею (бэкенд дублирует — P0003)
+  if (window.ME && idea.author_id && idea.author_id === ME.id) {
+    toast('❌ ' + T('myIdea'), 'var(--red)');
+    return;
+  }
   CUR_IDEA = idea;
   var min = idea.minBet || 10;
   var maxAllowed = Math.max(min, PROFILE.spk_balance);
@@ -3380,7 +3443,10 @@ async function doInvest() {
           if (payload2[0].new_total !== undefined) LIVE[ideaIdx].pool = String(payload2[0].new_total);
           if (Array.isArray(payload2[0].new_history) && payload2[0].new_history.length > 0) {
             LIVE[ideaIdx].investment_history = payload2[0].new_history;
-            LIVE[ideaIdx].investors = payload2[0].new_history.length;
+            // БАГ #7: счётчик — уникальные инвесторы из RPC, не число транзакций
+            LIVE[ideaIdx].investors = Number.isFinite(Number(payload2[0].new_investor_count)) && Number(payload2[0].new_investor_count) > 0
+              ? Number(payload2[0].new_investor_count)
+              : payload2[0].new_history.length;
           }
           // Recalculate pct
           var newPool = Number(LIVE[ideaIdx].pool) || 0;
@@ -3394,6 +3460,7 @@ async function doInvest() {
     renderFeed();
     renderTrends();
     renderProfile();
+    renderLeaders(); // БАГ #14: после транзакции лидерборд перечитывается из БД
   } catch (e) {
     reportClientError('invest_failed', {
       message: e && e.message ? e.message : String(e),
@@ -3697,14 +3764,14 @@ function initRealtime() {
         // Fetch updates for visible ideas (reactions included so polling clients see other users' reactions)
         var visibleIds = LIVE.slice((page - 1) * PER, page * PER).map(function(x) { return x.id; });
         if (visibleIds.length > 0) {
-          var { data } = await supa.from('ideas').select('id, total_invested, investment_history, reactions').in('id', visibleIds);
+          var { data } = await supa.from('ideas').select('id, total_invested, investment_history, investor_ids, reactions').in('id', visibleIds);
           if (data && data.length) {
             var changed = false;
             data.forEach(function(updated) {
               var idx = LIVE.findIndex(function(x) { return x.id === updated.id; });
               if (idx !== -1) {
                 var poolStr = String(Number(updated.total_invested) || 0);
-                var invCount = (updated.investment_history || []).length;
+                var invCount = countUniqueInvestors(updated.investor_ids, updated.investment_history);
                 if (String(LIVE[idx].pool) !== poolStr || LIVE[idx].investors !== invCount) {
                   changed = true;
                   LIVE[idx].pool = poolStr;
@@ -3737,6 +3804,7 @@ function initRealtime() {
           if (pd && pd.spk_balance !== PROFILE.spk_balance) {
             PROFILE.spk_balance = pd.spk_balance;
             updateHeader();
+            renderLeaders(); // БАГ #14: кошелёк и «Топ Пророков» обновляются вместе
           }
         }
       } catch (e) {
@@ -3770,7 +3838,7 @@ function initRealtime() {
           if (updated.total_invested !== undefined) LIVE[idx].pool = String(Number(updated.total_invested) || 0);
           if (Array.isArray(updated.investment_history)) {
             LIVE[idx].investment_history = updated.investment_history;
-            LIVE[idx].investors = updated.investment_history.length;
+            LIVE[idx].investors = countUniqueInvestors(updated.investor_ids, updated.investment_history);
             var newPool2 = Number(LIVE[idx].pool) || 0;
             var mb2 = LIVE[idx].minBet || 10;
             LIVE[idx].pct = newPool2 > 0 ? Math.min(Math.round((newPool2 / Math.max(mb2 * 5, 1)) * 100), 999) : 0;
@@ -3797,6 +3865,7 @@ function initRealtime() {
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles', filter: 'id=eq.' + ME.id }, function (p2) {
           PROFILE.spk_balance = p2.new.spk_balance;
           updateHeader();
+          renderLeaders(); // БАГ #14: кошелёк и «Топ Пророков» обновляются вместе
         }).subscribe();
     }
   } catch (e) {
@@ -3818,11 +3887,15 @@ function triggerVibration(pattern) {
 }
 
 function openPanel(name, pushHistory) {
-  if (name === _activePanel) return;
-  triggerVibration(10);
-
-  if (pushHistory !== false) {
-    window.history.pushState({ type: 'panel', name: name }, '');
+  // БАГ #16: не выходим раньше времени, если _activePanel рассинхронизировался
+  // с реальным DOM (например, после истории навигации в чатах) — повторный клик
+  // по табу заново применяет состояние UI. История/вибрация — только при смене.
+  var isSamePanel = (name === _activePanel);
+  if (!isSamePanel) {
+    triggerVibration(10);
+    if (pushHistory !== false) {
+      window.history.pushState({ type: 'panel', name: name }, '');
+    }
   }
   _activePanel = name;
 
@@ -3871,6 +3944,32 @@ function switchChatTab(tab) {
   if (dms) dms.classList.toggle('active', tab === 'dms');
   if (topics) topics.classList.toggle('active', tab === 'topics');
 }
+
+// БАГ #13: копирование адреса поддержки кликом (фолбэк, когда mailto не настроен)
+function copySupportEmail() {
+  var email = 'spark.supp.team@gmail.com';
+  function done() { toast(LANG === 'ru' ? '✓ Адрес скопирован' : '✓ Email copied', 'var(--ac2)'); }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(email).then(done).catch(function () { _copySupportFallback(email, done); });
+  } else {
+    _copySupportFallback(email, done);
+  }
+}
+function _copySupportFallback(text, done) {
+  try {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+    done();
+  } catch (e) {
+    toast(text, 'var(--ac2)');
+  }
+}
+window.copySupportEmail = copySupportEmail;
 
 function openMo(id) { var el = document.getElementById(id); if (el) { el.classList.add('open'); window.history.pushState({ type: 'modal', id: id }, ''); triggerVibration(15); } }
 function closeMo(id) { var el = document.getElementById(id); if (el) { el.classList.remove('open'); triggerVibration(10); } }

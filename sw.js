@@ -1,5 +1,5 @@
-/* SPARK Service Worker — v1 */
-var CACHE_NAME = 'spark-static-v1';
+/* SPARK Service Worker — v2 */
+var CACHE_NAME = 'spark-static-v2';
 
 var PRECACHE_URLS = [
   '/',
@@ -76,6 +76,14 @@ self.addEventListener('fetch', function (event) {
 
   var url;
   try { url = new URL(event.request.url); } catch (e) { return; }
+
+  // Network-Only: same-origin Supabase proxy paths (vercel.json rewrites
+  // /rest/v1, /auth/v1, /storage/v1, /functions/v1 → supabase.co).
+  // Without this guard API GETs landed in the Cache-First branch below and
+  // users saw stale data after F5 (reactions ~30s, balance/leaderboard drift).
+  if (/^\/(rest|auth|storage|functions|realtime)\/v\d+\//.test(url.pathname)) {
+    return; // let browser handle normally
+  }
 
   // Network-Only: Supabase API + external CDNs + realtime
   if (

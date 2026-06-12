@@ -623,8 +623,27 @@ window.SparkOnboarding = SparkOnboarding;
 var SparkTour = (function () {
 
   /* ── helpers ── */
-  function _taken()  { try{return !!localStorage.getItem(_TOUR_KEY);}catch(e){return false;} }
-  function _mark()   { try{localStorage.setItem(_TOUR_KEY,'1');}catch(e){} }
+  function _taken()  {
+    /* БАГ #1: статус «пройден/пропущен» хранится в БД (profiles.onboarding_completed),
+       т.к. localStorage стирается при logout. fetchProfile() кладёт его в PROFILE. */
+    if (window.PROFILE && window.PROFILE.onboarding_completed === true) return true;
+    try{return !!localStorage.getItem(_TOUR_KEY);}catch(e){return false;}
+  }
+  function _mark()   {
+    try{localStorage.setItem(_TOUR_KEY,'1');}catch(e){}
+    if (window.PROFILE) window.PROFILE.onboarding_completed = true;
+    /* Persist to Supabase so the flag survives logout / new device */
+    try {
+      if (window.supa && window.ME) {
+        window.supa.from('profiles')
+          .update({ onboarding_completed: true })
+          .eq('id', window.ME.id)
+          .then(function(res){
+            if (res && res.error) console.warn('[SparkTour] onboarding flag save failed', res.error);
+          });
+      }
+    } catch(e){ console.warn('[SparkTour] onboarding flag save failed', e); }
+  }
   function _T(en,ru) { return _getLang()==='ru' ? ru : en; }
 
   function _getStepIcon(id) {
@@ -895,6 +914,11 @@ var SparkTour = (function () {
 /* ══ Tour overlay container ══ */
 #spk-tour3 { position:fixed; inset:0; z-index:99980; pointer-events:none; }
 
+/* БАГ #2/#3: на время тура блокируем прокрутку страницы (десктоп), чтобы
+   рамка подсветки не наезжала на navbar, а карточка с кнопкой «Далее»
+   не уезжала из-под курсора. */
+body.spk-tour3-lock { overflow:hidden !important; }
+
 /* ── Four backdrop panels ── */
 .spk-t3-panel {
   position:fixed;
@@ -939,7 +963,7 @@ var SparkTour = (function () {
     0 24px 60px rgba(0,0,0,.85),
     inset 0 1px 1px rgba(255,255,255,.12),
     0 0 40px rgba(123,92,250,.15);
-  z-index:99984;
+  z-index:100001; /* БАГ #3: выше любых панелей/дропдаунов — кнопка «Далее» всегда кликабельна */
   pointer-events:all;
   will-change:transform,opacity;
   animation:t3TipIn .42s cubic-bezier(.34,1.56,.64,1) forwards;
@@ -1143,7 +1167,7 @@ var SparkTour = (function () {
 
 /* ════ Mobile bottom-sheet ════ */
 .spk-t3-sheet {
-  position:fixed; bottom:0; left:0; right:0; z-index:99986;
+  position:fixed; bottom:0; left:0; right:0; z-index:100001;
   background:linear-gradient(180deg,rgba(12,16,42,.95),rgba(6,8,24,.99));
   border-top:1px solid rgba(123,92,250,.35);
   border-radius:24px 24px 0 0;
@@ -1356,13 +1380,17 @@ var SparkTour = (function () {
     return tip;
   }
 
-  /* Smart placement: below → above → right → left → centre */
+  /* Smart placement: below → above → right → left → centre.
+     БАГ #2: размеры карточки берём из реального getBoundingClientRect()
+     (раньше высота была захардкожена 220px и тултип уезжал за экран),
+     а финальную позицию жёстко клампим в пределах viewport. */
   function _positionTip(tip, rect) {
     tip.classList.remove('arrow-top','arrow-bottom','arrow-left','arrow-right','arrow-none');
     var vw = window.innerWidth;
     var vh = window.innerHeight;
-    var tw = 358;
-    var th = 220; /* approx */
+    var tr = tip.getBoundingClientRect();
+    var tw = tr.width  || 358;
+    var th = tr.height || 220;
     var gap = 18;
 
     if (!rect) {
@@ -1374,32 +1402,28 @@ var SparkTour = (function () {
       return;
     }
     tip.style.transform = '';
+    tip.style.bottom    = 'auto';
 
     var left = Math.max(8, Math.min(vw - tw - 8, rect.left));
+    var top  = null;
 
     if (rect.bottom + gap + th < vh) {
       /* below */
-      tip.style.left = left + 'px';
-      tip.style.top  = (rect.bottom + gap) + 'px';
-      tip.style.bottom = 'auto';
+      top = rect.bottom + gap;
       tip.classList.add('arrow-top');
     } else if (rect.top - gap - th > 0) {
       /* above */
-      tip.style.left   = left + 'px';
-      tip.style.bottom = (vh - rect.top + gap) + 'px';
-      tip.style.top    = 'auto';
+      top = rect.top - gap - th;
       tip.classList.add('arrow-bottom');
     } else if (rect.left - gap - tw > 0) {
       /* left side */
-      tip.style.left  = (rect.left - tw - gap) + 'px';
-      tip.style.top   = Math.max(8, Math.min(vh - th - 8, rect.top)) + 'px';
-      tip.style.bottom = 'auto';
+      left = rect.left - tw - gap;
+      top  = rect.top;
       tip.classList.add('arrow-right');
     } else if (rect.right + gap + tw < vw) {
       /* right side */
-      tip.style.left  = (rect.right + gap) + 'px';
-      tip.style.top   = Math.max(8, Math.min(vh - th - 8, rect.top)) + 'px';
-      tip.style.bottom = 'auto';
+      left = rect.right + gap;
+      top  = rect.top;
       tip.classList.add('arrow-left');
     } else {
       /* fallback centre */
@@ -1407,7 +1431,14 @@ var SparkTour = (function () {
       tip.style.top       = '50%';
       tip.style.transform = 'translate(-50%,-50%)';
       tip.classList.add('arrow-none');
+      return;
     }
+
+    /* Final clamp — the card must never leave the viewport */
+    left = Math.max(8, Math.min(vw - tw - 8, left));
+    top  = Math.max(8, Math.min(vh - th - 8, top));
+    tip.style.left = left + 'px';
+    tip.style.top  = top  + 'px';
   }
 
   /* ─────────────────────────────────────────────────────
@@ -1717,7 +1748,15 @@ var SparkTour = (function () {
   /* ─────────────────────────────────────────────────────
      FINISH / CLEANUP
   ───────────────────────────────────────────────────── */
+  var _active = false;
+
+  /* БАГ #4: при любой навигации (popstate / уход со страницы) принудительно
+     завершаем тур, чтобы затемнение/blur не оставались висеть на экране. */
+  function _forceFinish() { if (_active) _finish(); }
+
   function _finish() {
+    if (!_active) return; /* idempotent — повторный вызов безопасен */
+    _active = false;
     _mark();
     _cleanStep();
 
@@ -1729,6 +1768,9 @@ var SparkTour = (function () {
     /* reset any profile-panel lift when the tour ends (desktop drawer + mobile panel) */
     _closeProfilePanel();
 
+    /* БАГ #2: снимаем блокировку прокрутки */
+    document.body.classList.remove('spk-tour3-lock');
+
     /* fade out overlay */
     if (_overlay) {
       _overlay.style.transition = 'opacity .35s ease';
@@ -1738,6 +1780,8 @@ var SparkTour = (function () {
       _destroyOverlay();
     }
     document.removeEventListener('keydown', _tourKey);
+    window.removeEventListener('popstate', _forceFinish);
+    window.removeEventListener('pagehide', _forceFinish);
   }
 
   /* Keyboard: → next, ← prev, Esc skip */
@@ -1752,17 +1796,26 @@ var SparkTour = (function () {
      PUBLIC API
   ───────────────────────────────────────────────────── */
   function launch() {
-    if (_taken()) return;
+    if (_taken() || _active) return;
+    _active = true;
     _css();
     _steps = _buildSteps();
     _idx   = 0;
     _buildOverlay();
+    /* БАГ #2: фиксируем прокрутку страницы на десктопе — рамка подсветки
+       больше не наезжает на navbar при скролле. На мобильных тур сам
+       управляет прокруткой внутренних контейнеров — там лок не нужен. */
+    if (!_isMob()) document.body.classList.add('spk-tour3-lock');
+    /* БАГ #4: любая навигация завершает тур и гарантированно убирает overlay */
+    window.addEventListener('popstate', _forceFinish);
+    window.addEventListener('pagehide', _forceFinish);
     /* Block all page interaction for the duration of the tour */
     ['click', 'touchstart', 'mousedown', 'mouseup', 'pointerdown', 'pointerup', 'touchend'].forEach(function(evt) {
       document.addEventListener(evt, _blockInteraction, { capture: true, passive: false });
     });
     /* Defer render so app UI has fully painted */
     setTimeout(function(){
+      if (!_active) return;
       _render(0);
       document.addEventListener('keydown', _tourKey);
     }, 1100);
@@ -1771,6 +1824,6 @@ var SparkTour = (function () {
   function init()  { if (!_taken()) launch(); }
   function reset() { try{localStorage.removeItem(_TOUR_KEY);}catch(e){} }
 
-  return { init:init, launch:launch, reset:reset };
+  return { init:init, launch:launch, reset:reset, forceEnd:_forceFinish };
 })();
 window.SparkTour = SparkTour;

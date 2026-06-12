@@ -80,6 +80,15 @@ const MiniProfile = (() => {
   const profileCache = new Map();
   const CACHE_TTL = 180000; // 3 минуты жизни кэша
 
+  /* БАГ #17: собственный профиль всегда «Онлайн» — пользователь физически
+     смотрит на экран; presence-канал может ещё не синхронизироваться. */
+  function _resolveOnline(userId) {
+    if (window.ME && userId === window.ME.id) return true;
+    return (window.ChatsEngine && typeof window.ChatsEngine.isUserOnline === 'function')
+      ? window.ChatsEngine.isUserOnline(userId)
+      : false;
+  }
+
   /* ── Получить данные пользователя (Supabase / Mock) ── */
   async function fetchUser(userId) {
     const now = Date.now();
@@ -87,10 +96,7 @@ const MiniProfile = (() => {
       const cached = profileCache.get(userId);
       if (now - cached.timestamp < CACHE_TTL) {
         // Online status changes frequently — always recompute it from the live presence channel
-        const liveOnline = (window.ChatsEngine && typeof window.ChatsEngine.isUserOnline === 'function')
-          ? window.ChatsEngine.isUserOnline(cached.data.id)
-          : false;
-        return Object.assign({}, cached.data, { online: liveOnline });
+        return Object.assign({}, cached.data, { online: _resolveOnline(cached.data.id) });
       }
     }
 
@@ -144,9 +150,7 @@ const MiniProfile = (() => {
             id:          row.id,
             name:        uname.replace('@', ''),
             handle:      uname,
-            online:      (window.ChatsEngine && typeof window.ChatsEngine.isUserOnline === 'function')
-                           ? window.ChatsEngine.isUserOnline(row.id)
-                           : false,
+            online:      _resolveOnline(row.id),
             rank:        rankClass,
             rankIcon:    rankIcon,
             rankLabel:   rankLabel,
@@ -483,7 +487,8 @@ const MiniProfile = (() => {
   /* ── Реактивное обновление статуса из ChatsEngine ───── */
   function onPresenceUpdate(presenceState) {
     if (!isOpen || !currentUser) return;
-    const isOnline = !!(
+    /* БАГ #17: для собственного профиля presence-снимок не важен — мы онлайн */
+    const isOnline = (window.ME && currentUser.id === window.ME.id) || !!(
       presenceState &&
       presenceState[currentUser.id] &&
       presenceState[currentUser.id].length > 0

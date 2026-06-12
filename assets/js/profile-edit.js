@@ -113,8 +113,9 @@ var ProfileEditEngine = (function () {
     if (nickEl && nickHint) {
       nickEl.addEventListener('input', function () {
         var v = nickEl.value;
+        /* БАГ #5: дефис разрешён — как при регистрации (единый паттерн) */
         if (v && v.length < 3)                       { _hint(nickHint, (window.T ? T('min3chars') : 'Minimum 3 characters'), 'err'); }
-        else if (v && !/^[a-zA-Z0-9_]+$/.test(v))   { _hint(nickHint, (window.T ? T('onlyLettersNums') : 'Only letters, numbers, _'),  'err'); }
+        else if (v && !/^[a-zA-Z0-9_-]+$/.test(v))  { _hint(nickHint, (window.T ? T('onlyLettersNums') : 'Only letters, numbers, _ and -'),  'err'); }
         else                                          { _hint(nickHint, '', ''); }
       });
     }
@@ -139,8 +140,9 @@ var ProfileEditEngine = (function () {
     var newBio  = bioEl.value.trim();
 
     /* Validate */
+    /* БАГ #5: дефис разрешён — как при регистрации (единый паттерн) */
     if (!newNick || newNick.length < 3)           { _status(status, 'Username must be 3+ characters', 'error'); return; }
-    if (!/^[a-zA-Z0-9_]+$/.test(newNick))        { _status(status, 'Only letters, numbers and _',    'error'); return; }
+    if (!/^[a-zA-Z0-9_-]+$/.test(newNick))       { _status(status, (window.T ? T('onlyLettersNums') : 'Only letters, numbers, _ and -'), 'error'); return; }
 
     var selectedDot = sec ? sec.querySelector('.avatar-dot.selected') : null;
     var avatarColor = selectedDot ? parseInt(selectedDot.dataset.avIdx, 10) : (window.PROFILE && window.PROFILE.avatar_color || 0);

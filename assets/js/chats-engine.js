@@ -1403,9 +1403,9 @@ var ChatsEngine = (function () {
       if (res.data) {
         var msgs = getCachedMessages();
         var deletedIds = getDeletedMessageIds();
-        
+
         // Map database records to our in-memory format
-        msgs[id] = res.data
+        var dbThread = res.data
           .filter(function(row) {
             return !deletedIds.includes(row.id);
           })
@@ -1422,6 +1422,22 @@ var ChatsEngine = (function () {
               read:                row.read || false // We added this!
             };
           });
+
+        // БАГ #11: не теряем optimistic-сообщения (id 'm_local_*'), чей INSERT
+        // ещё в полёте — раньше полная перезапись треда «съедала» их, и
+        // сообщение мигало: исчезало и появлялось снова после ответа сервера.
+        var pendingLocal = (msgs[id] || []).filter(function (m) {
+          if (typeof m.id !== 'string' || m.id.indexOf('m_local_') !== 0) return false;
+          // держим только свежие (< 2 мин) — застрявшие неотправленные не копим
+          if (Date.now() - (m.created_at || 0) > 120000) return false;
+          // если такой контент уже пришёл из БД от нас — это доставленный дубль
+          var delivered = dbThread.some(function (d) {
+            return d.sender_id === 'me' && d.content === m.content;
+          });
+          return !delivered;
+        });
+
+        msgs[id] = dbThread.concat(pendingLocal);
 
         cacheMessages(msgs);
         

@@ -831,6 +831,17 @@ html.auth-active, html.auth-active body { overflow: hidden !important; height: 1
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
       Написать письмо
     </a>
+    <!-- БАГ #13: если у пользователя не настроен почтовый клиент и mailto не срабатывает,
+         адрес виден прямо здесь и копируется одним кликом -->
+    <button type="button" id="supportMailCopy"
+       onclick="copySupportEmail()"
+       title="Нажмите, чтобы скопировать адрес"
+       style="display:flex;align-items:center;justify-content:center;gap:7px;width:100%;margin-top:10px;padding:10px;background:rgba(255,255,255,0.04);border:1px dashed rgba(255,255,255,0.18);border-radius:10px;color:var(--tx-d);font-size:13px;cursor:pointer;font-family:inherit;transition:border-color .2s,color .2s"
+       onmouseover="this.style.borderColor='var(--ac)';this.style.color='var(--tx)'"
+       onmouseout="this.style.borderColor='rgba(255,255,255,0.18)';this.style.color='var(--tx-d)'">
+      <span id="supportMailCopyText">spark.supp.team@gmail.com</span>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+    </button>
     <button style="width:100%;background:none;border:none;color:var(--mu2);font-size:12px;cursor:pointer;padding:10px;border-radius:8px;margin-top:4px;transition:color .2s" onmouseover="this.style.color='var(--tx)'" onmouseout="this.style.color='var(--mu2)'" onclick="closeMo('moSupport')">Закрыть</button>
   </div>
 </div>
