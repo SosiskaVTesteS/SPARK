@@ -203,19 +203,41 @@ const MiniProfile = (() => {
     elHandle.textContent = user.handle;
 
     /* Специальные бейджи (ICC: BETA TESTER / BETA TESTER PRO) */
+    const badgesContainer = card.querySelector('.mp-card__badges');
+    if (badgesContainer) {
+      badgesContainer.querySelectorAll('.special-badge').forEach(function (el) {
+        el.remove();
+      });
+    }
     (user.specialBadges || []).forEach(function (b) {
       if (!b || !b.label) return;
       const span = document.createElement('span');
       span.className = 'special-badge'
         + (b.id === 'beta_tester_pro' ? ' special-badge--pro'
          : b.id === 'beta_tester'     ? ' special-badge--beta' : '');
-      if (span.className === 'special-badge' && /^#[0-9A-Fa-f]{3,8}$/.test(String(b.color || ''))) {
-        span.style.color = b.color;
-        span.style.background = b.color + '22';
-        span.style.border = '1px solid ' + b.color + '55';
+      
+      if (b.id === 'beta_tester') {
+        span.style.background = 'rgba(96, 165, 250, 0.12)';
+        span.style.color = '#60A5FA';
+        span.style.border = '1px solid rgba(96, 165, 250, 0.3)';
+      } else if (b.id === 'beta_tester_pro') {
+        span.style.background = 'rgba(167, 139, 250, 0.15)';
+        span.style.color = '#A78BFA';
+        span.style.border = '1px solid rgba(167, 139, 250, 0.4)';
+        span.style.boxShadow = '0 0 8px rgba(167, 139, 250, 0.2)';
+      } else {
+        const color = /^#[0-9A-Fa-f]{3,8}$/.test(String(b.color || '')) ? b.color : '#A78BFA';
+        span.style.color = color;
+        span.style.background = color + '22';
+        span.style.border = '1px solid ' + color + '55';
       }
+
       span.textContent = b.label;
-      elName.appendChild(span);
+      if (badgesContainer) {
+        badgesContainer.appendChild(span);
+      } else {
+        elName.appendChild(span);
+      }
     });
 
     /* Статус-бейдж */

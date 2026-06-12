@@ -2063,10 +2063,14 @@ function renderSpecialBadges(badges) {
   return badges.map(function (b) {
     if (!b || !b.label) return '';
     var cls = 'special-badge';
-    if (b.id === 'beta_tester') cls += ' special-badge--beta';
-    else if (b.id === 'beta_tester_pro') cls += ' special-badge--pro';
     var style = '';
-    if (cls === 'special-badge') {
+    if (b.id === 'beta_tester') {
+      cls += ' special-badge--beta';
+      style = ' style="background:rgba(96, 165, 250, 0.12);color:#60A5FA;border:1px solid rgba(96, 165, 250, 0.3)"';
+    } else if (b.id === 'beta_tester_pro') {
+      cls += ' special-badge--pro';
+      style = ' style="background:rgba(167, 139, 250, 0.15);color:#A78BFA;border:1px solid rgba(167, 139, 250, 0.4);box-shadow:0 0 8px rgba(167, 139, 250, 0.2)"';
+    } else {
       // Неизвестный бейдж — красим инлайном по color из JSON (только hex, защита от инъекции в style)
       var color = /^#[0-9A-Fa-f]{3,8}$/.test(String(b.color || '')) ? b.color : '#A78BFA';
       style = ' style="background:' + color + '22;color:' + color + ';border:1px solid ' + color + '55"';
