@@ -3001,3 +3001,32 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
 }
 .ann-close:hover { color: var(--tx); }
 
+
+/* ── Специальные бейджи (ICC, BETA TESTER и т.д.) ── */
+.special-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 20px;
+  vertical-align: middle;
+  margin-left: 5px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.special-badge--beta {
+  background: rgba(96, 165, 250, 0.12);
+  color: #60A5FA;
+  border: 1px solid rgba(96, 165, 250, 0.3);
+}
+
+.special-badge--pro {
+  background: rgba(167, 139, 250, 0.15);
+  color: #A78BFA;
+  border: 1px solid rgba(167, 139, 250, 0.4);
+  box-shadow: 0 0 8px rgba(167, 139, 250, 0.2);
+}

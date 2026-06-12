@@ -2039,6 +2039,24 @@ function toggleDD(e, id) {
   if (dd) dd.classList.toggle('open');
 }
 
+/* Специальные бейджи (ICC: BETA TESTER / BETA TESTER PRO) из profiles.special_badges */
+function renderSpecialBadges(badges) {
+  if (!Array.isArray(badges) || badges.length === 0) return '';
+  return badges.map(function (b) {
+    if (!b || !b.label) return '';
+    var cls = 'special-badge';
+    if (b.id === 'beta_tester') cls += ' special-badge--beta';
+    else if (b.id === 'beta_tester_pro') cls += ' special-badge--pro';
+    var style = '';
+    if (cls === 'special-badge') {
+      // Неизвестный бейдж — красим инлайном по color из JSON (только hex, защита от инъекции в style)
+      var color = /^#[0-9A-Fa-f]{3,8}$/.test(String(b.color || '')) ? b.color : '#A78BFA';
+      style = ' style="background:' + color + '22;color:' + color + ';border:1px solid ' + color + '55"';
+    }
+    return ' <span class="' + cls + '"' + style + '>' + escapeHTML(String(b.label)) + '</span>';
+  }).join('');
+}
+
 function profileHTML(sfx) {
   var L = PROFILE.username.replace('@', '').charAt(0).toUpperCase();
   var safeUser  = escapeHTML(PROFILE.username);
@@ -2050,10 +2068,11 @@ function profileHTML(sfx) {
   var adminBadgeHtml = PROFILE.is_admin
     ? ' <span class="admin-badge">CORE TEAM</span>'
     : '';
+  var specialBadgesHtml = renderSpecialBadges(PROFILE.special_badges);
 
   return '<div class="phero">'
     + '<div class="pav-lg" style="background:' + avGrad + '">' + L + '</div>'
-    + '<div class="pname">' + safeUser + adminBadgeHtml + '</div>'
+    + '<div class="pname">' + safeUser + adminBadgeHtml + specialBadgesHtml + '</div>'
     + (safeBio ? '<div class="pbio">' + safeBio + '</div>' : '')
     + '<span class="pbadge">' + T('verifiedInvestor') + '</span></div>'
     + '<div class="srow" style="margin-bottom:18px">'

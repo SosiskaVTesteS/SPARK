@@ -158,7 +158,8 @@ const MiniProfile = (() => {
             invested:    bal.toLocaleString(),
             rankNum:     rankNum,
             avatarLabel: uname.replace('@', '').slice(0, 2).toUpperCase(),
-            theme:       theme
+            theme:       theme,
+            specialBadges: Array.isArray(row.special_badges) ? row.special_badges : []
           };
           profileCache.set(userId, { data: userData, timestamp: now });
           return userData;
@@ -190,6 +191,22 @@ const MiniProfile = (() => {
     /* Имя и хендл */
     elName.textContent   = user.name;
     elHandle.textContent = user.handle;
+
+    /* Специальные бейджи (ICC: BETA TESTER / BETA TESTER PRO) */
+    (user.specialBadges || []).forEach(function (b) {
+      if (!b || !b.label) return;
+      const span = document.createElement('span');
+      span.className = 'special-badge'
+        + (b.id === 'beta_tester_pro' ? ' special-badge--pro'
+         : b.id === 'beta_tester'     ? ' special-badge--beta' : '');
+      if (span.className === 'special-badge' && /^#[0-9A-Fa-f]{3,8}$/.test(String(b.color || ''))) {
+        span.style.color = b.color;
+        span.style.background = b.color + '22';
+        span.style.border = '1px solid ' + b.color + '55';
+      }
+      span.textContent = b.label;
+      elName.appendChild(span);
+    });
 
     /* Статус-бейдж */
     elStatusBadge.className = `mp-badge mp-badge--status ${user.online ? 'online' : 'offline'}`;

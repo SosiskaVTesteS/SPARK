@@ -275,10 +275,14 @@ Deno.serve(async (req) => {
   const password = payload.password || '';
   const nickname = (payload.nickname || '').trim().replace(/^@/, '');
 
-  // БАГ #5: единые правила username с формой редактирования профиля —
-  // буквы, цифры, подчёркивание и дефис, 3–30 символов.
-  if (!isValidEmail(email) || password.length < 8 || nickname.length < 3 || nickname.length > 30 || !/^[a-zA-Z0-9_-]+$/.test(nickname)) {
+  if (!isValidEmail(email) || password.length < 8 || !nickname || nickname.length > 30) {
     return json({ message: 'Invalid registration details' }, 400);
+  }
+
+  // БАГ #5: единые правила username с формой редактирования профиля —
+  // буквы, цифры, подчёркивание и дефис, минимум 3 символа.
+  if (nickname.length < 3 || !/^[a-zA-Z0-9_-]+$/.test(nickname)) {
+    return json({ message: 'Username: only letters, numbers, _ and -, min 3 chars' }, 400);
   }
 
   const admin = createClient(supabaseUrl, serviceKey, {
