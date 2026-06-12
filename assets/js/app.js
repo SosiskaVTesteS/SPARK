@@ -906,6 +906,16 @@ async function fetchProfile() {
     if (PROFILE.is_admin) ADMIN_USER_IDS.add(ME.id);
     // БАГ #1: онбординг показывается только один раз — статус хранится в БД
     PROFILE.onboarding_completed = row.onboarding_completed === true;
+    // ICC: специальные бейджи (BETA TESTER / BETA TESTER PRO)
+    var badges = row.special_badges;
+    if (typeof badges === 'string') {
+      try {
+        badges = JSON.parse(badges);
+      } catch (e) {
+        badges = [];
+      }
+    }
+    PROFILE.special_badges = Array.isArray(badges) ? badges : [];
     if (PROFILE.onboarding_completed) {
       try { localStorage.setItem('spark_tour3_seen', '1'); localStorage.setItem('spark_ob3_seen', '1'); } catch (e) {}
     }
@@ -942,6 +952,7 @@ async function fetchProfile() {
     PROFILE.username = fallbackName;
     PROFILE.spk_balance = 0;
     PROFILE.investments_count = 0;
+    PROFILE.special_badges = [];
   }
 
   // Load secondary stats asynchronously without blocking the startup sequence
@@ -1313,7 +1324,7 @@ async function doLogout(skipSignOut) {
 
   // Explicitly reset session state to guarantee immediate redirection to sign-in page
   ME = null;
-  PROFILE = { username: '@user', spk_balance: 0, ideas_count: 0, rank: null, investments_count: 0, bio: '', avatar_color: 0, is_admin: false };
+  PROFILE = { username: '@user', spk_balance: 0, ideas_count: 0, rank: null, investments_count: 0, bio: '', avatar_color: 0, is_admin: false, special_badges: [] };
   ADMIN_USER_IDS.clear();
   appEntered = false;
   try {
@@ -2041,6 +2052,13 @@ function toggleDD(e, id) {
 
 /* Специальные бейджи (ICC: BETA TESTER / BETA TESTER PRO) из profiles.special_badges */
 function renderSpecialBadges(badges) {
+  if (typeof badges === 'string') {
+    try {
+      badges = JSON.parse(badges);
+    } catch (e) {
+      badges = [];
+    }
+  }
   if (!Array.isArray(badges) || badges.length === 0) return '';
   return badges.map(function (b) {
     if (!b || !b.label) return '';
@@ -4060,7 +4078,7 @@ function bindAuthListener() {
   supa.auth.onAuthStateChange(function (event, session) {
     if (event === 'SIGNED_OUT') {
       ME = null;
-      PROFILE = { username: '@user', spk_balance: 0, ideas_count: 0, rank: null, investments_count: 0, bio: '', avatar_color: 0, is_admin: false };
+      PROFILE = { username: '@user', spk_balance: 0, ideas_count: 0, rank: null, investments_count: 0, bio: '', avatar_color: 0, is_admin: false, special_badges: [] };
       ADMIN_USER_IDS.clear();
       appEntered = false;
       _repostCodeCache = null;

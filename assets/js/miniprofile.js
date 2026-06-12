@@ -159,7 +159,17 @@ const MiniProfile = (() => {
             rankNum:     rankNum,
             avatarLabel: uname.replace('@', '').slice(0, 2).toUpperCase(),
             theme:       theme,
-            specialBadges: Array.isArray(row.special_badges) ? row.special_badges : []
+            specialBadges: (function () {
+              var badges = row.special_badges;
+              if (typeof badges === 'string') {
+                try {
+                  badges = JSON.parse(badges);
+                } catch (e) {
+                  badges = [];
+                }
+              }
+              return Array.isArray(badges) ? badges : [];
+            })()
           };
           profileCache.set(userId, { data: userData, timestamp: now });
           return userData;
