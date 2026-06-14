@@ -919,6 +919,10 @@ async function fetchProfile() {
     if (PROFILE.onboarding_completed) {
       try { localStorage.setItem('spark_tour3_seen', '1'); localStorage.setItem('spark_ob3_seen', '1'); } catch (e) {}
     }
+    // Cross-device theme sync: apply preset from DB if set (overrides local localStorage)
+    if (row.theme_preset_id && window.ThemeEngine && ThemeEngine.PRESETS[row.theme_preset_id]) {
+      ThemeEngine.applyPreset(row.theme_preset_id);
+    }
 
     // Check Daily Bonus Eligibility
     var eligible = false;
@@ -1541,6 +1545,29 @@ async function syncUnlockedContacts() {
   }
 }
 
+// ════ Load user's reaction picks from DB (cross-device sync: web ↔ Android) ════
+// Called once on login. Fetches user_reactions rows and restores RS[id].pick so the
+// user sees their own past picks from any device / browser (not just the current localStorage).
+async function loadUserReactionsFromDB() {
+  if (!supa || !ME) return;
+  try {
+    var r = await supa.from('user_reactions')
+      .select('idea_id, emoji')
+      .eq('user_id', ME.id);
+    if (!r.data || !Array.isArray(r.data)) return;
+    r.data.forEach(function (row) {
+      if (!row.idea_id || !row.emoji || EMOJIS.indexOf(row.emoji) === -1) return;
+      var rs = getRS(row.idea_id);
+      rs.pick = row.emoji;
+      try { localStorage.setItem('spark_pick_' + row.idea_id, row.emoji); } catch (e) {}
+    });
+    // Re-render feed so freshly restored picks are highlighted
+    renderFeed();
+  } catch (e) {
+    // Non-critical: localStorage picks still work as fallback
+  }
+}
+
 function enterApp() {
   if (appEntered) return;
   appEntered = true;
@@ -1555,6 +1582,8 @@ function enterApp() {
   applyLang(); // applyLang already calls renderProfile() — no need to call it twice
   // Load real ideas from DB, then render trends and leaders
   loadIdeasFromDB();
+  // Restore this user's reaction picks from DB (cross-device: replaces stale localStorage picks)
+  loadUserReactionsFromDB();
 
   // Pre-fill search from ?search= URL param (used by share links)
   var urlSearchParam = new URLSearchParams(window.location.search).get('search');
@@ -3249,67 +3278,33 @@ function react(ideaId, emoji, btn) {
     }
   }
 
-  // --- Async atomic DB sync via RPC (with legacy fallback) ---
-  if (supa) {
+  // --- Atomic DB sync via unified toggle_reaction RPC (web ↔ Android) ---
+  if (supa && ME) {
     (async function () {
       _reactInflight.add(ideaId);
       try {
-        // Snapshot rs.counts NOW (post-optimistic-update, before any await).
-        // Using this frozen copy in legacy .update() prevents a rapid second click
-        // from mutating rs.counts before Supabase serialises the HTTP request.
-        var postCounts = Object.assign({}, rs.counts);
+        var rr = await safeSupabaseCall('database', function () {
+          return supa.rpc('toggle_reaction', { p_idea_id: ideaId, p_emoji: emoji });
+        }, { silent: true });
 
-        // Legacy path: RPC confirmed missing on this Supabase instance — use direct update
-        if (_reactRpcMissing) {
-          safeSupabaseCall('database', function () {
-            return supa.from('ideas').update({ reactions: postCounts }).eq('id', ideaId);
-          }, { silent: true });
-          return;
-        }
-
-        var failed = false;
-        var lastServerCounts = null;
-
-        if (toDecrement) {
-          var r1 = await safeSupabaseCall('database', function () {
-            return supa.rpc('react_to_idea', { p_idea_id: ideaId, p_emoji: toDecrement, p_increment: -1 });
-          }, { silent: true });
-          if (!r1.ok) {
-            if (_isRpcMissingError(r1.error)) {
-              _reactRpcMissing = true;
-              console.warn('[SPARK] react_to_idea RPC not found — falling back to legacy reactions.update()');
-              safeSupabaseCall('database', function () {
-                return supa.from('ideas').update({ reactions: postCounts }).eq('id', ideaId);
-              }, { silent: true });
-              return;
-            }
-            failed = true;
-          } else if (r1.data && r1.data.data) {
-            lastServerCounts = r1.data.data;
+        if (rr.ok && rr.data && rr.data.data) {
+          var result = rr.data.data;
+          // Reconcile with authoritative server state (reactions counts + canonical pick)
+          if (result.reactions && typeof result.reactions === 'object') {
+            EMOJIS.forEach(function (e) {
+              if (result.reactions[e] !== undefined) {
+                rs.counts[e] = Math.max(0, Number(result.reactions[e]) || 0);
+              }
+            });
           }
-        }
-
-        if (!failed && toIncrement) {
-          var r2 = await safeSupabaseCall('database', function () {
-            return supa.rpc('react_to_idea', { p_idea_id: ideaId, p_emoji: toIncrement, p_increment: 1 });
-          }, { silent: true });
-          if (!r2.ok) {
-            if (_isRpcMissingError(r2.error)) {
-              _reactRpcMissing = true;
-              console.warn('[SPARK] react_to_idea RPC not found — falling back to legacy reactions.update()');
-              safeSupabaseCall('database', function () {
-                return supa.from('ideas').update({ reactions: postCounts }).eq('id', ideaId);
-              }, { silent: true });
-              return;
-            }
-            failed = true;
-          } else if (r2.data && r2.data.data) {
-            lastServerCounts = r2.data.data;
-          }
-        }
-
-        if (failed) {
-          // Rollback optimistic state
+          rs.pick = result.pick || null;
+          try {
+            if (rs.pick) localStorage.setItem('spark_pick_' + ideaId, rs.pick);
+            else localStorage.removeItem('spark_pick_' + ideaId);
+          } catch (e) {}
+          _renderReactContainer(ideaId);
+        } else if (!rr.ok) {
+          // Rollback optimistic state on RPC failure
           rs.counts = snapCounts;
           rs.pick = snapPick;
           try {
@@ -3318,14 +3313,6 @@ function react(ideaId, emoji, btn) {
           } catch (e) {}
           _renderReactContainer(ideaId);
           if (typeof toast === 'function') toast('Reaction failed — please try again.', 'var(--red)');
-        } else if (lastServerCounts) {
-          // Sync authoritative server counts (preserves pick set above)
-          EMOJIS.forEach(function (e) {
-            if (lastServerCounts[e] !== undefined) {
-              rs.counts[e] = Math.max(0, Number(lastServerCounts[e]) || 0);
-            }
-          });
-          _renderReactContainer(ideaId);
         }
       } finally {
         _reactInflight.delete(ideaId);
@@ -4588,5 +4575,34 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
       openPanel('feed', false);
     }
+  });
+
+  // ════ Cross-device sync on tab focus: reactions + theme ════
+  // When the user returns to this tab (from another tab or OS-level switch), silently
+  // pull fresh data so any changes made on the Android app are immediately visible
+  // without requiring a manual refresh.
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState !== 'visible') return;
+    if (!window.ME || !window.supa) return;
+
+    // 1. Refresh reaction picks so cross-device toggles are reflected in the feed UI.
+    loadUserReactionsFromDB();
+
+    // 2. Pull the current theme preset from the DB and apply it if it changed.
+    supa.from('profiles')
+      .select('theme_preset_id')
+      .eq('id', ME.id)
+      .single()
+      .then(function (result) {
+        var row = result.data;
+        if (!row || !row.theme_preset_id) return;
+        if (window.ThemeEngine && ThemeEngine.PRESETS && ThemeEngine.PRESETS[row.theme_preset_id]) {
+          var active = ThemeEngine.getActive ? ThemeEngine.getActive() : {};
+          if (active.id !== row.theme_preset_id) {
+            ThemeEngine.applyPreset(row.theme_preset_id);
+          }
+        }
+      })
+      .catch(function () {});
   });
 });

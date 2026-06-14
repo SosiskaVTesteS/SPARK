@@ -391,6 +391,13 @@ var ProfileEditEngine = (function () {
             ThemeEngine.apply(merged);
             ThemeEngine.save(merged);
           }
+          // Persist preset choice to DB for cross-device sync (web ↔ Android)
+          if (window.supa && window.ME) {
+            supa.from('profiles')
+              .update({ theme_preset_id: presetId || null })
+              .eq('id', ME.id)
+              .then(function () {});
+          }
           modal.classList.remove('open');
           if (window.toast) window.toast(window.T ? T('themeApplied') : 'Theme applied ✓', 'var(--ac2)');
         };
