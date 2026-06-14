@@ -41,6 +41,9 @@ var ChatsEngine = (function () {
   // Preloaded Teams/Groups - Defaults
   var DEFAULT_TEAMS = [];
 
+  // In-memory team channels — populated from channel_members DB, not localStorage
+  var _dbTeams = [];
+
   // Preset Rich Media Attachments (Photo 1 UI inspiration)
   var ATTACHMENTS = [
     {
@@ -108,22 +111,55 @@ var ChatsEngine = (function () {
     } catch (e) {}
   }
 
-  // Load/Save Teams list from LocalStorage
+  // Teams list — _dbTeams is the in-memory SSOT loaded from channel_members;
+  // localStorage is kept as an offline fallback cache only.
   function getTeamsList() {
-    try {
-      var cached = localStorage.getItem(CACHE_TEAMS_KEY);
-      if (cached) {
-        return JSON.parse(cached);
-      }
-    } catch (e) {}
-    localStorage.setItem(CACHE_TEAMS_KEY, JSON.stringify(DEFAULT_TEAMS));
-    return JSON.parse(JSON.stringify(DEFAULT_TEAMS));
+    return _dbTeams;
   }
 
   function saveTeamsList(teams) {
+    _dbTeams = teams;
     try {
       localStorage.setItem(CACHE_TEAMS_KEY, JSON.stringify(teams));
     } catch (e) {}
+  }
+
+  // Fetch team channels the current user belongs to from channel_members table
+  async function loadTeamsFromSupabase() {
+    if (!window.supa || !window.ME) return;
+    try {
+      var res = await window.supa
+        .from('channel_members')
+        .select('channel_id')
+        .eq('user_id', window.ME.id);
+      if (res.error) throw res.error;
+      if (res.data && res.data.length > 0) {
+        _dbTeams = res.data.map(function (row) {
+          var id = row.channel_id;
+          var displayName = id.split('-').map(function (w) {
+            return w.charAt(0).toUpperCase() + w.slice(1);
+          }).join(' ');
+          var existing = _dbTeams.find(function (t) { return t.id === id; });
+          return {
+            id:          id,
+            name:        displayName,
+            activeCount: existing ? existing.activeCount : 1,
+            avColor:     existing ? existing.avColor : id.split('').reduce(function (a, c) { return (a + c.charCodeAt(0)) % 12; }, 0),
+            preview:     existing ? existing.preview : ''
+          };
+        });
+        try { localStorage.setItem(CACHE_TEAMS_KEY, JSON.stringify(_dbTeams)); } catch (e) {}
+      }
+      renderChatList();
+    } catch (e) {
+      console.warn('Failed to load teams from Supabase:', e);
+      if (_dbTeams.length === 0) {
+        try {
+          var cached = localStorage.getItem(CACHE_TEAMS_KEY);
+          if (cached) { _dbTeams = JSON.parse(cached); renderChatList(); }
+        } catch (e2) {}
+      }
+    }
   }
 
   // Load chats from LocalStorage or Fallback Seeds
@@ -1764,7 +1800,7 @@ var ChatsEngine = (function () {
             memberRows.push({ channel_id: newId, user_id: mid });
           });
         }
-        if (window.supa && window.ME && memberRows.length > 0) {
+        if (window.supa && window.ME) {
           memberRows.unshift({ channel_id: newId, user_id: window.ME.id });
           supa.from('channel_members').insert(memberRows).then(function (r) {
             if (r.error) console.warn('[channel_members insert]', r.error);
@@ -2172,6 +2208,7 @@ var ChatsEngine = (function () {
     if (state.initialized) {
       // Re-setup realtime subscription if session loaded
       if (window.supa && window.ME) {
+        loadTeamsFromSupabase();
         _initRealtimeSubscription();
         _initPresenceSubscription();
         if (state.activeChannelId) {
@@ -2207,6 +2244,14 @@ var ChatsEngine = (function () {
         c.style.display = '';
       });
     });
+
+    // Pre-populate teams from localStorage cache so sidebar isn't blank while DB loads
+    if (_dbTeams.length === 0) {
+      try {
+        var _cachedTeams = localStorage.getItem(CACHE_TEAMS_KEY);
+        if (_cachedTeams) _dbTeams = JSON.parse(_cachedTeams);
+      } catch (e) {}
+    }
 
     // Initial render
     renderChatList();
@@ -2248,6 +2293,7 @@ var ChatsEngine = (function () {
 
     // Realtime Database replication hooks
     if (window.supa && window.ME) {
+      loadTeamsFromSupabase();
       _initRealtimeSubscription();
       _initPresenceSubscription();
       if (state.activeChannelId) {
