@@ -107,28 +107,23 @@ const MiniProfile = (() => {
         const pRes = await window.supa.from('profiles').select('*').eq('id', userId).single();
         if (pRes.data) {
           const row = pRes.data;
+          const bal = Number(row.spk_balance) || 0;
 
-          // Подсчет идей автора
-          let ideasCount = 0;
-          const ideasRes = await window.supa.from('ideas').select('id', { count: 'exact', head: true }).eq('author_id', userId);
-          if (ideasRes && !ideasRes.error) {
-            ideasCount = ideasRes.count || 0;
-          }
+          // Ideas count + rank count in parallel — mirrors Android coroutineScope { async {} }
+          const [ideasRes, rankRes] = await Promise.all([
+            window.supa.from('ideas').select('id', { count: 'exact', head: true }).eq('author_id', userId),
+            window.supa.from('profiles').select('id', { count: 'exact', head: true }).gt('spk_balance', bal),
+          ]);
 
-          // Расчет текущего ранга на основе баланса SPK
-          let rankNum = '#—';
-          const rankRes = await window.supa.from('profiles').select('id', { count: 'exact', head: true }).gt('spk_balance', row.spk_balance || 0);
-          if (rankRes && !rankRes.error) {
-            rankNum = '#' + (rankRes.count + 1);
-          }
+          const ideasCount = (!ideasRes.error ? ideasRes.count : 0) || 0;
+          const rankNum    = rankRes.error ? '#—' : '#' + ((rankRes.count || 0) + 1);
 
           // Цветовые темы MiniProfile в соответствии с индексом avatar_color
           const themes = ['violet', 'teal', 'pink'];
           const avatarColorIdx = Number(row.avatar_color) || 0;
           const theme = themes[avatarColorIdx % themes.length];
 
-          // Вычисление лиги/ранга инвестора
-          const bal = Number(row.spk_balance) || 0;
+          // Вычисление лиги/ранга инвестора (bal already computed above)
           let rankLabel = 'Seed';
           let rankIcon = '🌱';
           let rankClass = 'seed';
@@ -521,6 +516,12 @@ const MiniProfile = (() => {
         const userId = btn.dataset.userId;
         if (!userId) return;
         open(userId, btn);
+      });
+
+      /* Prefetch on hover — warms the cache so the card opens instantly on click */
+      btn.addEventListener('mouseenter', () => {
+        const userId = btn.dataset.userId;
+        if (userId) fetchUser(userId); // fire-and-forget; populates profileCache
       });
 
       /* Клавиатурная доступность */
