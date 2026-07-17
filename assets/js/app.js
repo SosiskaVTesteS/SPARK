@@ -1418,6 +1418,71 @@ async function doUnlockContact() {
   var authorId   = _pendingContactId;
   var authorName = _pendingContactName;
 
+  // Проверка: контакт уже разблокирован?
+  var alreadyUnlocked = false;
+  
+  // 1. Проверка в локальном множестве
+  if (window.UNLOCKED_CONTACT_IDS && window.UNLOCKED_CONTACT_IDS.has(authorId)) {
+    alreadyUnlocked = true;
+  }
+  
+  // 2. Проверка в локальном списке контактов
+  if (!alreadyUnlocked && window.ChatsEngine && window.ChatsEngine._getContacts) {
+    var contacts = window.ChatsEngine._getContacts();
+    if (contacts.some(function (c) { return c.id === authorId; })) {
+      alreadyUnlocked = true;
+    }
+  }
+  
+  // 3. Проверка в базе данных (если есть соединение)
+  if (!alreadyUnlocked && window.supa && window.ME) {
+    try {
+      var checkRes = await supa
+        .from('unlocked_contacts')
+        .select('contact_id')
+        .eq('user_id', ME.id)
+        .eq('contact_id', authorId)
+        .single();
+      
+      if (!checkRes.error && checkRes.data) {
+        alreadyUnlocked = true;
+        window.UNLOCKED_CONTACT_IDS.add(authorId);
+      }
+    } catch (e) {
+      // Игнорируем ошибки при проверке, продолжаем с обычной логикой
+    }
+  }
+  
+  // Если контакт уже разблокирован — просто открываем чат без списания
+  if (alreadyUnlocked) {
+    closeMo('moContactAuthor');
+    toast('Чат уже открыт', 'var(--ac)');
+    
+    // Убедимся что контакт есть в локальном списке
+    if (window.ChatsEngine) {
+      var contacts = (window.ChatsEngine._getContacts ? window.ChatsEngine._getContacts() : []);
+      var alreadyIn = contacts.some(function (c) { return c.id === authorId; });
+      if (!alreadyIn) {
+        contacts.push({
+          id:       authorId,
+          name:     authorName,
+          username: authorName,
+          online:   false,
+          avColor:  0,
+          preview:  ''
+        });
+        if (window.ChatsEngine._saveContacts) window.ChatsEngine._saveContacts(contacts);
+      }
+    }
+    
+    // Обновляем ленту чтобы кнопка на карточке сменилась
+    renderFeed();
+    
+    // Переключаемся в чаты
+    setTimeout(function () { _switchToChat(authorId); }, 350);
+    return;
+  }
+
   // БАГ #6: optimistic update — мгновенно списываем 30 SPK в UI,
   // при ошибке сервера откатываем и показываем уведомление.
   var balanceBeforeUnlock = PROFILE.spk_balance || 0;
