@@ -70,6 +70,10 @@ document.addEventListener('DOMContentLoaded', function () {
   if (caCancel) caCancel.addEventListener('click', function () { closeMo('moContactAuthor'); });
   var caConfirm = document.getElementById('caConfirm');
   if (caConfirm) caConfirm.addEventListener('click', doUnlockContact);
+  var diCancel = document.getElementById('diCancel');
+  if (diCancel) diCancel.addEventListener('click', function () { closeMo('moDeleteIdea'); });
+  var diConfirm = document.getElementById('diConfirm');
+  if (diConfirm) diConfirm.addEventListener('click', doAuthorDeleteConfirm);
   var reportConfirmModal = document.getElementById('reportConfirmModal');
   if (reportConfirmModal) {
     reportConfirmModal.addEventListener('click', function (event) {
@@ -204,6 +208,12 @@ document.addEventListener('DOMContentLoaded', function () {
       if (adminDelBtn && PROFILE.is_admin) {
         event.stopPropagation();
         openAdminDeleteModal(adminDelBtn.dataset.adminDelId);
+        return;
+      }
+      var authorDelBtn = event.target.closest('.author-del-btn[data-author-del-id]');
+      if (authorDelBtn) {
+        event.stopPropagation();
+        openAuthorDeleteModal(authorDelBtn.dataset.authorDelId);
         return;
       }
     });
@@ -1756,6 +1766,49 @@ async function doAdminDeleteConfirm() {
   }
 }
 
+// ════ AUTHOR DELETE IDEA ════
+var _pendingAuthorDeleteId = null;
+
+function openAuthorDeleteModal(ideaId) {
+  _pendingAuthorDeleteId = ideaId;
+  openMo('moDeleteIdea');
+}
+
+async function doAuthorDeleteConfirm() {
+  if (!_pendingAuthorDeleteId || !supa || !ME) return;
+  var ideaId = _pendingAuthorDeleteId;
+  _pendingAuthorDeleteId = null;
+
+  var confirmBtn = document.getElementById('diConfirm');
+  if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = '⏳...'; }
+
+  // Обновляем статус идеи на 'hidden' вместо полного удаления
+  var r = await safeSupabaseCall('database', function () {
+    return supa
+      .from('ideas')
+      .update({ status: 'hidden' })
+      .eq('id', ideaId)
+      .eq('author_id', ME.id);
+  }, { silent: true });
+
+  if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'Удалить идею'; }
+  closeMo('moDeleteIdea');
+
+  if (r.ok && !r.error) {
+    // Optimistic: remove from LIVE and re-render
+    LIVE = LIVE.filter(function (x) { return String(x.id) !== String(ideaId); });
+    renderFeed();
+    renderTrends();
+    toast('Идея удалена из ленты', 'var(--ac2)');
+  } else {
+    var errDetail = '';
+    if (!r.ok && r.error) {
+      errDetail = r.error.message || r.error.code || String(r.error);
+    }
+    toast('Ошибка: ' + (errDetail || 'неизвестная ошибка'), 'var(--red)');
+  }
+}
+
 function updateHeader() {
   var letter = PROFILE.username.replace('@', '').charAt(0).toUpperCase();
   var av = document.getElementById('hdrAv');
@@ -3136,6 +3189,7 @@ function isExpired(x) {
 function filtered() {
   var a = LIVE.slice();
   a = a.filter(function (x) { return !isExpired(x); });
+  a = a.filter(function (x) { return x.status !== 'hidden' && x.status !== 'banned'; });
   if (ftag !== 'all') a = a.filter(function (x) { return x.tag === ftag; });
   if (q) a = a.filter(function (x) {
     return x.title.toLowerCase().includes(q) || x.body.toLowerCase().includes(q) || x.tag.toLowerCase().includes(q) || x.u.toLowerCase().includes(q);
@@ -3206,10 +3260,16 @@ function cardHTML(x) {
       + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>'
       + '</button>'
     : '';
+  var authorDeleteBtn = (ME && x.author_id && x.author_id === ME.id)
+    ? '<button class="author-del-btn" data-author-del-id="' + x.id + '" title="Удалить идею">'
+      + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>'
+      + '</button>'
+    : '';
   return '<div class="card' + (fire ? ' fire' : '') + '" data-cid="' + x.id + '">'
     + '<div class="ch"><div' + triggerAttr + ' style="background:' + safeBg + '">' + safeAv + '</div>'
     + '<div class="cm"><div' + nameTriggerAttr + '>' + safeUser + authorAdminBadge + '</div><div class="ct">' + safeTime + ' · #' + safeTag + '</div></div>'
     + adminDeleteBtn
+    + authorDeleteBtn
     + '<div class="' + cmenClass + '" data-idea-id="' + x.id + '" data-immune="' + (isImmune ? '1' : '0') + '"' + (cmenTitle ? ' title="' + cmenTitle + '"' : '') + '><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></div></div>'
     + '<div class="ctitle">' + safeTitle + '</div><div class="cbody">' + safeBody + '</div>'
     + investGraphHTML(x)

@@ -3030,3 +3030,46 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
   border: 1px solid rgba(167, 139, 250, 0.4);
   box-shadow: 0 0 8px rgba(167, 139, 250, 0.2);
 }
+
+
+/* ================================================
+   AUTHOR DELETE BUTTON (on cards)
+   ================================================ */
+.author-del-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1.5px solid var(--red);
+  background: transparent;
+  color: var(--red);
+  cursor: pointer;
+  transition: all 0.18s;
+  margin-left: 4px;
+  box-shadow: 0 0 8px rgba(232,90,122,0.3);
+}
+.author-del-btn:hover {
+  background: rgba(232,90,122,0.1);
+  box-shadow: 0 0 12px rgba(232,90,122,0.5);
+  transform: scale(1.05);
+}
+.author-del-btn:active {
+  transform: scale(0.95);
+  box-shadow: 0 0 6px rgba(232,90,122,0.4);
+}
+
+/* ================================================
+   RED HOLD BUTTON (for delete confirmation)
+   ================================================ */
+.hbtn-red {
+  background: linear-gradient(135deg, #E85A7A 0%, #D64555 100%);
+  box-shadow: 0 4px 15px rgba(232,90,122,0.3);
+}
+.hbtn-red:hover {
+  background: linear-gradient(135deg, #F56A8A 0%, #E65565 100%);
+  box-shadow: 0 6px 20px rgba(232,90,122,0.4);
+}
+

@@ -582,6 +582,21 @@ html.auth-active, html.auth-active body { overflow: hidden !important; height: 1
   </div>
 </div>
 
+<!-- МОДАЛКА: ПОДТВЕРЖДЕНИЕ УДАЛЕНИЯ ИДЕИ -->
+<div class="mo" id="moDeleteIdea">
+  <div class="mo-box">
+    <div class="mo-handle"></div>
+    <div class="mo-title">Удалить идею 🗑️</div>
+    <div style="font-size:13px;color:var(--mu2);line-height:1.6;padding:16px 0 12px">
+      Идея удалится из общей ленты, но останется в разделе «Мои идеи» в вашем профиле.
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="hbtn" id="diCancel" style="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);--hms:0s">Назад</button>
+      <button class="hbtn hbtn-red" id="diConfirm" style="flex:1;--hms:0s">Удалить идею</button>
+    </div>
+  </div>
+</div>
+
 <!-- МОДАЛКА УВЕДОМЛЕНИЙ -->
 <div class="mo" id="moNotifications">
   <div class="mo-box spark-settings-page" style="padding:24px 20px; box-sizing:border-box;">
