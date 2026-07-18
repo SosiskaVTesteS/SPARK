@@ -3594,6 +3594,15 @@ async function doPublish() {
   if (!ciTitle) return;
   var title = ciTitle.value.trim();
   var desc = ciDesc ? ciDesc.value.trim() : '';
+  
+  // Валидация Min. bet (SPK) - проверяем исходное значение ДО clampAmount
+  var minVal = ciMin ? parseFloat(ciMin.value) : 10;
+  if (!minVal || minVal <= 0 || !Number.isFinite(minVal)) {
+    toast('❌ Min. bet must be greater than 0', 'var(--red)');
+    if (ciMin) ciMin.focus();
+    return;
+  }
+  
   var min = ciMin ? clampAmount(ciMin.value, 1, 1000000) : 10;
   if (!title) { toast('❌ Add a title', 'var(--red)'); return; }
   var _linkRe = /(https?:\/\/|www\.|t\.me\/)/i;
