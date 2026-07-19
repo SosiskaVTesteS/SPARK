@@ -3193,6 +3193,7 @@ var ChatsEngine = (function () {
           }
           var newTimeText = _formatTime(m.created_at) + statusTicks;
           if (timeEl.innerHTML !== newTimeText) {
+            console.log('[diffMessagesDOM] Updating status for message', m.id, 'old:', timeEl.innerHTML, 'new:', newTimeText);
             timeEl.innerHTML = newTimeText;
           }
         }
