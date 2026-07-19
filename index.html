@@ -597,6 +597,22 @@ html.auth-active, html.auth-active body { overflow: hidden !important; height: 1
   </div>
 </div>
 
+<!-- МОДАЛКА: ПОДТВЕРЖДЕНИЕ ВОССТАНОВЛЕНИЯ ИДЕИ -->
+<div class="mo" id="moRestoreIdea">
+  <div class="mo-box">
+    <div class="mo-handle"></div>
+    <div class="mo-title">Восстановить идеу ↺</div>
+    <div style="font-size:13px;color:var(--mu2);line-height:1.6;padding:16px 0 12px">
+      Идея вернётся в общую ленту и станет видимой всем пользователям.
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="hbtn" id="riCancel" style="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);--hms:0s">Назад</button>
+      <button class="hbtn hbtn-green" id="riConfirm" style="flex:1;--hms:2s">Опубликовать идею</button>
+    </div>
+    <div class="hbtn-hint">Hold 2 seconds to confirm</div>
+  </div>
+</div>
+
 <!-- МОДАЛКА УВЕДОМЛЕНИЙ -->
 <div class="mo" id="moNotifications">
   <div class="mo-box spark-settings-page" style="padding:24px 20px; box-sizing:border-box;">

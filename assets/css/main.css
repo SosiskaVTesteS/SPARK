@@ -3073,3 +3073,75 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
   box-shadow: 0 6px 20px rgba(232,90,122,0.4);
 }
 
+
+
+/* ================================================
+   AUTHOR RESTORE BUTTON (on cards in profile)
+   ================================================ */
+.author-restore-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1.5px solid #4ade80;
+  background: transparent;
+  color: #4ade80;
+  cursor: pointer;
+  transition: all 0.18s;
+  margin-left: 4px;
+  box-shadow: 0 0 8px rgba(74,222,128,0.3);
+}
+.author-restore-btn:hover {
+  background: rgba(74,222,128,0.1);
+  box-shadow: 0 0 12px rgba(74,222,128,0.5);
+  transform: scale(1.05);
+}
+.author-restore-btn:active {
+  transform: scale(0.95);
+  box-shadow: 0 0 6px rgba(74,222,128,0.4);
+}
+
+/* ================================================
+   IN FEED BADGE (for active ideas in profile)
+   ================================================ */
+.in-feed-badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(232,197,90,0.4);
+  background: transparent;
+  color: rgba(232,197,90,0.8);
+  font-size: 11px;
+  font-weight: 500;
+  margin-left: 4px;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ================================================
+   GREEN HOLD BUTTON (for restore confirmation)
+   ================================================ */
+.hbtn-green {
+  background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+  box-shadow: 0 4px 15px rgba(74,222,128,0.3);
+}
+.hbtn-green:hover {
+  background: linear-gradient(135deg, #86efac 0%, #4ade80 100%);
+  box-shadow: 0 6px 20px rgba(74,222,128,0.4);
+}
+
+
+
+/* DEBUG: author-restore-btn */
+.author-restore-btn {
+  z-index: 9999 !important;
+  pointer-events: auto !important;
+  position: relative !important;
+}
+

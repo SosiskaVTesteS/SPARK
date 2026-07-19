@@ -74,6 +74,9 @@ document.addEventListener('DOMContentLoaded', function () {
   if (diCancel) diCancel.addEventListener('click', function () { closeMo('moDeleteIdea'); });
   var diConfirm = document.getElementById('diConfirm');
   if (diConfirm) diConfirm.addEventListener('click', doAuthorDeleteConfirm);
+  var riCancel = document.getElementById('riCancel');
+  if (riCancel) riCancel.addEventListener('click', function () { closeMo('moRestoreIdea'); });
+  attachHold('riConfirm', 2000, doAuthorRestoreConfirm);
   var reportConfirmModal = document.getElementById('reportConfirmModal');
   if (reportConfirmModal) {
     reportConfirmModal.addEventListener('click', function (event) {
@@ -216,8 +219,16 @@ document.addEventListener('DOMContentLoaded', function () {
         openAuthorDeleteModal(authorDelBtn.dataset.authorDelId);
         return;
       }
+      var authorRestoreBtn = event.target.closest('.author-restore-btn[data-author-restore-id]');
+      if (authorRestoreBtn) {
+        event.stopPropagation();
+        openAuthorRestoreModal(authorRestoreBtn.dataset.authorRestoreId);
+        return;
+      }
     });
   }
+  
+  // Обработчик кликов для карточек в "Мои идеи" (профиль) будет установлен в renderMyIdeas
   var invPresets = document.getElementById('invPresets');
   if (invPresets) {
     invPresets.addEventListener('click', function (event) {
@@ -1799,7 +1810,51 @@ async function doAuthorDeleteConfirm() {
     LIVE = LIVE.filter(function (x) { return String(x.id) !== String(ideaId); });
     renderFeed();
     renderTrends();
+    renderMyIdeas();
     toast('Идея удалена из ленты', 'var(--ac2)');
+  } else {
+    var errDetail = '';
+    if (!r.ok && r.error) {
+      errDetail = r.error.message || r.error.code || String(r.error);
+    }
+    toast('Ошибка: ' + (errDetail || 'неизвестная ошибка'), 'var(--red)');
+  }
+}
+
+// ════ AUTHOR RESTORE IDEA ════
+var _pendingAuthorRestoreId = null;
+
+function openAuthorRestoreModal(ideaId) {
+  _pendingAuthorRestoreId = ideaId;
+  openMo('moRestoreIdea');
+}
+
+async function doAuthorRestoreConfirm() {
+  if (!_pendingAuthorRestoreId || !supa || !ME) return;
+  var ideaId = _pendingAuthorRestoreId;
+  _pendingAuthorRestoreId = null;
+
+  // Обновляем статус идеи на 'active'
+  var r = await safeSupabaseCall('database', function () {
+    return supa
+      .from('ideas')
+      .update({ status: 'active' })
+      .eq('id', ideaId)
+      .eq('author_id', ME.id);
+  }, { silent: true });
+
+  closeMo('moRestoreIdea');
+
+  if (r.ok && !r.error) {
+    // Optimistic: add back to LIVE and re-render
+    var idea = LIVE.find(function (x) { return String(x.id) === String(ideaId); });
+    if (idea) {
+      idea.status = 'active';
+    }
+    renderFeed();
+    renderTrends();
+    renderMyIdeas();
+    toast('Идея опубликована', 'var(--ac2)');
   } else {
     var errDetail = '';
     if (!r.ok && r.error) {
@@ -2851,6 +2906,7 @@ async function getUserIdeas() {
 
 async function renderMyIdeas() {
   var list = await getUserIdeas();
+  console.log('renderMyIdeas called, list:', list);
   ['D', 'M'].forEach(function (sfx) {
     var el = document.getElementById('myIdeasList-' + sfx);
     if (!el) return;
@@ -2863,8 +2919,34 @@ async function renderMyIdeas() {
     /* Single-card carousel: show one idea, swipe right→left to advance.
        Dots + hint appear only when there is more than one idea. */
     var slides = list.map(function (x) {
-      return '<div class="mi-slide">' + cardHTML(x) + '</div>';
+      console.log('Rendering idea in profile:', x.id, 'status:', x.status);
+      return '<div class="mi-slide">' + cardHTML(x, true) + '</div>';
     }).join('');
+
+    // Устанавливаем обработчик кликов для карточек в "Мои идеи"
+    el.onclick = function (event) {
+      console.log('Click in myIdeasList myIdeasList-' + sfx, 'target:', event.target);
+      var authorDelBtn = event.target.closest('.author-del-btn[data-author-del-id]');
+      if (authorDelBtn) {
+        console.log('Author delete btn clicked, id:', authorDelBtn.dataset.authorDelId);
+        event.stopPropagation();
+        openAuthorDeleteModal(authorDelBtn.dataset.authorDelId);
+        return;
+      }
+      var authorRestoreBtn = event.target.closest('.author-restore-btn[data-author-restore-id]');
+      if (authorRestoreBtn) {
+        console.log('Author restore btn clicked, id:', authorRestoreBtn.dataset.authorRestoreId);
+        event.stopPropagation();
+        openAuthorRestoreModal(authorRestoreBtn.dataset.authorRestoreId);
+        return;
+      }
+      var cmenBtn = event.target.closest('.cmen[data-idea-id]');
+      if (cmenBtn) {
+        event.stopPropagation();
+        openCmenDropdown(cmenBtn);
+        return;
+      }
+    };
 
     var multi = list.length > 1;
     var dots = '';
@@ -3236,7 +3318,7 @@ function _contactBtnHTML(x) {
   return '<button class="bcontact" data-contact-author-id="' + aid + '" data-contact-author-name="' + escapeHTML(x.u) + '">' + label + '</button>';
 }
 
-function cardHTML(x) {
+function cardHTML(x, isProfile) {
   var fire = (getRS(x.id).counts['🔥'] || 0) >= FIRE_T;
   var safeUser = escapeHTML(x.u);
   var safeTag = escapeHTML(x.tag);
@@ -3260,16 +3342,40 @@ function cardHTML(x) {
       + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>'
       + '</button>'
     : '';
-  var authorDeleteBtn = (ME && x.author_id && x.author_id === ME.id)
-    ? '<button class="author-del-btn" data-author-del-id="' + x.id + '" title="Удалить идею">'
+  
+  // Для профиля автора: кнопка удаления/восстановления + надпись "В ленте"
+  var profileActions = '';
+  console.log('cardHTML: isProfile=', isProfile, 'ME=', !!ME, 'author_id=', x.author_id, 'ME.id=', ME ? ME.id : null, 'status=', x.status);
+  if (isProfile && ME && x.author_id && x.author_id === ME.id) {
+    console.log('cardHTML: Profile mode, author matches');
+    if (x.status === 'hidden') {
+      // Кнопка восстановления
+      console.log('cardHTML: Rendering restore button for idea', x.id);
+      profileActions = '<button class="author-restore-btn" data-author-restore-id="' + x.id + '" title="Восстановить идею">'
+        + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>'
+        + '</button>';
+    } else if (x.status === 'active') {
+      // Кнопка удаления + надпись "В ленте"
+      console.log('cardHTML: Rendering delete button + in-feed badge for idea', x.id);
+      profileActions = '<button class="author-del-btn" data-author-del-id="' + x.id + '" title="Удалить идею">'
+        + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>'
+        + '</button>'
+        + '<span class="in-feed-badge">В ленте</span>';
+    } else {
+      console.log('cardHTML: Unknown status', x.status, 'for idea', x.id);
+    }
+  } else if (ME && x.author_id && x.author_id === ME.id && !isProfile) {
+    // Для общей ленты: только кнопка удаления
+    profileActions = '<button class="author-del-btn" data-author-del-id="' + x.id + '" title="Удалить идею">'
       + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>'
-      + '</button>'
-    : '';
+      + '</button>';
+  }
+  
   return '<div class="card' + (fire ? ' fire' : '') + '" data-cid="' + x.id + '">'
     + '<div class="ch"><div' + triggerAttr + ' style="background:' + safeBg + '">' + safeAv + '</div>'
     + '<div class="cm"><div' + nameTriggerAttr + '>' + safeUser + authorAdminBadge + '</div><div class="ct">' + safeTime + ' · #' + safeTag + '</div></div>'
     + adminDeleteBtn
-    + authorDeleteBtn
+    + profileActions
     + '<div class="' + cmenClass + '" data-idea-id="' + x.id + '" data-immune="' + (isImmune ? '1' : '0') + '"' + (cmenTitle ? ' title="' + cmenTitle + '"' : '') + '><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></div></div>'
     + '<div class="ctitle">' + safeTitle + '</div><div class="cbody">' + safeBody + '</div>'
     + investGraphHTML(x)
