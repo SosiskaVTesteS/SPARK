@@ -1760,8 +1760,13 @@ function formatRelativeTime(timestamp) {
 
 // Load initial activity data
 async function loadInitialActivity() {
-  if (!supa) return;
+  console.log('[Activity Feed] loadInitialActivity called');
+  if (!supa) {
+    console.log('[Activity Feed] Supabase client not available');
+    return;
+  }
   
+  console.log('[Activity Feed] Fetching initial activity data...');
   var r = await safeSupabaseCall('database', function () {
     return supa
       .from('investment_activity_log')
@@ -1778,26 +1783,39 @@ async function loadInitialActivity() {
       .limit(10);
   }, { silent: true, timeout: 25000 });
   
+  console.log('[Activity Feed] Response from Supabase:', r);
+  
   if (r.ok && r.data && r.data.data) {
     activityItems = r.data.data;
+    console.log('[Activity Feed] Loaded activity items:', activityItems);
     renderActivityFeed();
+  } else {
+    console.log('[Activity Feed] Failed to load activity. OK:', r.ok, 'Data:', r.data, 'Error:', r.error);
   }
 }
 
 // Render activity feed
 function renderActivityFeed() {
+  console.log('[Activity Feed] renderActivityFeed called, activityItems:', activityItems);
   var elFull = document.getElementById('liveActivityListFull');
   var elDesk = document.getElementById('liveActivityList');
   
-  if (!elFull && !elDesk) return;
+  console.log('[Activity Feed] Elements found - Full:', !!elFull, 'Desk:', !!elDesk);
+  
+  if (!elFull && !elDesk) {
+    console.log('[Activity Feed] No activity elements found in DOM');
+    return;
+  }
   
   if (activityItems.length === 0) {
+    console.log('[Activity Feed] No activity items to render');
     var emptyMsg = LANG === 'ru' ? 'Активность пока нет' : 'No activity yet';
     if (elFull) elFull.innerHTML = '<div style="padding:7px 0">' + emptyMsg + '</div>';
     if (elDesk) elDesk.innerHTML = '<div style="padding:7px 0">' + emptyMsg + '</div>';
     return;
   }
   
+  console.log('[Activity Feed] Rendering', activityItems.length, 'activity items');
   var html = activityItems.map(function(item) {
     var username = item.profiles ? item.profiles.username : '@user';
     var avatarColor = item.profiles ? item.profiles.avatar_color || 0 : 0;
@@ -1818,14 +1836,25 @@ function renderActivityFeed() {
       + '</div>';
   }).join('');
   
+  console.log('[Activity Feed] HTML generated, updating DOM');
   if (elFull) elFull.innerHTML = html;
   if (elDesk) elDesk.innerHTML = html;
+  console.log('[Activity Feed] DOM updated');
 }
 
 // Subscribe to realtime activity updates
 function subscribeToActivity() {
-  if (!supa || activityChannel) return;
+  console.log('[Activity Feed] subscribeToActivity called');
+  if (!supa) {
+    console.log('[Activity Feed] Supabase client not available for subscription');
+    return;
+  }
+  if (activityChannel) {
+    console.log('[Activity Feed] Already subscribed, skipping');
+    return;
+  }
   
+  console.log('[Activity Feed] Creating realtime subscription...');
   activityChannel = supa
     .channel('investment_activity_changes')
     .on(
@@ -1836,6 +1865,7 @@ function subscribeToActivity() {
         table: 'investment_activity_log'
       },
       function (payload) {
+        console.log('[Activity Feed] Realtime INSERT received:', payload);
         var newItem = payload.new;
         // Fetch related data
         supa
@@ -1852,12 +1882,14 @@ function subscribeToActivity() {
           .eq('id', newItem.id)
           .single()
           .then(function (r) {
+            console.log('[Activity Feed] Fetched related data for new item:', r);
             if (r.data) {
               // Add to beginning and keep only 10 items
               activityItems.unshift(r.data);
               if (activityItems.length > 10) {
                 activityItems = activityItems.slice(0, 10);
               }
+              console.log('[Activity Feed] Updated activityItems:', activityItems);
               renderActivityFeed();
             }
           });
@@ -1865,6 +1897,11 @@ function subscribeToActivity() {
     )
     .subscribe(function (status) {
       console.log('[Activity Feed] Subscription status:', status);
+      if (status === 'SUBSCRIBED') {
+        console.log('[Activity Feed] Successfully subscribed to activity updates');
+      } else if (status === 'CHANNEL_ERROR') {
+        console.log('[Activity Feed] Subscription error');
+      }
     });
 }
 
