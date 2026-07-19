@@ -2906,7 +2906,6 @@ async function getUserIdeas() {
 
 async function renderMyIdeas() {
   var list = await getUserIdeas();
-  console.log('renderMyIdeas called, list:', list);
   ['D', 'M'].forEach(function (sfx) {
     var el = document.getElementById('myIdeasList-' + sfx);
     if (!el) return;
@@ -2919,23 +2918,19 @@ async function renderMyIdeas() {
     /* Single-card carousel: show one idea, swipe right→left to advance.
        Dots + hint appear only when there is more than one idea. */
     var slides = list.map(function (x) {
-      console.log('Rendering idea in profile:', x.id, 'status:', x.status);
       return '<div class="mi-slide">' + cardHTML(x, true) + '</div>';
     }).join('');
 
     // Устанавливаем обработчик кликов для карточек в "Мои идеи"
     el.onclick = function (event) {
-      console.log('Click in myIdeasList myIdeasList-' + sfx, 'target:', event.target);
       var authorDelBtn = event.target.closest('.author-del-btn[data-author-del-id]');
       if (authorDelBtn) {
-        console.log('Author delete btn clicked, id:', authorDelBtn.dataset.authorDelId);
         event.stopPropagation();
         openAuthorDeleteModal(authorDelBtn.dataset.authorDelId);
         return;
       }
       var authorRestoreBtn = event.target.closest('.author-restore-btn[data-author-restore-id]');
       if (authorRestoreBtn) {
-        console.log('Author restore btn clicked, id:', authorRestoreBtn.dataset.authorRestoreId);
         event.stopPropagation();
         openAuthorRestoreModal(authorRestoreBtn.dataset.authorRestoreId);
         return;
@@ -3345,24 +3340,18 @@ function cardHTML(x, isProfile) {
   
   // Для профиля автора: кнопка удаления/восстановления + надпись "В ленте"
   var profileActions = '';
-  console.log('cardHTML: isProfile=', isProfile, 'ME=', !!ME, 'author_id=', x.author_id, 'ME.id=', ME ? ME.id : null, 'status=', x.status);
   if (isProfile && ME && x.author_id && x.author_id === ME.id) {
-    console.log('cardHTML: Profile mode, author matches');
     if (x.status === 'hidden') {
       // Кнопка восстановления
-      console.log('cardHTML: Rendering restore button for idea', x.id);
       profileActions = '<button class="author-restore-btn" data-author-restore-id="' + x.id + '" title="Восстановить идею">'
         + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>'
         + '</button>';
     } else if (x.status === 'active') {
       // Кнопка удаления + надпись "В ленте"
-      console.log('cardHTML: Rendering delete button + in-feed badge for idea', x.id);
       profileActions = '<button class="author-del-btn" data-author-del-id="' + x.id + '" title="Удалить идею">'
         + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>'
         + '</button>'
         + '<span class="in-feed-badge">В ленте</span>';
-    } else {
-      console.log('cardHTML: Unknown status', x.status, 'for idea', x.id);
     }
   } else if (ME && x.author_id && x.author_id === ME.id && !isProfile) {
     // Для общей ленты: только кнопка удаления
