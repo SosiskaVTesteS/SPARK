@@ -1497,6 +1497,7 @@ var ChatsEngine = (function () {
   // Send a message (saves locally + Supabase fallback)
   async function sendMessage(content, mediaUrl, mediaTitle) {
     var channel = state.activeChannelId;
+    console.log('[sendMessage] Called with channel:', channel, 'content:', content);
     if (!channel) return;
 
     // Clear input field immediately before rendering to prevent race conditions in preservation
@@ -1534,7 +1535,11 @@ var ChatsEngine = (function () {
     // 3. Supabase Database integration (if configured)
     if (window.supa && window.ME) {
       var isDM = !channel.startsWith('#') && !['defi-prophets', 'ai-signals', 'spark-devs'].includes(channel);
-      if (isDM && !isValidUUID(channel)) return; // Skip mock DMs
+      console.log('[sendMessage] isDM:', isDM, 'channel:', channel);
+      if (isDM && !isValidUUID(channel)) {
+        console.log('[sendMessage] Skipping mock DM');
+        return; // Skip mock DMs
+      }
       try {
         var dbMsg = {
           channel_id:          channel,
@@ -1544,7 +1549,9 @@ var ChatsEngine = (function () {
           content:             newMsg.content,
           media_url:           newMsg.media_url
         };
+        console.log('[sendMessage] Attempting to insert message to DB:', dbMsg);
         var res = await window.supa.from('messages').insert(dbMsg).select();
+        console.log('[sendMessage] Insert response:', res);
         if (res.error) {
           console.warn('Supabase message insert error:', res.error);
         } else if (res.data && res.data[0]) {
@@ -1592,6 +1599,8 @@ var ChatsEngine = (function () {
       } catch (e) {
         console.warn('Supabase insert failed, running local-first mode:', e);
       }
+    } else {
+      console.log('[sendMessage] Skipping Supabase insert - no supa or ME');
     }
   }
 
