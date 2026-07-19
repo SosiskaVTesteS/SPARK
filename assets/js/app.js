@@ -121,16 +121,23 @@ document.addEventListener('DOMContentLoaded', function () {
       // Load full leaders list when switching to Leaders tab
       if (navName === 'leaders' && window.renderLeadersFull) {
         renderLeadersFull();
+        renderTopInvestments();
+        renderTopAccuracy();
+        renderUserProgress();
+        renderRisingStars();
       }
     });
   });
 
-  // Leaders period filter - visual switching only (logic to be connected later)
+  // Leaders period filter - connect to RPC
   document.querySelectorAll('.filter-btn[data-period]').forEach(function (filterBtn) {
     filterBtn.addEventListener('click', function () {
       document.querySelectorAll('.filter-btn').forEach(function (b) { b.classList.remove('active'); });
       filterBtn.classList.add('active');
-      // TODO: Connect to actual data filtering when backend is ready
+      var period = filterBtn.dataset.period;
+      if (window.renderLeadersByPeriod) {
+        renderLeadersByPeriod(period);
+      }
     });
   });
   document.querySelectorAll('.chat-tab-btn[data-chat-tab]').forEach(function (chatBtn) {
@@ -1439,6 +1446,240 @@ async function renderLeadersFull() {
 
   var lf = document.getElementById('leaderListFull');
   if (lf) lf.innerHTML = html;
+}
+
+// ═══ Render top by investments ═══
+async function renderTopInvestments() {
+  if (!supa) return;
+  
+  var r = await safeSupabaseCall('database', function () {
+    return supa.from('profiles')
+      .select('id, username, investments_count, avatar_color')
+      .or('is_admin.is.null,is_admin.eq.false')
+      .order('investments_count', { ascending: false })
+      .limit(5);
+  }, { silent: true, timeout: 25000 });
+  
+  var el = document.getElementById('topInvestmentsList');
+  if (!el) return;
+  
+  if (r.ok && r.data && r.data.data && r.data.data.length > 0) {
+    var leaders = r.data.data;
+    var html = leaders.map(function(p, i) {
+      var uname = escapeHTML(p.username || '@user');
+      var letter = uname.replace('@', '').charAt(0).toUpperCase();
+      var avatarColor = p.avatar_color || 0;
+      var avatarGradient = window.ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avatarColor) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
+      var invCount = Number(p.investments_count) || 0;
+      console.log('[Leaders Debug] Top Investments:', i + 1, 'User ID:', p.id, 'Username:', uname, 'Count:', invCount);
+      return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0">'
+        + '<div style="width:24px;height:24px;border-radius:50%;background:' + avatarGradient + ';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff">' + letter + '</div>'
+        + '<div style="flex:1">'
+        + '<div style="font-size:11px;font-weight:500;color:var(--mu2)">' + uname + '</div>'
+        + '<div style="font-size:10px;color:var(--mu)">' + invCount + ' ' + (LANG === 'ru' ? 'вложений' : 'investments') + '</div>'
+        + '</div>'
+        + '</div>';
+    }).join('');
+    el.innerHTML = html;
+  } else {
+    el.innerHTML = '<div style="color:var(--mu);font-size:11px;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных' : 'No data yet') + '</div>';
+  }
+}
+
+// ═══ Render top by accuracy ═══
+async function renderTopAccuracy() {
+  if (!supa) return;
+  
+  // Calculate accuracy: successful ideas / total ideas
+  // Successful = ideas with total_invested > min_bet * 3 (at least 3x return)
+  var r = await safeSupabaseCall('database', function () {
+    return supa.rpc('get_top_by_accuracy', { limit_count: 5 });
+  }, { silent: true, timeout: 25000 });
+  
+  var el = document.getElementById('topAccuracyList');
+  if (!el) return;
+  
+  if (r.ok && r.data && r.data.length > 0) {
+    var leaders = r.data;
+    var html = leaders.map(function(p, i) {
+      var uname = escapeHTML(p.username || '@user');
+      var letter = uname.replace('@', '').charAt(0).toUpperCase();
+      var avatarColor = p.avatar_color || 0;
+      var avatarGradient = window.ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avatarColor) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
+      var accuracy = Number(p.accuracy) || 0;
+      console.log('[Leaders Debug] Top Accuracy:', i + 1, 'User ID:', p.user_id, 'Username:', uname, 'Accuracy:', accuracy + '%');
+      return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0">'
+        + '<div style="width:24px;height:24px;border-radius:50%;background:' + avatarGradient + ';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff">' + letter + '</div>'
+        + '<div style="flex:1">'
+        + '<div style="font-size:11px;font-weight:500;color:var(--mu2)">' + uname + '</div>'
+        + '<div style="font-size:10px;color:var(--ac)">' + accuracy.toFixed(1) + '% ' + (LANG === 'ru' ? 'точность' : 'accuracy') + '</div>'
+        + '</div>'
+        + '</div>';
+    }).join('');
+    el.innerHTML = html;
+  } else {
+    // Fallback: show message that RPC needs to be created
+    el.innerHTML = '<div style="color:var(--mu);font-size:10px;padding:8px 0">' + (LANG === 'ru' ? 'Требуется RPC-функция' : 'RPC function required') + '</div>';
+  }
+}
+
+// ═══ Render user progress ═══
+async function renderUserProgress() {
+  if (!supa || !ME) return;
+  
+  var el = document.querySelector('.progress-chart-placeholder');
+  if (!el) return;
+  
+  // Get balance history for current user (last 30 days)
+  var thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  
+  var r = await safeSupabaseCall('database', function () {
+    return supa.from('spk_balance_history')
+      .select('balance_after, created_at')
+      .eq('user_id', ME.id)
+      .gte('created_at', thirtyDaysAgo.toISOString())
+      .order('created_at', { ascending: true });
+  }, { silent: true, timeout: 25000 });
+  
+  if (r.ok && r.data && r.data.data && r.data.data.length > 0) {
+    var history = r.data.data;
+    var startBalance = Number(history[0].balance_after) || 0;
+    var endBalance = Number(history[history.length - 1].balance_after) || 0;
+    var change = endBalance - startBalance;
+    var changePercent = startBalance > 0 ? ((change / startBalance) * 100).toFixed(1) : 0;
+    
+    console.log('[Leaders Debug] User Progress: Start:', startBalance, 'End:', endBalance, 'Change:', change, 'Percent:', changePercent + '%');
+    
+    var changeColor = change >= 0 ? 'var(--ac)' : 'var(--er)';
+    var changeSign = change >= 0 ? '+' : '';
+    
+    el.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%">'
+      + '<div style="font-size:24px;font-weight:700;color:' + changeColor + '">' + changeSign + change.toLocaleString() + ' SPK</div>'
+      + '<div style="font-size:12px;color:var(--mu)">' + changeSign + changePercent + '% ' + (LANG === 'ru' ? 'за 30 дней' : 'in 30 days') + '</div>'
+      + '</div>';
+  } else {
+    el.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%">'
+      + '<div style="font-size:13px;font-weight:500;color:var(--mu2)">' + (LANG === 'ru' ? 'Нет истории' : 'No history') + '</div>'
+      + '<div style="font-size:10px;color:var(--mu)">' + (LANG === 'ru' ? 'История начнётся после первой транзакции' : 'History starts after first transaction') + '</div>'
+      + '</div>';
+  }
+}
+
+// ═══ Render rising stars ═══
+async function renderRisingStars() {
+  if (!supa) return;
+  
+  var el = document.getElementById('risingStarsList');
+  if (!el) return;
+  
+  // Get users with highest balance growth in last 7 days
+  var sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  
+  var r = await safeSupabaseCall('database', function () {
+    return supa.rpc('get_rising_stars', { days_ago: 7, limit_count: 5 });
+  }, { silent: true, timeout: 25000 });
+  
+  if (r.ok && r.data && r.data.length > 0) {
+    var stars = r.data;
+    var html = stars.map(function(p, i) {
+      var uname = escapeHTML(p.username || '@user');
+      var letter = uname.replace('@', '').charAt(0).toUpperCase();
+      var avatarColor = p.avatar_color || 0;
+      var avatarGradient = window.ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avatarColor) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
+      var growth = Number(p.growth) || 0;
+      console.log('[Leaders Debug] Rising Star:', i + 1, 'User ID:', p.user_id, 'Username:', uname, 'Growth:', growth);
+      return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0">'
+        + '<div style="width:24px;height:24px;border-radius:50%;background:' + avatarGradient + ';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff">' + letter + '</div>'
+        + '<div style="flex:1">'
+        + '<div style="font-size:11px;font-weight:500;color:var(--mu2)">' + uname + '</div>'
+        + '<div style="font-size:10px;color:var(--ac)">+' + growth.toLocaleString() + ' SPK</div>'
+        + '</div>'
+        + '</div>';
+    }).join('');
+    el.innerHTML = html;
+  } else {
+    el.innerHTML = '<div style="color:var(--mu);font-size:10px;padding:8px 0">' + (LANG === 'ru' ? 'Требуется RPC-функция' : 'RPC function required') + '</div>';
+  }
+}
+
+// ═══ Render leaders by period (week/month/all-time) ═══
+async function renderLeadersByPeriod(period) {
+  if (!supa) return;
+  
+  var rankColors = ['gold', 'silver', 'bronze'];
+  
+  var r = await safeSupabaseCall('database', function () {
+    return supa.rpc('get_leaders_by_period', { period: period, limit_count: 10 });
+  }, { silent: true, timeout: 25000 });
+  
+  var el = document.getElementById('leaderListFull');
+  if (!el) return;
+  
+  // Build self-row
+  var selfHtml = '';
+  if (typeof ME !== 'undefined' && ME && PROFILE) {
+    var selfUname = escapeHTML(PROFILE.username || '@user');
+    var selfLetter = selfUname.replace('@', '').charAt(0).toUpperCase();
+    var selfAvIdx  = PROFILE.avatar_color || 0;
+    var selfAvGrad = window.ProfileEditEngine
+      ? ProfileEditEngine.getAvatarGradient(selfAvIdx)
+      : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
+    var selfBal    = Number(PROFILE.spk_balance) || 0;
+    var selfInv    = Number(PROFILE.investments_count) || 0;
+    var selfRank   = PROFILE.rank ? '#' + PROFILE.rank : '#—';
+    selfHtml = '<div class="divider"></div>'
+      + '<div class="stitle">' + T('you') + '</div>'
+      + '<div class="li li-self">'
+      + '<span class="lrank" style="width:auto;min-width:22px;color:var(--mu)">' + selfRank + '</span>'
+      + '<div class="lav" style="background:' + selfAvGrad + '">' + selfLetter + '</div>'
+      + '<div class="linf">'
+      + '<div class="lname">' + selfUname + '</div>'
+      + '<div class="lsub">' + selfInv + ' ' + (LANG === 'ru' ? 'вложений' : 'investments') + '</div>'
+      + '</div>'
+      + '<div class="lprofit" style="color:var(--ac)">' + selfBal.toLocaleString() + ' SPK</div>'
+      + '</div>';
+  }
+  
+  if (r.ok && r.data && r.data.length > 0) {
+    var leaders = r.data;
+    var html = leaders.map(function(p, i) {
+      var uname = escapeHTML(p.username || '@user');
+      var letter = uname.replace('@', '').charAt(0).toUpperCase();
+      var avatarColor = p.avatar_color || 0;
+      var avatarGradient = window.ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avatarColor) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
+      var bal = Number(p.spk_balance) || 0;
+      var invCount = Number(p.investments_count) || 0;
+      var periodGrowth = Number(p.period_growth) || 0;
+      console.log('[Leaders Debug] Period Filter:', period, 'Leader:', i + 1, 'User ID:', p.user_id, 'Username:', uname, 'Period Growth:', periodGrowth);
+      var rankClass = rankColors[i] ? 'lrank ' + rankColors[i] : 'lrank';
+      var rankStyle = i >= 3 ? ' style="color:var(--mu)"' : '';
+      var profitColor = i < 3 ? '' : ' style="color:var(--ac)"';
+      var triggerId = p.user_id;
+      var lavTriggerAttr = triggerId ? ' class="lav mp-trigger" data-user-id="' + triggerId + '"' : ' class="lav"';
+      var linfTriggerAttr = triggerId ? ' class="linf mp-trigger" data-user-id="' + triggerId + '"' : ' class="linf"';
+      
+      // Show period growth if available, otherwise show total balance
+      var balanceDisplay = period !== 'all' && periodGrowth > 0 
+        ? '+' + periodGrowth.toLocaleString() + ' SPK (' + (LANG === 'ru' ? 'рост' : 'growth') + ')'
+        : bal.toLocaleString() + ' SPK';
+      
+      return '<div class="li">'
+        + '<span class="' + rankClass + '"' + rankStyle + '>' + (i + 1) + '</span>'
+        + '<div' + lavTriggerAttr + ' style="background:' + avatarGradient + '">' + letter + '</div>'
+        + '<div' + linfTriggerAttr + '>'
+        + '<div class="lname">' + uname + '</div>'
+        + '<div class="lsub">' + invCount + ' ' + (LANG === 'ru' ? 'вложений' : 'investments') + '</div>'
+        + '</div>'
+        + '<div class="lprofit"' + profitColor + '>' + balanceDisplay + '</div>'
+        + '</div>';
+    }).join('');
+    html += selfHtml;
+    el.innerHTML = html;
+  } else {
+    el.innerHTML = '<div style="color:var(--mu);font-size:12px;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных' : 'No data yet') + '</div>' + selfHtml;
+  }
 }
 
 async function doLogout(skipSignOut) {
