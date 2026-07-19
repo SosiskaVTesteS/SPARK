@@ -1713,7 +1713,13 @@ async function renderLeadersByPeriod(period) {
     el.innerHTML = html;
   } else {
     console.log('[Leaders Debug] Period Filter: No data, RPC response:', r);
-    el.innerHTML = '<div style="color:var(--mu);font-size:12px;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных' : 'No data yet') + '</div>' + selfHtml;
+    var noDataMessage;
+    if (period === 'all') {
+      noDataMessage = LANG === 'ru' ? 'Нет данных' : 'No data yet';
+    } else {
+      noDataMessage = LANG === 'ru' ? 'Данные накапливаются — загляните через несколько дней' : 'Data accumulating — check back in a few days';
+    }
+    el.innerHTML = '<div style="color:var(--mu);font-size:12px;padding:8px 0">' + noDataMessage + '</div>' + selfHtml;
   }
 }
 
