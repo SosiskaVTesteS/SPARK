@@ -111,7 +111,7 @@ BEGIN
   END IF;
   
   IF v_cutoff_date IS NULL THEN
-    -- All time: just return current balance ranking
+    -- All time: just return current balance ranking (same as original leaderboard)
     RETURN QUERY
     SELECT 
       p.id AS user_id,
@@ -121,11 +121,12 @@ BEGIN
       p.investments_count,
       0 AS period_growth
     FROM profiles p
-    WHERE p.is_admin IS NULL OR p.is_admin = false
-    ORDER BY p.spk_balance DESC
+    WHERE (p.is_admin IS NULL OR p.is_admin = false)
+      AND p.spk_balance IS NOT NULL
+    ORDER BY p.spk_balance DESC NULLS LAST
     LIMIT limit_count;
   ELSE
-    -- Period-based: calculate growth in period
+    -- Period-based: calculate growth in period from balance history
     RETURN QUERY
     WITH period_growth AS (
       SELECT 
@@ -144,8 +145,9 @@ BEGIN
       COALESCE(pg.total_growth, 0) AS period_growth
     FROM profiles p
     LEFT JOIN period_growth pg ON pg.user_id = p.id
-    WHERE p.is_admin IS NULL OR p.is_admin = false
-    ORDER BY pg.total_growth DESC NULLS LAST, p.spk_balance DESC
+    WHERE (p.is_admin IS NULL OR p.is_admin = false)
+      AND p.spk_balance IS NOT NULL
+    ORDER BY COALESCE(pg.total_growth, 0) DESC, p.spk_balance DESC
     LIMIT limit_count;
   END IF;
 END;
