@@ -634,6 +634,133 @@ header {
   padding-right: 24px;
 }
 
+/* Leaders page styles */
+.leaders-filter {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  padding: 8px;
+  background: rgba(255,255,255,0.02);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.filter-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--mu);
+  font-family: var(--fb);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-btn:hover {
+  background: rgba(255,255,255,0.05);
+  color: var(--mu2);
+}
+
+.filter-btn.active {
+  background: rgba(123,92,250,0.15);
+  color: var(--vl2);
+}
+
+.leaders-categories {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.leader-cat-card {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.cat-title {
+  font-family: var(--fh);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mu);
+  margin-bottom: 12px;
+}
+
+.cat-content {
+  min-height: 60px;
+}
+
+.progress-card {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 24px;
+}
+
+.progress-title {
+  font-family: var(--fh);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mu);
+  margin-bottom: 16px;
+}
+
+.progress-chart-placeholder {
+  height: 120px;
+  background: rgba(123,92,250,0.05);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed rgba(123,92,250,0.2);
+}
+
+.progress-placeholder-text {
+  font-family: var(--fb);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--mu2);
+  margin-bottom: 4px;
+}
+
+.progress-placeholder-sub {
+  font-size: 11px;
+  color: var(--mu);
+}
+
+.rising-stars-card {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 24px;
+}
+
+.rising-title {
+  font-family: var(--fh);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mu);
+  margin-bottom: 16px;
+}
+
+.rising-list {
+  min-height: 60px;
+}
+
 .stitle {
   font-family: var(--fh);
   font-size: 10px;

@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', function () {
       var rightSidebar = document.querySelector('.sidebar:last-child');
       var layout = document.querySelector('.layout');
       if (rightSidebar && layout) {
-        if (navName === 'explore' || navName === 'observatory') {
+        if (navName === 'explore') {
           rightSidebar.style.display = 'block';
           layout.style.gridTemplateColumns = '88px 1fr 258px';
         } else {
@@ -117,6 +117,15 @@ document.addEventListener('DOMContentLoaded', function () {
           layout.style.gridTemplateColumns = '88px 1fr';
         }
       }
+    });
+  });
+
+  // Leaders period filter - visual switching only (logic to be connected later)
+  document.querySelectorAll('.filter-btn[data-period]').forEach(function (filterBtn) {
+    filterBtn.addEventListener('click', function () {
+      document.querySelectorAll('.filter-btn').forEach(function (b) { b.classList.remove('active'); });
+      filterBtn.classList.add('active');
+      // TODO: Connect to actual data filtering when backend is ready
     });
   });
   document.querySelectorAll('.chat-tab-btn[data-chat-tab]').forEach(function (chatBtn) {
@@ -1299,7 +1308,7 @@ async function renderLeaders() {
       .select('id, username, spk_balance, investments_count, is_admin')
       .or('is_admin.is.null,is_admin.eq.false')
       .order('spk_balance', { ascending: false })
-      .limit(5);
+      .limit(10);
   }, { silent: true, timeout: 25000 });
 
   var html;

@@ -339,8 +339,49 @@ html.auth-active, html.auth-active body { overflow: hidden !important; height: 1
 
     <!-- PAGE PANEL: LEADERS -->
     <div class="page-panel" id="page-leaders">
+      <!-- Period Filter -->
+      <div class="leaders-filter">
+        <button class="filter-btn active" data-period="week">За неделю</button>
+        <button class="filter-btn" data-period="month">За месяц</button>
+        <button class="filter-btn" data-period="all">За всё время</button>
+      </div>
+
+      <!-- Main Leaderboard -->
       <div class="stitle">Prophet Leaderboard</div>
       <div id="leaderListFull"><div style="color:var(--mu);font-size:12px;padding:8px 0">Loading...</div></div>
+
+      <!-- Leader Categories -->
+      <div class="leaders-categories">
+        <div class="leader-cat-card">
+          <div class="cat-title">Топ по вложениям</div>
+          <div class="cat-content" id="topInvestmentsList">
+            <div style="color:var(--mu);font-size:11px;padding:8px 0">Coming soon...</div>
+          </div>
+        </div>
+        <div class="leader-cat-card">
+          <div class="cat-title">Топ по точности</div>
+          <div class="cat-content" id="topAccuracyList">
+            <div style="color:var(--mu);font-size:11px;padding:8px 0">Coming soon...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Your Progress -->
+      <div class="progress-card">
+        <div class="progress-title">Твой прогресс</div>
+        <div class="progress-chart-placeholder">
+          <div class="progress-placeholder-text">График прогресса</div>
+          <div class="progress-placeholder-sub">Исторические данные будут доступны позже</div>
+        </div>
+      </div>
+
+      <!-- Rising Stars -->
+      <div class="rising-stars-card">
+        <div class="rising-title">Восходящие звёзды</div>
+        <div class="rising-list" id="risingStarsList">
+          <div style="color:var(--mu);font-size:11px;padding:8px 0">Coming soon...</div>
+        </div>
+      </div>
     </div>
 
     <!-- PAGE PANEL: CHATS -->
@@ -417,6 +458,11 @@ html.auth-active, html.auth-active body { overflow: hidden !important; height: 1
             <span class="obs-stub-sub">Coming soon</span>
           </div>
         </div>
+      </div>
+      <div class="divider"></div>
+      <div class="stitle">Live Activity</div>
+      <div id="liveActivityListFull" style="display:flex;flex-direction:column;gap:7px;font-size:12px;color:var(--mu);line-height:1.55">
+        <div style="padding:7px 0;border-bottom:1px solid var(--bd)">Loading activity...</div>
       </div>
     </div>
 
