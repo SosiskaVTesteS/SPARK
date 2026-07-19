@@ -229,6 +229,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
   
   // Обработчик кликов для карточек в "Мои идеи" (профиль) будет установлен в renderMyIdeas
+  
   var invPresets = document.getElementById('invPresets');
   if (invPresets) {
     invPresets.addEventListener('click', function (event) {
@@ -3815,6 +3816,10 @@ function openCmenDropdown(cmenEl) {
   var isReported = MY_REPORTED_IDEAS.indexOf(ideaId) !== -1;
   var ru = LANG === 'ru';
 
+  // Проверяем, принадлежит ли идея текущему пользователю
+  var idea = LIVE.filter(function (x) { return String(x.id) === String(ideaId); })[0];
+  var isOwnIdea = idea && ME && idea.author_id === ME.id;
+
   var dd = document.createElement('div');
   dd.className = 'cmen-dropdown';
 
@@ -3824,6 +3829,9 @@ function openCmenDropdown(cmenEl) {
   } else if (isReported) {
     dd.innerHTML = '<button class="cmen-dropdown-item cmen-dropdown-item--disabled" disabled>'
       + '✓ ' + (ru ? 'Вы пожаловались' : 'Reported') + '</button>';
+  } else if (isOwnIdea) {
+    dd.innerHTML = '<button class="cmen-dropdown-item cmen-dropdown-item--disabled" disabled>'
+      + '🚫 ' + (ru ? 'Нельзя пожаловаться на свой пост' : 'Cannot report your own post') + '</button>';
   } else {
     dd.innerHTML = '<button class="cmen-dropdown-item cmen-report-btn" data-report-id="' + ideaId + '">'
       + '⚠ ' + (ru ? 'Пожаловаться' : 'Report') + '</button>';

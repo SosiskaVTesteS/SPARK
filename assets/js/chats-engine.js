@@ -2147,6 +2147,24 @@ var ChatsEngine = (function () {
             }
           }
         })
+        .on('postgres_changes', {
+          event: 'INSERT', schema: 'public', table: 'channel_members',
+          filter: 'user_id=eq.' + ME.id
+        }, function (payload) {
+          var newRow = payload.new;
+          if (!newRow) return;
+          // Reload teams from Supabase when user is added to a new channel
+          loadTeamsFromSupabase();
+        })
+        .on('postgres_changes', {
+          event: 'DELETE', schema: 'public', table: 'channel_members',
+          filter: 'user_id=eq.' + ME.id
+        }, function (payload) {
+          var oldRow = payload.old;
+          if (!oldRow) return;
+          // Reload teams from Supabase when user is removed from a channel
+          loadTeamsFromSupabase();
+        })
         .subscribe();
 
     } catch (e) {

@@ -3145,3 +3145,32 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
   position: relative !important;
 }
 
+
+
+/* FIX: Improve click area for dropdown items */
+.cmen-dropdown-item {
+  pointer-events: auto !important;
+  position: relative !important;
+  min-height: 44px !important;
+  height: auto !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  padding: 11px 16px !important;
+  width: 100% !important;
+}
+.cmen-dropdown-item::before,
+.cmen-dropdown-item::after {
+  display: none !important;
+}
+/* Disable pointer events for elements that overlap the button */
+.cmen-dropdown-item svg,
+.cmen-dropdown-item .cmen,
+.cmen-dropdown-item .ch {
+  pointer-events: none !important;
+}
+.cmen-dropdown-item * {
+  pointer-events: none !important;
+}
+
