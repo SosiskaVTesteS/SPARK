@@ -128,11 +128,13 @@ var ChatsEngine = (function () {
   async function loadTeamsFromSupabase() {
     if (!window.supa || !window.ME) return;
     try {
+      console.log('[loadTeamsFromSupabase] Loading teams for user:', ME.id);
       var res = await window.supa
         .from('channel_members')
         .select('channel_id')
         .eq('user_id', window.ME.id);
       if (res.error) throw res.error;
+      console.log('[loadTeamsFromSupabase] Channel members response:', res);
       if (res.data && res.data.length > 0) {
         _dbTeams = res.data.map(function (row) {
           var id = row.channel_id;
@@ -149,6 +151,9 @@ var ChatsEngine = (function () {
           };
         });
         try { localStorage.setItem(CACHE_TEAMS_KEY, JSON.stringify(_dbTeams)); } catch (e) {}
+        console.log('[loadTeamsFromSupabase] Teams loaded:', _dbTeams);
+      } else {
+        console.log('[loadTeamsFromSupabase] No channel members found for user');
       }
       renderChatList();
     } catch (e) {
@@ -1545,6 +1550,7 @@ var ChatsEngine = (function () {
         } else if (res.data && res.data[0]) {
           // Replace local message ID with database UUID
           var saved = res.data[0];
+          console.log('[sendMessage] Message saved to DB, replacing local ID:', newMsg.id, '->', saved.id);
 
           var list = getDeletedMessageIds();
           var wasDeleted = list.includes(newMsg.id);
@@ -1572,11 +1578,16 @@ var ChatsEngine = (function () {
           if (mLocalIndex !== -1) {
             thread[mLocalIndex].id = saved.id;
             cacheMessages(cachedMsgs);
+            console.log('[sendMessage] Local message ID replaced in cache, re-rendering');
             if (state.activeChannelId === channel) {
               renderActiveConversation();
             }
             renderChatList();
+          } else {
+            console.warn('[sendMessage] Local message not found in cache for replacement:', newMsg.id);
           }
+        } else {
+          console.warn('[sendMessage] No data returned from insert:', res);
         }
       } catch (e) {
         console.warn('Supabase insert failed, running local-first mode:', e);
