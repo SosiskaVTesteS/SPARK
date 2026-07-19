@@ -119,8 +119,8 @@ document.addEventListener('DOMContentLoaded', function () {
       }
 
       // Load full leaders list when switching to Leaders tab
-      if (navName === 'leaders' && window.renderLeadersFull) {
-        renderLeadersFull();
+      if (navName === 'leaders' && window.renderLeadersByPeriod) {
+        renderLeadersByPeriod('all');
         renderTopInvestments();
         renderTopAccuracy();
         renderUserProgress();
@@ -1499,8 +1499,12 @@ async function renderTopAccuracy() {
   var el = document.getElementById('topAccuracyList');
   if (!el) return;
   
-  if (r.ok && r.data && r.data.length > 0) {
-    var leaders = r.data;
+  console.log('[Leaders Debug] Top Accuracy RPC response:', r);
+  
+  // Supabase RPC returns data in r.data.data for SETOF functions
+  var leaders = r.ok && r.data && r.data.data ? r.data.data : (r.ok && r.data ? r.data : []);
+  
+  if (leaders.length > 0) {
     var html = leaders.map(function(p, i) {
       var uname = escapeHTML(p.username || '@user');
       var letter = uname.replace('@', '').charAt(0).toUpperCase();
@@ -1519,7 +1523,8 @@ async function renderTopAccuracy() {
     el.innerHTML = html;
   } else {
     // Fallback: show message that RPC needs to be created
-    el.innerHTML = '<div style="color:var(--mu);font-size:10px;padding:8px 0">' + (LANG === 'ru' ? 'Требуется RPC-функция' : 'RPC function required') + '</div>';
+    console.log('[Leaders Debug] Top Accuracy: No data, RPC response:', r);
+    el.innerHTML = '<div style="color:var(--mu);font-size:10px;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных' : 'No data') + '</div>';
   }
 }
 
@@ -1581,8 +1586,12 @@ async function renderRisingStars() {
     return supa.rpc('get_rising_stars', { days_ago: 7, limit_count: 5 });
   }, { silent: true, timeout: 25000 });
   
-  if (r.ok && r.data && r.data.length > 0) {
-    var stars = r.data;
+  console.log('[Leaders Debug] Rising Stars RPC response:', r);
+  
+  // Supabase RPC returns data in r.data.data for SETOF functions
+  var stars = r.ok && r.data && r.data.data ? r.data.data : (r.ok && r.data ? r.data : []);
+  
+  if (stars.length > 0) {
     var html = stars.map(function(p, i) {
       var uname = escapeHTML(p.username || '@user');
       var letter = uname.replace('@', '').charAt(0).toUpperCase();
@@ -1600,7 +1609,8 @@ async function renderRisingStars() {
     }).join('');
     el.innerHTML = html;
   } else {
-    el.innerHTML = '<div style="color:var(--mu);font-size:10px;padding:8px 0">' + (LANG === 'ru' ? 'Требуется RPC-функция' : 'RPC function required') + '</div>';
+    console.log('[Leaders Debug] Rising Stars: No data, RPC response:', r);
+    el.innerHTML = '<div style="color:var(--mu);font-size:10px;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных' : 'No data') + '</div>';
   }
 }
 
@@ -1613,6 +1623,8 @@ async function renderLeadersByPeriod(period) {
   var r = await safeSupabaseCall('database', function () {
     return supa.rpc('get_leaders_by_period', { period: period, limit_count: 10 });
   }, { silent: true, timeout: 25000 });
+  
+  console.log('[Leaders Debug] Period Filter RPC response:', period, r);
   
   var el = document.getElementById('leaderListFull');
   if (!el) return;
@@ -1642,8 +1654,10 @@ async function renderLeadersByPeriod(period) {
       + '</div>';
   }
   
-  if (r.ok && r.data && r.data.length > 0) {
-    var leaders = r.data;
+  // Supabase RPC returns data in r.data.data for SETOF functions
+  var leaders = r.ok && r.data && r.data.data ? r.data.data : (r.ok && r.data ? r.data : []);
+  
+  if (leaders.length > 0) {
     var html = leaders.map(function(p, i) {
       var uname = escapeHTML(p.username || '@user');
       var letter = uname.replace('@', '').charAt(0).toUpperCase();
@@ -1678,6 +1692,7 @@ async function renderLeadersByPeriod(period) {
     html += selfHtml;
     el.innerHTML = html;
   } else {
+    console.log('[Leaders Debug] Period Filter: No data, RPC response:', r);
     el.innerHTML = '<div style="color:var(--mu);font-size:12px;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных' : 'No data yet') + '</div>' + selfHtml;
   }
 }
