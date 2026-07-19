@@ -264,17 +264,35 @@ html.auth-active, html.auth-active body { overflow: hidden !important; height: 1
     <div class="uavatar" id="hdrAv">U</div>
     <div><div class="uname" id="hdrUn">@user123</div><span class="ubadge">✓ Verified</span></div>
   </div>
-  <button class="btn-prof" id="btnChatsDesk" style="margin-right: 8px; position: relative;">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    <span>Chats</span>
-    <div id="dChatBadge" class="chat-badge-count" style="display: none;"></div>
-  </button>
-  <button class="btn-prof" id="btnProfDesk">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-    <span>Profile</span>
-  </button>
   <button class="btn-post" id="btnPostIdea">+ Post Idea</button>
 </header>
+
+<!-- ════════════════ БОКОВАЯ НАВИГАЦИЯ (DESKTOP) ════════════════ -->
+<nav class="desk-nav">
+  <button class="desk-nav-tab active" data-panel="feed">
+    <svg class="d-ic" viewBox="0 0 24 24"><path d="M12 3L20 9V21H15V14H9V21H4V9L12 3Z" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span class="desk-nav-label">Explore</span>
+  </button>
+  <button class="desk-nav-tab" data-panel="leaders">
+    <svg class="d-ic" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10l1 7c0 3-2 6-6 6s-6-3-6-6Z" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span class="desk-nav-label">Leaders</span>
+  </button>
+  <button class="desk-nav-tab tab-chats" data-panel="chats">
+    <div class="d-ic" style="position:relative;">
+      <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div id="deskChatBadge" class="chat-badge-count" style="display:none;"></div>
+    </div>
+    <span class="desk-nav-label">Chats</span>
+  </button>
+  <button class="desk-nav-tab" data-panel="trends">
+    <svg class="d-ic" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="16 7 22 7 22 13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span class="desk-nav-label">Observatory</span>
+  </button>
+  <button class="desk-nav-tab" data-panel="profile">
+    <svg class="d-ic" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span class="desk-nav-label">Profile</span>
+  </button>
+</nav>
 
 <div class="dp-overlay" id="dpOverlay">
   <div class="dp-panel" id="dpPanel"></div>
@@ -282,93 +300,191 @@ html.auth-active, html.auth-active body { overflow: hidden !important; height: 1
 
 <!-- ════════════════ ОСНОВНАЯ ВЁРСТКА ════════════════ -->
 <div class="layout">
-  <aside class="sidebar">
-    <div class="stitle">Trending Now</div>
-    <div id="trendListDesk"><div style="color:var(--mu);font-size:12px;padding:8px 0">Loading...</div></div>
-    <div class="divider"></div>
-    <div class="stitle" id="obsTitleDesk">Market Observatory</div>
-    <div style="position:relative">
-      <div class="obs-shell" id="obsDesk" aria-label="Market observatory map" style="pointer-events:none;opacity:0.35">
-        <div class="obs-dimmer"></div>
-        <div class="obs-core"></div>
-        <button class="obs-system pos-tech" type="button" data-obs-system>
-          <span class="obs-sun"></span>
-          <span class="obs-system-label" data-obs-label="tech">Technology</span>
-          <span class="obs-orbit orbit-1"><span class="obs-planet mint p-45"><span class="obs-info"><span class="obs-n">AI</span><span class="obs-v">—</span></span></span></span>
-          <span class="obs-orbit orbit-2"><span class="obs-planet azure p-180"><span class="obs-info"><span class="obs-n">SaaS</span><span class="obs-v">—</span></span></span></span>
-          <span class="obs-orbit orbit-3"><span class="obs-planet mint p-300"><span class="obs-info"><span class="obs-n">Web3</span><span class="obs-v">—</span></span></span></span>
-        </button>
-        <button class="obs-system pos-eco" type="button" data-obs-system>
-          <span class="obs-sun"></span>
-          <span class="obs-system-label" data-obs-label="eco">Ecology</span>
-          <span class="obs-orbit orbit-1"><span class="obs-planet mint p-220"><span class="obs-info"><span class="obs-n">Solar</span><span class="obs-v">—</span></span></span></span>
-          <span class="obs-orbit orbit-2"><span class="obs-planet azure p-45"><span class="obs-info"><span class="obs-n">Energy</span><span class="obs-v">—</span></span></span></span>
-        </button>
-        <button class="obs-system pos-social" type="button" data-obs-system>
-          <span class="obs-sun"></span>
-          <span class="obs-system-label" data-obs-label="social">Society</span>
-          <span class="obs-orbit orbit-1"><span class="obs-planet mint p-90"><span class="obs-info"><span class="obs-n">HW</span><span class="obs-v">—</span></span></span></span>
-          <span class="obs-orbit orbit-2"><span class="obs-planet azure p-270"><span class="obs-info"><span class="obs-n">DeFi</span><span class="obs-v">—</span></span></span></span>
-          <span class="obs-orbit orbit-3"><span class="obs-planet mint p-10"><span class="obs-info"><span class="obs-n">Other</span><span class="obs-v">—</span></span></span></span>
-        </button>
+  <!-- PAGE: EXPLORE (Feed) -->
+  <div class="page-panel active" id="page-feed">
+    <aside class="sidebar">
+      <div class="stitle">Trending Now</div>
+      <div id="trendListDesk"><div style="color:var(--mu);font-size:12px;padding:8px 0">Loading...</div></div>
+      <div class="divider"></div>
+      <div class="stitle" id="obsTitleDesk">Market Observatory</div>
+      <div style="position:relative">
+        <div class="obs-shell" id="obsDesk" aria-label="Market observatory map" style="pointer-events:none;opacity:0.35">
+          <div class="obs-dimmer"></div>
+          <div class="obs-core"></div>
+          <button class="obs-system pos-tech" type="button" data-obs-system>
+            <span class="obs-sun"></span>
+            <span class="obs-system-label" data-obs-label="tech">Technology</span>
+            <span class="obs-orbit orbit-1"><span class="obs-planet mint p-45"><span class="obs-info"><span class="obs-n">AI</span><span class="obs-v">—</span></span></span></span>
+            <span class="obs-orbit orbit-2"><span class="obs-planet azure p-180"><span class="obs-info"><span class="obs-n">SaaS</span><span class="obs-v">—</span></span></span></span>
+            <span class="obs-orbit orbit-3"><span class="obs-planet mint p-300"><span class="obs-info"><span class="obs-n">Web3</span><span class="obs-v">—</span></span></span></span>
+          </button>
+          <button class="obs-system pos-eco" type="button" data-obs-system>
+            <span class="obs-sun"></span>
+            <span class="obs-system-label" data-obs-label="eco">Ecology</span>
+            <span class="obs-orbit orbit-1"><span class="obs-planet mint p-220"><span class="obs-info"><span class="obs-n">Solar</span><span class="obs-v">—</span></span></span></span>
+            <span class="obs-orbit orbit-2"><span class="obs-planet azure p-45"><span class="obs-info"><span class="obs-n">Energy</span><span class="obs-v">—</span></span></span></span>
+          </button>
+          <button class="obs-system pos-social" type="button" data-obs-system>
+            <span class="obs-sun"></span>
+            <span class="obs-system-label" data-obs-label="social">Society</span>
+            <span class="obs-orbit orbit-1"><span class="obs-planet mint p-90"><span class="obs-info"><span class="obs-n">HW</span><span class="obs-v">—</span></span></span></span>
+            <span class="obs-orbit orbit-2"><span class="obs-planet azure p-270"><span class="obs-info"><span class="obs-n">DeFi</span><span class="obs-v">—</span></span></span></span>
+            <span class="obs-orbit orbit-3"><span class="obs-planet mint p-10"><span class="obs-info"><span class="obs-n">Other</span><span class="obs-v">—</span></span></span></span>
+          </button>
+        </div>
+        <div class="obs-coming-soon" id="obsStubDesk">
+          <div class="obs-stub-inner">
+            <span class="obs-stub-icon">🔭</span>
+            <span class="obs-stub-title">Market Observatory</span>
+            <span class="obs-stub-sub">Coming soon</span>
+          </div>
+        </div>
       </div>
-      <div class="obs-coming-soon" id="obsStubDesk">
-        <div class="obs-stub-inner">
-          <span class="obs-stub-icon">🔭</span>
-          <span class="obs-stub-title">Market Observatory</span>
-          <span class="obs-stub-sub">Coming soon</span>
+    </aside>
+
+    <main class="feed">
+      <!-- ════ СИСТЕМНОЕ ОБЪЯВЛЕНИЕ ════ -->
+      <div id="announcementBanner" role="alert" aria-live="polite">
+        <div class="ann-inner">
+          <svg class="ann-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span id="announcementText"></span>
+          <button class="ann-close" id="announcementClose" aria-label="Закрыть объявление">&times;</button>
+        </div>
+      </div>
+      <div class="fbar">
+        <div class="srch">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input class="srch-in" type="text" id="srchIn" placeholder="Search ideas...">
+        </div>
+        <div class="frow">
+          <span class="flabel">Sort:</span>
+          <button class="fbtn active" data-sort="new">🕐 New</button>
+          <button class="fbtn" data-sort="popular">🔥 Popular</button>
+          <button class="fbtn" data-sort="profit">📈 Profitable</button>
+          <button class="fbtn" data-sort="ending">⏱ Ending soon</button>
+        </div>
+        <div class="trow">
+          <span class="flabel">Tag:</span>
+          <button class="tchip active" data-tag="all">All</button>
+          <button class="tchip" data-tag="AI Tools">#AI Tools</button>
+          <button class="tchip" data-tag="DeFi">#DeFi</button>
+          <button class="tchip" data-tag="CleanEnergy">#CleanEnergy</button>
+          <button class="tchip" data-tag="B2B SaaS">#B2B SaaS</button>
+          <button class="tchip" data-tag="Hardware">#Hardware</button>
+          <button class="tchip" data-tag="Web3">#Web3</button>
+        </div>
+      </div>
+      <div class="cards" id="cardsList"></div>
+      <div class="pgn" id="pgn"></div>
+    </main>
+
+    <aside class="sidebar">
+      <div class="stitle">Prophet Leaderboard</div>
+      <div id="leaderListDesk"><div style="color:var(--mu);font-size:12px;padding:8px 0">Loading...</div></div>
+      <div class="divider"></div>
+      <div class="stitle">Live Activity</div>
+      <div id="liveActivityList" style="display:flex;flex-direction:column;gap:7px;font-size:12px;color:var(--mu);line-height:1.55">
+        <div id="actRow1" style="padding:7px 0;border-bottom:1px solid var(--bd)"></div>
+        <div id="actRow2" style="padding:7px 0;border-bottom:1px solid var(--bd)"></div>
+        <div id="actRow3" style="padding:7px 0"></div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- PAGE: LEADERS -->
+  <div class="page-panel" id="page-leaders">
+    <div class="full-page-content">
+      <h1 class="page-title">Prophet Leaderboard</h1>
+      <div id="leaderListFull"><div style="color:var(--mu);font-size:12px;padding:8px 0">Loading...</div></div>
+    </div>
+  </div>
+
+  <!-- PAGE: CHATS -->
+  <div class="page-panel" id="page-chats">
+    <div class="chat-container">
+      <!-- LEFT SIDEBAR (DMs and Teams list) -->
+      <div class="chat-sidebar">
+        <div class="chat-sidebar-header">
+          <div class="chat-sidebar-title-row">
+            <span class="chat-sidebar-title">SPARK Chats</span>
+            <button class="chat-sidebar-action" title="New message">+</button>
+          </div>
+          <div class="chat-search-wrap">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input type="text" class="chat-search-input" id="chatSearchInput" placeholder="Search contacts...">
+          </div>
+        </div>
+        
+        <div class="chat-sidebar-scroll">
+          <div class="chat-sidebar-section-title">💬 Direct Messages</div>
+          <div id="chatListDMs">
+            <!-- Populated by ChatsEngine.renderChatList() -->
+          </div>
+          
+          <div class="chat-sidebar-section-title">🗂 Teams & Channels</div>
+          <div id="chatListTeams">
+            <!-- Populated by ChatsEngine.renderChatList() -->
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT VIEWPORT (Conversation) -->
+      <div class="chat-main-view" id="chatActivePane">
+        <!-- Populated by ChatsEngine.renderActiveConversation() or fallbacks -->
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: OBSERVATORY -->
+  <div class="page-panel" id="page-trends">
+    <div class="full-page-content">
+      <h1 class="page-title">Market Observatory</h1>
+      <div class="stitle">Trending Now</div>
+      <div id="trendListFull"><div style="color:var(--mu);font-size:12px;padding:8px 0">Loading...</div></div>
+      <div class="divider"></div>
+      <div class="stitle">Market Observatory</div>
+      <div style="position:relative">
+        <div class="obs-shell" id="obsFull" aria-label="Market observatory map" style="pointer-events:none;opacity:0.35">
+          <div class="obs-dimmer"></div>
+          <div class="obs-core"></div>
+          <button class="obs-system pos-tech" type="button" data-obs-system>
+            <span class="obs-sun"></span>
+            <span class="obs-system-label" data-obs-label="tech">Technology</span>
+            <span class="obs-orbit orbit-1"><span class="obs-planet mint p-45"><span class="obs-info"><span class="obs-n">AI</span><span class="obs-v">—</span></span></span></span>
+            <span class="obs-orbit orbit-2"><span class="obs-planet azure p-180"><span class="obs-info"><span class="obs-n">SaaS</span><span class="obs-v">—</span></span></span></span>
+            <span class="obs-orbit orbit-3"><span class="obs-planet mint p-300"><span class="obs-info"><span class="obs-n">Web3</span><span class="obs-v">—</span></span></span></span>
+          </button>
+          <button class="obs-system pos-eco" type="button" data-obs-system>
+            <span class="obs-sun"></span>
+            <span class="obs-system-label" data-obs-label="eco">Ecology</span>
+            <span class="obs-orbit orbit-1"><span class="obs-planet mint p-220"><span class="obs-info"><span class="obs-n">Solar</span><span class="obs-v">—</span></span></span></span>
+            <span class="obs-orbit orbit-2"><span class="obs-planet azure p-45"><span class="obs-info"><span class="obs-n">Energy</span><span class="obs-v">—</span></span></span></span>
+          </button>
+          <button class="obs-system pos-social" type="button" data-obs-system>
+            <span class="obs-sun"></span>
+            <span class="obs-system-label" data-obs-label="social">Society</span>
+            <span class="obs-orbit orbit-1"><span class="obs-planet mint p-90"><span class="obs-info"><span class="obs-n">HW</span><span class="obs-v">—</span></span></span></span>
+            <span class="obs-orbit orbit-2"><span class="obs-planet azure p-270"><span class="obs-info"><span class="obs-n">DeFi</span><span class="obs-v">—</span></span></span></span>
+            <span class="obs-orbit orbit-3"><span class="obs-planet mint p-10"><span class="obs-info"><span class="obs-n">Other</span><span class="obs-v">—</span></span></span></span>
+          </button>
+        </div>
+        <div class="obs-coming-soon" id="obsStubFull">
+          <div class="obs-stub-inner">
+            <span class="obs-stub-icon">🔭</span>
+            <span class="obs-stub-title">Market Observatory</span>
+            <span class="obs-stub-sub">Coming soon</span>
+          </div>
         </div>
       </div>
     </div>
-  </aside>
+  </div>
 
-  <main class="feed">
-    <!-- ════ СИСТЕМНОЕ ОБЪЯВЛЕНИЕ ════ -->
-    <div id="announcementBanner" role="alert" aria-live="polite">
-      <div class="ann-inner">
-        <svg class="ann-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-        <span id="announcementText"></span>
-        <button class="ann-close" id="announcementClose" aria-label="Закрыть объявление">&times;</button>
-      </div>
+  <!-- PAGE: PROFILE -->
+  <div class="page-panel" id="page-profile">
+    <div class="full-page-content">
+      <div id="profileContentFull"></div>
     </div>
-    <div class="fbar">
-      <div class="srch">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input class="srch-in" type="text" id="srchIn" placeholder="Search ideas...">
-      </div>
-      <div class="frow">
-        <span class="flabel">Sort:</span>
-        <button class="fbtn active" data-sort="new">🕐 New</button>
-        <button class="fbtn" data-sort="popular">🔥 Popular</button>
-        <button class="fbtn" data-sort="profit">📈 Profitable</button>
-        <button class="fbtn" data-sort="ending">⏱ Ending soon</button>
-      </div>
-      <div class="trow">
-        <span class="flabel">Tag:</span>
-        <button class="tchip active" data-tag="all">All</button>
-        <button class="tchip" data-tag="AI Tools">#AI Tools</button>
-        <button class="tchip" data-tag="DeFi">#DeFi</button>
-        <button class="tchip" data-tag="CleanEnergy">#CleanEnergy</button>
-        <button class="tchip" data-tag="B2B SaaS">#B2B SaaS</button>
-        <button class="tchip" data-tag="Hardware">#Hardware</button>
-        <button class="tchip" data-tag="Web3">#Web3</button>
-      </div>
-    </div>
-    <div class="cards" id="cardsList"></div>
-    <div class="pgn" id="pgn"></div>
-  </main>
-
-  <aside class="sidebar">
-    <div class="stitle">Prophet Leaderboard</div>
-    <div id="leaderListDesk"><div style="color:var(--mu);font-size:12px;padding:8px 0">Loading...</div></div>
-    <div class="divider"></div>
-    <div class="stitle">Live Activity</div>
-    <div id="liveActivityList" style="display:flex;flex-direction:column;gap:7px;font-size:12px;color:var(--mu);line-height:1.55">
-      <div id="actRow1" style="padding:7px 0;border-bottom:1px solid var(--bd)"></div>
-      <div id="actRow2" style="padding:7px 0;border-bottom:1px solid var(--bd)"></div>
-      <div id="actRow3" style="padding:7px 0"></div>
-    </div>
-  </aside>
+  </div>
 </div>
 
 <!-- МОБИЛЬНАЯ ПАНЕЛЬ -->

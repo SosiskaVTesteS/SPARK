@@ -92,6 +92,13 @@ document.addEventListener('DOMContentLoaded', function () {
       openPanel(tabBtn.dataset.panel);
     });
   });
+
+  // Desktop side navigation
+  document.querySelectorAll('.desk-nav-tab[data-panel]').forEach(function (tabBtn) {
+    tabBtn.addEventListener('click', function () {
+      openPanel(tabBtn.dataset.panel);
+    });
+  });
   document.querySelectorAll('.chat-tab-btn[data-chat-tab]').forEach(function (chatBtn) {
     chatBtn.addEventListener('click', function () {
       switchChatTab(chatBtn.dataset.chatTab);
@@ -4167,6 +4174,17 @@ function openPanel(name, pushHistory) {
   document.querySelectorAll('.mob-tab').forEach(function (t) { t.classList.remove('active'); });
   var tab = document.querySelector('.mob-tab[data-panel="' + name + '"]');
   if (tab) tab.classList.add('active');
+
+  // Sync desktop side navigation active state
+  document.querySelectorAll('.desk-nav-tab').forEach(function (t) { t.classList.remove('active'); });
+  var deskTab = document.querySelector('.desk-nav-tab[data-panel="' + name + '"]');
+  if (deskTab) deskTab.classList.add('active');
+
+  // Toggle desktop page panels
+  document.querySelectorAll('.page-panel').forEach(function (p) { p.classList.remove('active'); });
+  var pagePanel = document.getElementById('page-' + name);
+  if (pagePanel) pagePanel.classList.add('active');
+
   var feed = document.querySelector('.feed');
   ['trends', 'leaders', 'chats', 'profile'].forEach(function (id) {
     var p = document.getElementById('panel-' + id);

@@ -1211,6 +1211,77 @@ svg.igsvg { width:100%; height:68px; display:block; overflow:visible; }
 .lang-opt.sel   { color:var(--vl2); font-weight:600; }
 
 /* ════════════════════════════════════════════════
+   DESKTOP SIDE NAV
+   ════════════════════════════════════════════════ */
+.desk-nav {
+  display: none;
+  position: fixed;
+  top: 72px;
+  left: 16px;
+  bottom: 24px;
+  width: 72px;
+  z-index: 500;
+  background: rgba(10, 11, 20, 0.85);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(123,92,250,0.15);
+  border-radius: 24px;
+  box-shadow: 0 12px 36px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.05);
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 0;
+  gap: 8px;
+}
+.desk-nav-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 56px;
+  height: 56px;
+  border: none;
+  border-radius: 16px;
+  background: transparent;
+  color: var(--mu);
+  font-family: var(--fb);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
+}
+.desk-nav-tab.active {
+  color: var(--vl2);
+  background: color-mix(in srgb, var(--vl2) 15%, transparent);
+}
+.d-ic { width: 24px; height: 24px; flex-shrink: 0; display: block; }
+.desk-nav-tab svg { transition: transform 0.3s cubic-bezier(0.34, 1.15, 0.64, 1); }
+.desk-nav-tab.active svg { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--vl2) 60%, transparent)); transform: scale(1.1); }
+.desk-nav-label {
+  display: block;
+  max-width: 0;
+  opacity: 0;
+  white-space: nowrap;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  font-size: 10px;
+  transform: translateY(4px);
+}
+.desk-nav-tab.active .desk-nav-label {
+  max-width: 60px;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Chats tab special */
+.desk-nav-tab.tab-chats { color: var(--ac); }
+.desk-nav-tab.tab-chats.active {
+  color: var(--ac);
+  background: color-mix(in srgb, var(--ac) 15%, transparent);
+}
+.desk-nav-tab.tab-chats.active svg { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--ac) 60%, transparent)); transform: scale(1.1); }
+
+/* ════════════════════════════════════════════════
    MOBILE NAV BAR
    ════════════════════════════════════════════════ */
 .mob-bar {
@@ -1247,8 +1318,8 @@ svg.igsvg { width:100%; height:68px; display:block; overflow:visible; }
   transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   overflow: hidden;
 }
-.mob-tab.active { 
-  color: var(--vl2); 
+.mob-tab.active {
+  color: var(--vl2);
   background: color-mix(in srgb, var(--vl2) 15%, transparent);
   flex: 2.2; /* expand */
 }
@@ -1273,15 +1344,38 @@ svg.igsvg { width:100%; height:68px; display:block; overflow:visible; }
 
 /* Chats tab special */
 .mob-tab.tab-chats { color: var(--ac); flex: 0.8; }
-.mob-tab.tab-chats.active { 
-  color: var(--ac); 
-  background: color-mix(in srgb, var(--ac) 15%, transparent); 
-  flex: 2.2; 
+.mob-tab.tab-chats.active {
+  color: var(--ac);
+  background: color-mix(in srgb, var(--ac) 15%, transparent);
+  flex: 2.2;
 }
 .mob-tab.tab-chats.active svg { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--ac) 60%, transparent)); transform: scale(1.1); }
 
 .unread-dot { position:absolute; top:8px; right:calc(50% - 14px); width:7px; height:7px; border-radius:50%; background:var(--red); border:1.5px solid var(--bg); display:none; }
 .unread-dot.show { display:block; }
+
+/* Desktop page panels */
+.page-panel {
+  display: none;
+  width: 100%;
+  height: 100%;
+}
+.page-panel.active {
+  display: block;
+}
+.full-page-content {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.page-title {
+  font-family: var(--fh);
+  font-size: 32px;
+  font-weight: 800;
+  margin-bottom: 24px;
+  letter-spacing: -0.02em;
+  color: var(--tx);
+}
 
 /* Mobile panels */
 .mpanel {
@@ -1530,6 +1624,15 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
 .btn-timer-loading { position:relative !important; pointer-events:none !important; display:inline-flex !important; align-items:center !important; justify-content:center !important; }
 .btn-timer-progress { transform-origin:center; transition:stroke-dashoffset 0.1s linear; }
 .btn-timer-progress.pulse-glow { animation:timerPulse 1.5s ease-in-out infinite; stroke-dashoffset:0 !important; }
+
+/* ════════════════════════════════════════════════
+   RESPONSIVE — DESKTOP
+   ════════════════════════════════════════════════ */
+@media (min-width: 1024px) {
+  .desk-nav { display: flex; }
+  .layout { margin-left: 104px; } /* 72px nav + 32px gap */
+  header { padding-left: 120px; }
+}
 
 /* ════════════════════════════════════════════════
    RESPONSIVE — MOBILE
