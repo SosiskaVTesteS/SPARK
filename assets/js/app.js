@@ -1452,6 +1452,14 @@ async function renderLeadersFull() {
 async function renderTopInvestments() {
   if (!supa) return;
   
+  var el = document.getElementById('topInvestmentsList');
+  if (!el) {
+    console.log('[Leaders Debug] Top Investments: Element not found');
+    return;
+  }
+  
+  console.log('[Leaders Debug] Calling profiles query for top investments...');
+  
   var r = await safeSupabaseCall('database', function () {
     return supa.from('profiles')
       .select('id, username, investments_count, avatar_color')
@@ -1460,8 +1468,7 @@ async function renderTopInvestments() {
       .limit(5);
   }, { silent: true, timeout: 25000 });
   
-  var el = document.getElementById('topInvestmentsList');
-  if (!el) return;
+  console.log('[Leaders Debug] Top Investments response:', r);
   
   if (r.ok && r.data && r.data.data && r.data.data.length > 0) {
     var leaders = r.data.data;
@@ -1482,6 +1489,7 @@ async function renderTopInvestments() {
     }).join('');
     el.innerHTML = html;
   } else {
+    console.log('[Leaders Debug] Top Investments: No data, response:', r);
     el.innerHTML = '<div style="color:var(--mu);font-size:11px;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных' : 'No data yet') + '</div>';
   }
 }
@@ -1490,14 +1498,19 @@ async function renderTopInvestments() {
 async function renderTopAccuracy() {
   if (!supa) return;
   
+  var el = document.getElementById('topAccuracyList');
+  if (!el) {
+    console.log('[Leaders Debug] Top Accuracy: Element not found');
+    return;
+  }
+  
+  console.log('[Leaders Debug] Calling get_top_by_accuracy...');
+  
   // Calculate accuracy: successful ideas / total ideas
   // Successful = ideas with total_invested > min_bet * 3 (at least 3x return)
   var r = await safeSupabaseCall('database', function () {
     return supa.rpc('get_top_by_accuracy', { limit_count: 5 });
   }, { silent: true, timeout: 25000 });
-  
-  var el = document.getElementById('topAccuracyList');
-  if (!el) return;
   
   console.log('[Leaders Debug] Top Accuracy RPC response:', r);
   
@@ -1576,12 +1589,14 @@ async function renderRisingStars() {
   if (!supa) return;
   
   var el = document.getElementById('risingStarsList');
-  if (!el) return;
+  if (!el) {
+    console.log('[Leaders Debug] Rising Stars: Element not found');
+    return;
+  }
+  
+  console.log('[Leaders Debug] Calling get_rising_stars...');
   
   // Get users with highest balance growth in last 7 days
-  var sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-  
   var r = await safeSupabaseCall('database', function () {
     return supa.rpc('get_rising_stars', { days_ago: 7, limit_count: 5 });
   }, { silent: true, timeout: 25000 });
@@ -1618,6 +1633,8 @@ async function renderRisingStars() {
 async function renderLeadersByPeriod(period) {
   if (!supa) return;
   
+  console.log('[Leaders Debug] Calling get_leaders_by_period with period:', period);
+  
   var rankColors = ['gold', 'silver', 'bronze'];
   
   var r = await safeSupabaseCall('database', function () {
@@ -1627,7 +1644,10 @@ async function renderLeadersByPeriod(period) {
   console.log('[Leaders Debug] Period Filter RPC response:', period, r);
   
   var el = document.getElementById('leaderListFull');
-  if (!el) return;
+  if (!el) {
+    console.log('[Leaders Debug] Period Filter: Element not found');
+    return;
+  }
   
   // Build self-row
   var selfHtml = '';
