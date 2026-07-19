@@ -93,11 +93,23 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
-  // Side navigation tabs - visual switching only
+  // Side navigation tabs - switch page panels
   document.querySelectorAll('.nav-tab[data-nav]').forEach(function (navBtn) {
     navBtn.addEventListener('click', function () {
+      var navName = navBtn.dataset.nav;
       document.querySelectorAll('.nav-tab').forEach(function (t) { t.classList.remove('active'); });
       navBtn.classList.add('active');
+
+      // Switch page panels
+      document.querySelectorAll('.page-panel').forEach(function (p) { p.classList.remove('active'); });
+      var pagePanel = document.getElementById('page-' + navName);
+      if (pagePanel) pagePanel.classList.add('active');
+
+      // Show/hide right sidebar based on active tab
+      var rightSidebar = document.querySelector('.sidebar:last-child');
+      if (rightSidebar) {
+        rightSidebar.style.display = navName === 'explore' ? 'block' : 'none';
+      }
     });
   });
   document.querySelectorAll('.chat-tab-btn[data-chat-tab]').forEach(function (chatBtn) {
@@ -246,7 +258,7 @@ document.addEventListener('DOMContentLoaded', function () {
       setAmt(parseInt(presetBtn.dataset.setAmt, 10));
     });
   }
-  ['dpPanel', 'mobProfInner'].forEach(function (containerId) {
+  ['dpPanel', 'mobProfInner', 'profileContentFull'].forEach(function (containerId) {
     var container = document.getElementById(containerId);
     if (!container) return;
     container.addEventListener('click', function (event) {
@@ -1231,6 +1243,8 @@ function renderTrends() {
   if (desk) desk.innerHTML = html;
   var mob = document.getElementById('trendListMob');
   if (mob) mob.innerHTML = html;
+  var full = document.getElementById('trendListFull');
+  if (full) full.innerHTML = html;
 }
 
 // ═══ Render leaders from profiles DB ═══
@@ -1268,6 +1282,8 @@ async function renderLeaders() {
     if (ld) ld.innerHTML = emptyHtml + selfHtml;
     var lm = document.getElementById('leaderListMob');
     if (lm) lm.innerHTML = emptyHtml + selfHtml;
+    var lf = document.getElementById('leaderListFull');
+    if (lf) lf.innerHTML = emptyHtml + selfHtml;
     return;
   }
 
@@ -1321,6 +1337,8 @@ async function renderLeaders() {
   if (ld) ld.innerHTML = html;
   var lm = document.getElementById('leaderListMob');
   if (lm) lm.innerHTML = html;
+  var lf = document.getElementById('leaderListFull');
+  if (lf) lf.innerHTML = html;
 }
 
 async function doLogout(skipSignOut) {
@@ -2387,8 +2405,13 @@ function renderProfile() {
   if (mb) {
     mb.innerHTML = profileHTML('M');
     if (window.ProfileEditEngine) ProfileEditEngine.initSection('M');
-    initMyIdeasToggle('M');
-    initAchievementsToggle('M');
+  }
+  var pf = document.getElementById('profileContentFull');
+  if (pf) {
+    pf.innerHTML = profileHTML('D');
+    if (window.ProfileEditEngine) ProfileEditEngine.initSection('D');
+    initMyIdeasToggle('D');
+    initAchievementsToggle('D');
   }
   renderMyIdeas();
   renderAchievements('D');
