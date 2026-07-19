@@ -117,6 +117,13 @@ var ChatsEngine = (function () {
     return _dbTeams;
   }
 
+  // Helper to determine if a channel ID is a DM (contact) or a team channel
+  function isDMChannel(channelId) {
+    var isTeamChannel = getTeamsList().some(function (t) { return t.id === channelId; });
+    var isPresetChannel = ['defi-prophets', 'ai-signals', 'spark-devs'].includes(channelId);
+    return !isTeamChannel && !isPresetChannel && !channelId.startsWith('#');
+  }
+
   function saveTeamsList(teams) {
     _dbTeams = teams;
     try {
@@ -1260,7 +1267,7 @@ var ChatsEngine = (function () {
     }
 
     if (!channelId) return;
-    var isDM = !channelId.startsWith('#') && !['defi-prophets', 'ai-signals', 'spark-devs'].includes(channelId);
+    var isDM = isDMChannel(channelId);
 
     if (!isDM) {
       try {
@@ -1388,7 +1395,7 @@ var ChatsEngine = (function () {
   async function markMessagesAsRead(contactId) {
     if (!window.supa || !window.ME || !contactId) return;
 
-    var isDM = !contactId.startsWith('#') && !['defi-prophets', 'ai-signals', 'spark-devs'].includes(contactId);
+    var isDM = isDMChannel(contactId);
     if (!isDM) return;
     if (isDM && !isValidUUID(contactId)) return;
 
@@ -1426,7 +1433,7 @@ var ChatsEngine = (function () {
   async function loadSupabaseHistory(id) {
     if (!window.supa || !window.ME) return;
     try {
-      var isDM = !id.startsWith('#') && !['defi-prophets', 'ai-signals', 'spark-devs'].includes(id);
+      var isDM = isDMChannel(id);
       if (isDM && !isValidUUID(id)) return; // Skip mock DMs
       var res;
       if (isDM) {
@@ -1534,7 +1541,7 @@ var ChatsEngine = (function () {
 
     // 3. Supabase Database integration (if configured)
     if (window.supa && window.ME) {
-      var isDM = !channel.startsWith('#') && !['defi-prophets', 'ai-signals', 'spark-devs'].includes(channel);
+      var isDM = isDMChannel(channel);
       console.log('[sendMessage] isDM:', isDM, 'channel:', channel);
       if (isDM && !isValidUUID(channel)) {
         console.log('[sendMessage] Skipping mock DM');
