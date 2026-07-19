@@ -92,6 +92,14 @@ document.addEventListener('DOMContentLoaded', function () {
       openPanel(tabBtn.dataset.panel);
     });
   });
+
+  // Side navigation tabs - visual switching only
+  document.querySelectorAll('.nav-tab[data-nav]').forEach(function (navBtn) {
+    navBtn.addEventListener('click', function () {
+      document.querySelectorAll('.nav-tab').forEach(function (t) { t.classList.remove('active'); });
+      navBtn.classList.add('active');
+    });
+  });
   document.querySelectorAll('.chat-tab-btn[data-chat-tab]').forEach(function (chatBtn) {
     chatBtn.addEventListener('click', function () {
       switchChatTab(chatBtn.dataset.chatTab);

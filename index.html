@@ -282,44 +282,27 @@ html.auth-active, html.auth-active body { overflow: hidden !important; height: 1
 
 <!-- ════════════════ ОСНОВНАЯ ВЁРСТКА ════════════════ -->
 <div class="layout">
-  <aside class="sidebar">
-    <div class="stitle">Trending Now</div>
-    <div id="trendListDesk"><div style="color:var(--mu);font-size:12px;padding:8px 0">Loading...</div></div>
-    <div class="divider"></div>
-    <div class="stitle" id="obsTitleDesk">Market Observatory</div>
-    <div style="position:relative">
-      <div class="obs-shell" id="obsDesk" aria-label="Market observatory map" style="pointer-events:none;opacity:0.35">
-        <div class="obs-dimmer"></div>
-        <div class="obs-core"></div>
-        <button class="obs-system pos-tech" type="button" data-obs-system>
-          <span class="obs-sun"></span>
-          <span class="obs-system-label" data-obs-label="tech">Technology</span>
-          <span class="obs-orbit orbit-1"><span class="obs-planet mint p-45"><span class="obs-info"><span class="obs-n">AI</span><span class="obs-v">—</span></span></span></span>
-          <span class="obs-orbit orbit-2"><span class="obs-planet azure p-180"><span class="obs-info"><span class="obs-n">SaaS</span><span class="obs-v">—</span></span></span></span>
-          <span class="obs-orbit orbit-3"><span class="obs-planet mint p-300"><span class="obs-info"><span class="obs-n">Web3</span><span class="obs-v">—</span></span></span></span>
-        </button>
-        <button class="obs-system pos-eco" type="button" data-obs-system>
-          <span class="obs-sun"></span>
-          <span class="obs-system-label" data-obs-label="eco">Ecology</span>
-          <span class="obs-orbit orbit-1"><span class="obs-planet mint p-220"><span class="obs-info"><span class="obs-n">Solar</span><span class="obs-v">—</span></span></span></span>
-          <span class="obs-orbit orbit-2"><span class="obs-planet azure p-45"><span class="obs-info"><span class="obs-n">Energy</span><span class="obs-v">—</span></span></span></span>
-        </button>
-        <button class="obs-system pos-social" type="button" data-obs-system>
-          <span class="obs-sun"></span>
-          <span class="obs-system-label" data-obs-label="social">Society</span>
-          <span class="obs-orbit orbit-1"><span class="obs-planet mint p-90"><span class="obs-info"><span class="obs-n">HW</span><span class="obs-v">—</span></span></span></span>
-          <span class="obs-orbit orbit-2"><span class="obs-planet azure p-270"><span class="obs-info"><span class="obs-n">DeFi</span><span class="obs-v">—</span></span></span></span>
-          <span class="obs-orbit orbit-3"><span class="obs-planet mint p-10"><span class="obs-info"><span class="obs-n">Other</span><span class="obs-v">—</span></span></span></span>
-        </button>
-      </div>
-      <div class="obs-coming-soon" id="obsStubDesk">
-        <div class="obs-stub-inner">
-          <span class="obs-stub-icon">🔭</span>
-          <span class="obs-stub-title">Market Observatory</span>
-          <span class="obs-stub-sub">Coming soon</span>
-        </div>
-      </div>
-    </div>
+  <aside class="sidebar-nav">
+    <button class="nav-tab active" data-nav="explore">
+      <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 3L20 9V21H15V14H9V21H4V9L12 3Z" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="nav-label">Explore</span>
+    </button>
+    <button class="nav-tab" data-nav="leaders">
+      <svg class="nav-icon" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10l1 7c0 3-2 6-6 6s-6-3-6-6Z" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="nav-label">Leaders</span>
+    </button>
+    <button class="nav-tab" data-nav="chats">
+      <svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="nav-label">Chats</span>
+    </button>
+    <button class="nav-tab" data-nav="observatory">
+      <svg class="nav-icon" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="16 7 22 7 22 13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="nav-label">Observatory</span>
+    </button>
+    <button class="nav-tab" data-nav="profile">
+      <svg class="nav-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="nav-label">Profile</span>
+    </button>
   </aside>
 
   <main class="feed">
