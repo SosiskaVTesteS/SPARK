@@ -117,6 +117,11 @@ document.addEventListener('DOMContentLoaded', function () {
           layout.style.gridTemplateColumns = '88px 1fr';
         }
       }
+
+      // Load full leaders list when switching to Leaders tab
+      if (navName === 'leaders' && window.renderLeadersFull) {
+        renderLeadersFull();
+      }
     });
   });
 
@@ -1270,7 +1275,8 @@ function renderTrends() {
 }
 
 // ═══ Render leaders from profiles DB ═══
-async function renderLeaders() {
+async function renderLeaders(limit) {
+  limit = limit || 5; // Default to 5 for sidebar
   var rankColors = ['gold', 'silver', 'bronze'];
 
   // Build self-row — shown in both online and offline paths
@@ -1304,8 +1310,6 @@ async function renderLeaders() {
     if (ld) ld.innerHTML = emptyHtml + selfHtml;
     var lm = document.getElementById('leaderListMob');
     if (lm) lm.innerHTML = emptyHtml + selfHtml;
-    var lf = document.getElementById('leaderListFull');
-    if (lf) lf.innerHTML = emptyHtml + selfHtml;
     return;
   }
 
@@ -1314,7 +1318,7 @@ async function renderLeaders() {
       .select('id, username, spk_balance, investments_count, avatar_color, is_admin')
       .or('is_admin.is.null,is_admin.eq.false')
       .order('spk_balance', { ascending: false })
-      .limit(10);
+      .limit(limit);
   }, { silent: true, timeout: 25000 });
 
   var html;
@@ -1354,6 +1358,85 @@ async function renderLeaders() {
   if (ld) ld.innerHTML = html;
   var lm = document.getElementById('leaderListMob');
   if (lm) lm.innerHTML = html;
+}
+
+// ═══ Render full leaders list for Leaders page (10 items) ═══
+async function renderLeadersFull() {
+  var rankColors = ['gold', 'silver', 'bronze'];
+
+  // Build self-row — shown in both online and offline paths
+  var selfHtml = '';
+  if (typeof ME !== 'undefined' && ME && PROFILE) {
+    var selfUname = escapeHTML(PROFILE.username || '@user');
+    var selfLetter = selfUname.replace('@', '').charAt(0).toUpperCase();
+    var selfAvIdx  = PROFILE.avatar_color || 0;
+    var selfAvGrad = window.ProfileEditEngine
+      ? ProfileEditEngine.getAvatarGradient(selfAvIdx)
+      : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
+    var selfBal    = Number(PROFILE.spk_balance) || 0;
+    var selfInv    = Number(PROFILE.investments_count) || 0;
+    var selfRank   = PROFILE.rank ? '#' + PROFILE.rank : '#—';
+    selfHtml = '<div class="divider"></div>'
+      + '<div class="stitle">' + T('you') + '</div>'
+      + '<div class="li li-self">'
+      + '<span class="lrank" style="width:auto;min-width:22px;color:var(--mu)">' + selfRank + '</span>'
+      + '<div class="lav" style="background:' + selfAvGrad + '">' + selfLetter + '</div>'
+      + '<div class="linf">'
+      + '<div class="lname">' + selfUname + '</div>'
+      + '<div class="lsub">' + selfInv + ' ' + (LANG === 'ru' ? 'вложений' : 'investments') + '</div>'
+      + '</div>'
+      + '<div class="lprofit" style="color:var(--ac)">' + selfBal.toLocaleString() + ' SPK</div>'
+      + '</div>';
+  }
+
+  if (!supa) {
+    var emptyHtml = '<div style="color:var(--mu);font-size:12px;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных' : 'No data yet') + '</div>';
+    var lf = document.getElementById('leaderListFull');
+    if (lf) lf.innerHTML = emptyHtml + selfHtml;
+    return;
+  }
+
+  var r = await safeSupabaseCall('database', function () {
+    return supa.from('profiles')
+      .select('id, username, spk_balance, investments_count, avatar_color, is_admin')
+      .or('is_admin.is.null,is_admin.eq.false')
+      .order('spk_balance', { ascending: false })
+      .limit(10);
+  }, { silent: true, timeout: 25000 });
+
+  var html;
+  if (r.ok && r.data && r.data.data && r.data.data.length > 0) {
+    var leaders = r.data.data;
+    html = leaders.map(function(p, i) {
+      var uname = escapeHTML(p.username || '@user');
+      var letter = uname.replace('@', '').charAt(0).toUpperCase();
+      var avatarColor = p.avatar_color || 0;
+      var avatarGradient = window.ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avatarColor) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
+      console.log('[Avatar Debug] Leaders Page Leader:', i + 1, 'User ID:', p.id, 'Username:', uname, 'Avatar Color:', avatarColor, 'Gradient:', avatarGradient);
+      var rankClass = rankColors[i] ? 'lrank ' + rankColors[i] : 'lrank';
+      var rankStyle = i >= 3 ? ' style="color:var(--mu)"' : '';
+      var bal = Number(p.spk_balance) || 0;
+      var invCount = Number(p.investments_count) || 0;
+      var profitColor = i < 3 ? '' : ' style="color:var(--ac)"';
+      var triggerId = p.id;
+      var lavTriggerAttr = triggerId ? ' class="lav mp-trigger" data-user-id="' + triggerId + '"' : ' class="lav"';
+      var linfTriggerAttr = triggerId ? ' class="linf mp-trigger" data-user-id="' + triggerId + '"' : ' class="linf"';
+      return '<div class="li">'
+        + '<span class="' + rankClass + '"' + rankStyle + '>' + (i + 1) + '</span>'
+        + '<div' + lavTriggerAttr + ' style="background:' + avatarGradient + '">' + letter + '</div>'
+        + '<div' + linfTriggerAttr + '>'
+        + '<div class="lname">' + uname + '</div>'
+        + '<div class="lsub">' + invCount + ' ' + (LANG === 'ru' ? 'вложений' : 'investments') + '</div>'
+        + '</div>'
+        + '<div class="lprofit"' + profitColor + '>' + bal.toLocaleString() + ' SPK</div>'
+        + '</div>';
+    }).join('');
+  } else {
+    html = '<div style="color:var(--mu);font-size:12px;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных' : 'No data yet') + '</div>';
+  }
+
+  html += selfHtml;
+
   var lf = document.getElementById('leaderListFull');
   if (lf) lf.innerHTML = html;
 }
