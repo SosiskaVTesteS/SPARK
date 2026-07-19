@@ -37,6 +37,9 @@ ALTER TABLE public.investment_activity_log REPLICA IDENTITY FULL;
 -- Add to realtime publication
 ALTER PUBLICATION supabase_realtime ADD TABLE public.investment_activity_log;
 
+-- Drop existing helper function first
+DROP FUNCTION IF EXISTS public.log_investment_to_activity(UUID, UUID, BIGINT);
+
 -- Update helper function to use profile_id
 CREATE OR REPLACE FUNCTION public.log_investment_to_activity(p_profile_id UUID, p_idea_id UUID, p_amount BIGINT)
 RETURNS VOID AS $$
