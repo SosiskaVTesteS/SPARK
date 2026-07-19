@@ -2917,10 +2917,31 @@ function profileHTML(sfx) {
     + '<div class="my-ideas-list" id="myIdeasList-' + sfx + '" style="display:flex;flex-direction:column;gap:12px;margin-top:12px;padding:4px 0;"></div>'
     + '</div>'
     + '</div>'
+    + '<div class="savedideas-section" id="savedideasSec-' + sfx + '">'
+    + '<button type="button" class="savedideas-toggle" id="savedideasToggle-' + sfx + '">'
+    + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--ac2)"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>'
+    + '<span>' + (window.LANG === 'ru' ? 'Сохранённые идеи' : 'Saved Ideas') + '</span>'
+    + '<svg class="savedideas-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>'
+    + '</button>'
+    + '<div class="savedideas-body" id="savedideasBody-' + sfx + '">'
+    + '<div class="saved-ideas-list" id="savedIdeasList-' + sfx + '" style="display:flex;flex-direction:column;gap:12px;margin-top:12px;padding:4px 0;"></div>'
+    + '</div>'
+    + '</div>'
     + '<div class="divider"></div>'
     + '<div class="stitle" style="margin-top:14px">' + T('wallet') + '</div>'
     + '<div class="wcrd"><div><div class="wamt">' + (Number(PROFILE.spk_balance) || 0).toLocaleString() + ' <small>SPK</small></div><div class="wsub">' + T('availableBalance') + '</div></div>'
     + '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--ac);opacity:.55"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8L2 7h20l-6-4z"/></svg></div>'
+    + renderDailyStreakHTML()
+    + '<div class="divider"></div>'
+    + '<div class="sset" data-open-mo="moSupport" onclick="openMo(\'moSupport\')">'
+    + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--ac)"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>'
+    + '<span>' + (window.LANG === 'ru' ? 'Поддержать проект' : 'Support Project') + '</span>'
+    + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--mu)"><polyline points="9 18 15 12 9 6"/></svg></div>'
+    + '<div class="sset" onclick="window.openPremium && openPremium()">'
+    + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--ac)"><path d="M12 2l3.09 6.26L22 9.27l-5 4.97 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>'
+    + '<span>' + (window.LANG === 'ru' ? 'Полный доступ' : 'Full Access') + '</span>'
+    + '<span class="sset-status">' + (window.LANG === 'ru' ? 'Активен · ∞ дн.' : 'Active · ∞ days') + '</span>'
+    + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--mu)"><polyline points="9 18 15 12 9 6"/></svg></div>'
     + '<div class="divider"></div>'
     + '<div class="ach-section" id="achSec-' + sfx + '">'
     + '<button type="button" class="ach-toggle" id="achToggle-' + sfx + '">'
@@ -2953,17 +2974,62 @@ function profileHTML(sfx) {
     + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--mu)"><polyline points="9 18 15 12 9 6"/></svg></div>'
     + '<div class="sset" data-pulse="1" data-settings="privacy"><span>' + T('privacy') + '</span>'
     + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--mu)"><polyline points="9 18 15 12 9 6"/></svg></div>'
+    + '<div class="sset" data-settings="profile-bg" onclick="window.ProfileEditEngine && ProfileEditEngine.openProfileBg()">'
+    + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--ac)"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>'
+    + '<span>' + (window.LANG === 'ru' ? 'Фон профиля' : 'Profile Background') + '</span>'
+    + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--mu)"><polyline points="9 18 15 12 9 6"/></svg></div>'
     + '<a class="sset" href="about.html" style="text-decoration:none;color:inherit"><span>' + (typeof T === 'function' && T('aboutUs') !== 'aboutUs' ? T('aboutUs') : (window.LANG === 'ru' ? 'О нас' : 'About us')) + '</span>'
     + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--mu)"><polyline points="9 18 15 12 9 6"/></svg></a>'
     + '<div class="sset" data-open-mo="moSupport" onclick="openMo(\'moSupport\')"><span>' + (window.LANG === 'ru' ? 'Поддержка' : 'Support') + '</span>'
     + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--mu)"><polyline points="9 18 15 12 9 6"/></svg></div>'
     + (PROFILE.is_admin
-        ? '<a class="sset" href="admin.html" style="text-decoration:none;color:inherit">'
+        ? '<div class="sset" onclick="window.checkUpdates && checkUpdates()">'
+          + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--ac)"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>'
+          + '<span>' + (window.LANG === 'ru' ? 'Проверить обновления' : 'Check Updates') + '</span>'
+          + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--mu)"><polyline points="9 18 15 12 9 6"/></svg></div>'
+          + '<a class="sset" href="admin.html" style="text-decoration:none;color:inherit">'
           + '<span style="color:var(--vl2)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:5px;color:var(--vl2)"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Панель управления</span>'
           + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--mu)"><polyline points="9 18 15 12 9 6"/></svg></a>'
+          + '<div class="sset" onclick="window.quickAccountSwitch && quickAccountSwitch()">'
+          + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--ac)"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M12 11v6"/><path d="M9 14h6"/></svg>'
+          + '<span>' + (window.LANG === 'ru' ? 'Быстрая смена аккаунта' : 'Quick Account Switch') + '</span>'
+          + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--mu)"><polyline points="9 18 15 12 9 6"/></svg></div>'
         : '')
     + '<div class="sset" data-logout="1"><span style="color:var(--red)">' + T('logout') + '</span>'
     + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--red)"><polyline points="9 18 15 12 9 6"/></svg></div>'
+    + '</div>';
+}
+
+function renderDailyStreakHTML() {
+  // Calculate daily streak based on last_daily_bonus_claim
+  var streak = 0;
+  var streakDays = [];
+  
+  if (PROFILE.last_daily_bonus_claim) {
+    var lastClaim = new Date(PROFILE.last_daily_bonus_claim);
+    var now = new Date();
+    var daysDiff = Math.floor((now - lastClaim) / (1000 * 60 * 60 * 24));
+    
+    // Simple streak calculation: if claimed today or yesterday, streak continues
+    // This is a simplified version - in production you'd want more sophisticated logic
+    if (daysDiff <= 1) {
+      streak = PROFILE.daily_streak || 1;
+    }
+  }
+  
+  // Generate 7 days with stars
+  for (var i = 0; i < 7; i++) {
+    var active = i < streak;
+    streakDays.push(
+      '<div class="streak-day' + (active ? ' active' : '') + '">'
+      + '<svg width="14" height="14" viewBox="0 0 24 24" fill="' + (active ? 'currentColor' : 'none') + '" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'
+      + '</div>'
+    );
+  }
+  
+  return '<div class="streak-container">'
+    + '<div class="streak-label">' + (window.LANG === 'ru' ? 'Ежедневный стрик' : 'Daily Streak') + '</div>'
+    + '<div class="streak-days">' + streakDays.join('') + '</div>'
     + '</div>';
 }
 
@@ -2973,6 +3039,7 @@ function renderProfile() {
     dp.innerHTML = profileHTML('D');
     if (window.ProfileEditEngine) ProfileEditEngine.initSection('D');
     initMyIdeasToggle('D');
+    initSavedIdeasToggle('D');
     initAchievementsToggle('D');
   }
   var mb = document.getElementById('mobProfInner');
@@ -2985,6 +3052,7 @@ function renderProfile() {
     pf.innerHTML = profileHTML('D');
     if (window.ProfileEditEngine) ProfileEditEngine.initSection('D');
     initMyIdeasToggle('D');
+    initSavedIdeasToggle('D');
     initAchievementsToggle('D');
   }
   renderMyIdeas();
@@ -2995,6 +3063,18 @@ function renderProfile() {
 function initMyIdeasToggle(sfx) {
   var toggle = document.getElementById('myideasToggle-' + sfx);
   var body   = document.getElementById('myideasBody-' + sfx);
+  if (toggle && body) {
+    toggle.onclick = function () {
+      var open = body.classList.contains('open');
+      body.classList.toggle('open', !open);
+      toggle.classList.toggle('open', !open);
+    };
+  }
+}
+
+function initSavedIdeasToggle(sfx) {
+  var toggle = document.getElementById('savedideasToggle-' + sfx);
+  var body   = document.getElementById('savedideasBody-' + sfx);
   if (toggle && body) {
     toggle.onclick = function () {
       var open = body.classList.contains('open');
