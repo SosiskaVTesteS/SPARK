@@ -536,7 +536,7 @@ header {
   border-right: 1px solid rgba(123,92,250,0.12);
   box-shadow: 0 0 20px rgba(123,92,250,0.08), inset 0 0 30px rgba(232,90,160,0.03);
   border-radius: 16px;
-  margin: 16px 0;
+  margin: auto 16px;
   height: 50vh;
   max-height: 400px;
 }
