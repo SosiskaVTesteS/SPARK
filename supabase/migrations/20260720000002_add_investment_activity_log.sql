@@ -4,7 +4,7 @@
 -- Create table for investment activity log
 CREATE TABLE IF NOT EXISTS public.investment_activity_log (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID NOT NULL REFERENCES public.auth.users(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   idea_id UUID NOT NULL REFERENCES public.ideas(id) ON DELETE CASCADE,
   amount BIGINT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
