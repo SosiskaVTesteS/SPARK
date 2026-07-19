@@ -105,10 +105,17 @@ document.addEventListener('DOMContentLoaded', function () {
       var pagePanel = document.getElementById('page-' + navName);
       if (pagePanel) pagePanel.classList.add('active');
 
-      // Show/hide right sidebar based on active tab
+      // Show/hide right sidebar and adjust grid layout based on active tab
       var rightSidebar = document.querySelector('.sidebar:last-child');
-      if (rightSidebar) {
-        rightSidebar.style.display = navName === 'explore' ? 'block' : 'none';
+      var layout = document.querySelector('.layout');
+      if (rightSidebar && layout) {
+        if (navName === 'explore' || navName === 'observatory') {
+          rightSidebar.style.display = 'block';
+          layout.style.gridTemplateColumns = '88px 1fr 258px';
+        } else {
+          rightSidebar.style.display = 'none';
+          layout.style.gridTemplateColumns = '88px 1fr';
+        }
       }
     });
   });

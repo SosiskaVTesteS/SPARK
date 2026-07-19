@@ -628,6 +628,12 @@ header {
   margin-bottom: 16px;
 }
 
+/* Expand Leaders, Chats, Profile panels to full width when right sidebar is hidden */
+#page-leaders, #page-chats, #page-profile {
+  max-width: 100%;
+  padding-right: 24px;
+}
+
 .stitle {
   font-family: var(--fh);
   font-size: 10px;
