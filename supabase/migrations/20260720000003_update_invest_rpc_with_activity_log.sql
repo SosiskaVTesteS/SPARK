@@ -1,6 +1,9 @@
 -- Migration: Update invest_in_idea to log investment activity
 -- This adds the call to log_investment_to_activity helper function
 
+-- Drop existing function first to allow return type changes
+DROP FUNCTION IF EXISTS public.invest_in_idea(uuid, integer);
+
 -- Get the current invest_in_idea function definition and update it
 CREATE OR REPLACE FUNCTION public.invest_in_idea(p_idea_id uuid, p_amount integer)
 RETURNS TABLE (new_balance integer, new_total_invested integer, new_investment_history integer[])
