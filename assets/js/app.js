@@ -1772,11 +1772,11 @@ async function loadInitialActivity() {
       .from('investment_activity_log')
       .select(`
         id,
-        user_id,
+        profile_id,
         idea_id,
         amount,
         created_at,
-        profiles!investment_activity_log_user_id_fkey (username, avatar_color),
+        profiles!investment_activity_log_profile_id_fkey (username, avatar_color),
         ideas!investment_activity_log_idea_id_fkey (title, author_id, profiles!ideas_author_id_fkey (username))
       `)
       .order('created_at', { ascending: false })
@@ -1872,11 +1872,11 @@ function subscribeToActivity() {
           .from('investment_activity_log')
           .select(`
             id,
-            user_id,
+            profile_id,
             idea_id,
             amount,
             created_at,
-            profiles!investment_activity_log_user_id_fkey (username, avatar_color),
+            profiles!investment_activity_log_profile_id_fkey (username, avatar_color),
             ideas!investment_activity_log_idea_id_fkey (title, author_id, profiles!ideas_author_id_fkey (username))
           `)
           .eq('id', newItem.id)

@@ -34,7 +34,7 @@ BEGIN
     IF v_balance IS NULL THEN
       RAISE EXCEPTION 'insufficient_balance';
     END IF;
-    -- Log the investment activity
+    -- Log the investment activity (use profile_id which is same as user_id in this context)
     PERFORM public.log_investment_to_activity(v_uid, p_idea_id, p_amount::BIGINT);
     RETURN QUERY SELECT v_balance, 0, ARRAY[]::integer[];
     RETURN;

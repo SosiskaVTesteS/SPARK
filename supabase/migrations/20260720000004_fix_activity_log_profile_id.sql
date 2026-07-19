@@ -1,8 +1,11 @@
--- Migration: Add investment activity log for Live Activity feed
--- This table tracks all investments for real-time activity feed
+-- Migration: Fix investment_activity_log to use profile_id instead of user_id
+-- This fixes the foreign key relationship to profiles table
 
--- Create table for investment activity log
-CREATE TABLE IF NOT EXISTS public.investment_activity_log (
+-- Drop the existing table and recreate with correct structure
+DROP TABLE IF EXISTS public.investment_activity_log CASCADE;
+
+-- Recreate table with correct foreign key to profiles
+CREATE TABLE public.investment_activity_log (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   profile_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   idea_id UUID NOT NULL REFERENCES public.ideas(id) ON DELETE CASCADE,
@@ -11,11 +14,11 @@ CREATE TABLE IF NOT EXISTS public.investment_activity_log (
 );
 
 -- Add index for efficient querying of recent activity
-CREATE INDEX IF NOT EXISTS investment_activity_log_created_at_idx 
+CREATE INDEX investment_activity_log_created_at_idx 
   ON public.investment_activity_log(created_at DESC);
 
 -- Add index for filtering by idea
-CREATE INDEX IF NOT EXISTS investment_activity_log_idea_id_idx 
+CREATE INDEX investment_activity_log_idea_id_idx 
   ON public.investment_activity_log(idea_id);
 
 -- Enable Row Level Security
@@ -34,8 +37,7 @@ ALTER TABLE public.investment_activity_log REPLICA IDENTITY FULL;
 -- Add to realtime publication
 ALTER PUBLICATION supabase_realtime ADD TABLE public.investment_activity_log;
 
--- ═══ Helper function to log investment activity ═══
--- This function will be called from invest_in_idea RPC
+-- Update helper function to use profile_id
 CREATE OR REPLACE FUNCTION public.log_investment_to_activity(p_profile_id UUID, p_idea_id UUID, p_amount BIGINT)
 RETURNS VOID AS $$
 BEGIN
