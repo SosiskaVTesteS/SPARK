@@ -90,9 +90,9 @@ RETURNS TABLE (
   user_id UUID,
   username TEXT,
   avatar_color SMALLINT,
-  spk_balance INTEGER,
+  spk_balance BIGINT,
   investments_count INTEGER,
-  period_growth INTEGER
+  period_growth BIGINT
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -119,7 +119,7 @@ BEGIN
       p.avatar_color,
       p.spk_balance,
       p.investments_count,
-      0 AS period_growth
+      0::BIGINT AS period_growth
     FROM profiles p
     WHERE (p.is_admin IS NULL OR p.is_admin = false)
       AND p.spk_balance IS NOT NULL
@@ -142,12 +142,12 @@ BEGIN
       p.avatar_color,
       p.spk_balance,
       p.investments_count,
-      COALESCE(pg.total_growth, 0) AS period_growth
+      COALESCE(pg.total_growth, 0::BIGINT) AS period_growth
     FROM profiles p
     LEFT JOIN period_growth pg ON pg.user_id = p.id
     WHERE (p.is_admin IS NULL OR p.is_admin = false)
       AND p.spk_balance IS NOT NULL
-    ORDER BY COALESCE(pg.total_growth, 0) DESC, p.spk_balance DESC
+    ORDER BY COALESCE(pg.total_growth, 0::BIGINT) DESC, p.spk_balance DESC
     LIMIT limit_count;
   END IF;
 END;
