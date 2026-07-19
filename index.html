@@ -283,26 +283,29 @@ html.auth-active, html.auth-active body { overflow: hidden !important; height: 1
 <!-- ════════════════ ОСНОВНАЯ ВЁРСТКА ════════════════ -->
 <div class="layout">
   <aside class="sidebar-nav">
-    <button class="nav-tab active" data-nav="explore">
-      <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 3L20 9V21H15V14H9V21H4V9L12 3Z" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span class="nav-label">Explore</span>
-    </button>
-    <button class="nav-tab" data-nav="leaders">
-      <svg class="nav-icon" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10l1 7c0 3-2 6-6 6s-6-3-6-6Z" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span class="nav-label">Leaders</span>
-    </button>
-    <button class="nav-tab" data-nav="chats">
-      <svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span class="nav-label">Chats</span>
-    </button>
-    <button class="nav-tab" data-nav="observatory">
-      <svg class="nav-icon" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="16 7 22 7 22 13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span class="nav-label">Observatory</span>
-    </button>
-    <button class="nav-tab" data-nav="profile">
-      <svg class="nav-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span class="nav-label">Profile</span>
-    </button>
+    <div class="nav-tabs-container">
+      <button class="nav-tab active" data-nav="explore">
+        <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 3L20 9V21H15V14H9V21H4V9L12 3Z" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="nav-label">Лента</span>
+      </button>
+      <button class="nav-tab" data-nav="leaders">
+        <svg class="nav-icon" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10l1 7c0 3-2 6-6 6s-6-3-6-6Z" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="nav-label">Лидеры</span>
+      </button>
+      <button class="nav-tab" data-nav="chats">
+        <svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="nav-label">Чаты</span>
+      </button>
+      <button class="nav-tab" data-nav="observatory">
+        <svg class="nav-icon" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="16 7 22 7 22 13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="nav-label">Обсерватория</span>
+      </button>
+      <button class="nav-tab" data-nav="profile">
+        <svg class="nav-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="nav-label">Профиль</span>
+      </button>
+    </div>
+    <div class="nav-avatar" id="navAvatar">U</div>
   </aside>
 
   <main class="feed">
