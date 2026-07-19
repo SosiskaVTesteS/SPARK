@@ -126,6 +126,14 @@ document.addEventListener('DOMContentLoaded', function () {
         renderUserProgress();
         renderRisingStars();
       }
+      
+      // Load live activity when switching to Observatory tab
+      if (navName === 'observatory') {
+        loadInitialActivity();
+        subscribeToActivity();
+      } else {
+        unsubscribeFromActivity();
+      }
     });
   });
 
@@ -1720,6 +1728,151 @@ async function renderLeadersByPeriod(period) {
       noDataMessage = LANG === 'ru' ? 'Данные накапливаются — загляните через несколько дней' : 'Data accumulating — check back in a few days';
     }
     el.innerHTML = '<div style="color:var(--mu);font-size:12px;padding:8px 0">' + noDataMessage + '</div>' + selfHtml;
+  }
+}
+
+// ═══ Live Activity Feed ═══
+var activityChannel = null;
+var activityItems = [];
+
+// Format time relative to now
+function formatRelativeTime(timestamp) {
+  var now = new Date();
+  var time = new Date(timestamp);
+  var diffMs = now - time;
+  var diffSec = Math.floor(diffMs / 1000);
+  var diffMin = Math.floor(diffSec / 60);
+  var diffHour = Math.floor(diffMin / 60);
+  var diffDay = Math.floor(diffHour / 24);
+  
+  if (LANG === 'ru') {
+    if (diffSec < 60) return 'только что';
+    if (diffMin < 60) return diffMin + ' мин назад';
+    if (diffHour < 24) return diffHour + ' ч назад';
+    return diffDay + ' д назад';
+  } else {
+    if (diffSec < 60) return 'just now';
+    if (diffMin < 60) return diffMin + ' min ago';
+    if (diffHour < 24) return diffHour + 'h ago';
+    return diffDay + 'd ago';
+  }
+}
+
+// Load initial activity data
+async function loadInitialActivity() {
+  if (!supa) return;
+  
+  var r = await safeSupabaseCall('database', function () {
+    return supa
+      .from('investment_activity_log')
+      .select(`
+        id,
+        user_id,
+        idea_id,
+        amount,
+        created_at,
+        profiles!investment_activity_log_user_id_fkey (username, avatar_color),
+        ideas!investment_activity_log_idea_id_fkey (title, author_id, profiles!ideas_author_id_fkey (username))
+      `)
+      .order('created_at', { ascending: false })
+      .limit(10);
+  }, { silent: true, timeout: 25000 });
+  
+  if (r.ok && r.data && r.data.data) {
+    activityItems = r.data.data;
+    renderActivityFeed();
+  }
+}
+
+// Render activity feed
+function renderActivityFeed() {
+  var elFull = document.getElementById('liveActivityListFull');
+  var elDesk = document.getElementById('liveActivityList');
+  
+  if (!elFull && !elDesk) return;
+  
+  if (activityItems.length === 0) {
+    var emptyMsg = LANG === 'ru' ? 'Активность пока нет' : 'No activity yet';
+    if (elFull) elFull.innerHTML = '<div style="padding:7px 0">' + emptyMsg + '</div>';
+    if (elDesk) elDesk.innerHTML = '<div style="padding:7px 0">' + emptyMsg + '</div>';
+    return;
+  }
+  
+  var html = activityItems.map(function(item) {
+    var username = item.profiles ? item.profiles.username : '@user';
+    var avatarColor = item.profiles ? item.profiles.avatar_color || 0 : 0;
+    var avatarGradient = window.ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avatarColor) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
+    var letter = username.replace('@', '').charAt(0).toUpperCase();
+    var amount = Number(item.amount) || 0;
+    var ideaTitle = item.ideas ? item.ideas.title : 'Unknown idea';
+    var ideaAuthor = item.ideas && item.ideas.profiles ? item.ideas.profiles.username : '@user';
+    var timeStr = formatRelativeTime(item.created_at);
+    
+    return '<div style="padding:7px 0;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:8px;animation:slideIn 0.3s ease-out">'
+      + '<div style="width:28px;height:28px;border-radius:50%;background:' + avatarGradient + ';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0">' + letter + '</div>'
+      + '<div style="flex:1;min-width:0">'
+      + '<div style="font-size:12px;font-weight:500;color:var(--mu2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + username + ' вложил ' + amount.toLocaleString() + ' SPK</div>'
+      + '<div style="font-size:11px;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">в "' + ideaTitle + '" (' + ideaAuthor + ')</div>'
+      + '</div>'
+      + '<div style="font-size:10px;color:var(--ac);flex-shrink:0">' + timeStr + '</div>'
+      + '</div>';
+  }).join('');
+  
+  if (elFull) elFull.innerHTML = html;
+  if (elDesk) elDesk.innerHTML = html;
+}
+
+// Subscribe to realtime activity updates
+function subscribeToActivity() {
+  if (!supa || activityChannel) return;
+  
+  activityChannel = supa
+    .channel('investment_activity_changes')
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'investment_activity_log'
+      },
+      function (payload) {
+        var newItem = payload.new;
+        // Fetch related data
+        supa
+          .from('investment_activity_log')
+          .select(`
+            id,
+            user_id,
+            idea_id,
+            amount,
+            created_at,
+            profiles!investment_activity_log_user_id_fkey (username, avatar_color),
+            ideas!investment_activity_log_idea_id_fkey (title, author_id, profiles!ideas_author_id_fkey (username))
+          `)
+          .eq('id', newItem.id)
+          .single()
+          .then(function (r) {
+            if (r.data) {
+              // Add to beginning and keep only 10 items
+              activityItems.unshift(r.data);
+              if (activityItems.length > 10) {
+                activityItems = activityItems.slice(0, 10);
+              }
+              renderActivityFeed();
+            }
+          });
+      }
+    )
+    .subscribe(function (status) {
+      console.log('[Activity Feed] Subscription status:', status);
+    });
+}
+
+// Unsubscribe from activity updates
+function unsubscribeFromActivity() {
+  if (activityChannel) {
+    supa.removeChannel(activityChannel);
+    activityChannel = null;
   }
 }
 
