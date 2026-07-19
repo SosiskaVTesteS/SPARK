@@ -322,6 +322,7 @@ var ChatsEngine = (function () {
           var isActive = state.activeChannelId === c.id ? ' active' : '';
           var statusClass = isUserOnline(c.id) ? '' : ' offline';
           var grad = ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(c.avColor) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
+          console.log('[Avatar Debug] Chat Contact ID:', c.id, 'Username:', c.username, 'Avatar Color:', c.avColor, 'Gradient:', grad);
           var pinBadge = c.pinned ? '<span class="chat-row-pin-badge" style="color:var(--ac);font-size:10px;margin-left:5px" title="Pinned chat">📌</span>' : '';
           
           var checkboxHtml = '';

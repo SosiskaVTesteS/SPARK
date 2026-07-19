@@ -1099,11 +1099,14 @@ async function loadIdeasFromDB() {
     var profilesMap = {};
     if (authorIds.length > 0) {
       var pRes = await safeSupabaseCall('database', function () {
-        return supa.from('profiles').select('id, username, is_admin').in('id', authorIds);
+        return supa.from('profiles').select('id, username, avatar_color, is_admin').in('id', authorIds);
       }, { silent: true, timeout: 25000 });
       if (pRes.ok && pRes.data && pRes.data.data) {
         pRes.data.data.forEach(function(p) {
-          profilesMap[p.id] = p.username || '@user';
+          profilesMap[p.id] = {
+            username: p.username || '@user',
+            avatar_color: p.avatar_color || 0
+          };
           if (p.is_admin === true) ADMIN_USER_IDS.add(p.id);
         });
       }
@@ -1136,8 +1139,10 @@ function countUniqueInvestors(investorIds, history) {
 
 // ═══ Convert a DB ideas row to LIVE array object ═══
 function dbRowToLiveIdea(row, profilesMap) {
-  var uname = (profilesMap && profilesMap[row.author_id]) || '@user';
+  var profile = profilesMap && profilesMap[row.author_id];
+  var uname = profile && profile.username || '@user';
   var letter = uname.replace('@', '').charAt(0).toUpperCase();
+  var avatarColor = profile && profile.avatar_color || 0;
   var history = Array.isArray(row.investment_history) ? row.investment_history : [];
   // БАГ #7: считаем УНИКАЛЬНЫХ инвесторов (investor_ids), а не число транзакций.
   // Для старых идей (до миграции investor_ids) фолбэк — длина истории.
@@ -1198,6 +1203,7 @@ function dbRowToLiveIdea(row, profilesMap) {
     author_id: row.author_id,
     u: uname,
     av: letter,
+    avatar_color: avatarColor,
     bg: bg,
     tm: tm,
     tag: tag,
@@ -1305,7 +1311,7 @@ async function renderLeaders() {
 
   var r = await safeSupabaseCall('database', function () {
     return supa.from('profiles')
-      .select('id, username, spk_balance, investments_count, is_admin')
+      .select('id, username, spk_balance, investments_count, avatar_color, is_admin')
       .or('is_admin.is.null,is_admin.eq.false')
       .order('spk_balance', { ascending: false })
       .limit(10);
@@ -1317,25 +1323,20 @@ async function renderLeaders() {
     html = leaders.map(function(p, i) {
       var uname = escapeHTML(p.username || '@user');
       var letter = uname.replace('@', '').charAt(0).toUpperCase();
+      var avatarColor = p.avatar_color || 0;
+      var avatarGradient = window.ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avatarColor) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
+      console.log('[Avatar Debug] Leader:', i + 1, 'User ID:', p.id, 'Username:', uname, 'Avatar Color:', avatarColor, 'Gradient:', avatarGradient);
       var rankClass = rankColors[i] ? 'lrank ' + rankColors[i] : 'lrank';
       var rankStyle = i >= 3 ? ' style="color:var(--mu)"' : '';
       var bal = Number(p.spk_balance) || 0;
       var invCount = Number(p.investments_count) || 0;
-      // Gradient based on rank
-      var gradients = [
-        'linear-gradient(135deg,#ffd700,#e8a55a)',
-        'linear-gradient(135deg,#c0c0c0,#8888aa)',
-        'linear-gradient(135deg,#cd7f32,#aa5a22)',
-        'linear-gradient(135deg,#5ae8c5,#5a90e8)',
-        'linear-gradient(135deg,#e85a7a,#c55ae8)'
-      ];
       var profitColor = i < 3 ? '' : ' style="color:var(--ac)"';
       var triggerId = p.id;
       var lavTriggerAttr = triggerId ? ' class="lav mp-trigger" data-user-id="' + triggerId + '"' : ' class="lav"';
       var linfTriggerAttr = triggerId ? ' class="linf mp-trigger" data-user-id="' + triggerId + '"' : ' class="linf"';
       return '<div class="li">'
         + '<span class="' + rankClass + '"' + rankStyle + '>' + (i + 1) + '</span>'
-        + '<div' + lavTriggerAttr + ' style="background:' + gradients[i] + '">' + letter + '</div>'
+        + '<div' + lavTriggerAttr + ' style="background:' + avatarGradient + '">' + letter + '</div>'
         + '<div' + linfTriggerAttr + '>'
         + '<div class="lname">' + uname + '</div>'
         + '<div class="lsub">' + invCount + ' ' + (LANG === 'ru' ? 'вложений' : 'investments') + '</div>'
@@ -1917,6 +1918,7 @@ function updateHeader() {
     av.textContent = letter;
     var avIdx = Number(PROFILE.avatar_color) || 0;
     var avGrad = window.ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avIdx) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
+    console.log('[Avatar Debug] Header User ID:', ME.id, 'Username:', PROFILE.username, 'Avatar Color:', avIdx, 'Gradient:', avGrad);
     av.style.background = avGrad;
   }
   if (un) un.textContent = PROFILE.username;
@@ -2330,6 +2332,7 @@ function profileHTML(sfx) {
   var safeBio   = PROFILE.bio ? escapeHTML(PROFILE.bio) : '';
   var avIdx     = Number(PROFILE.avatar_color) || 0;
   var avGrad    = window.ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avIdx) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
+  console.log('[Avatar Debug] Profile Page User ID:', ME.id, 'Username:', PROFILE.username, 'Avatar Color:', avIdx, 'Gradient:', avGrad);
   var activeTheme = window.ThemeEngine ? ThemeEngine.getActive() : {};
   var themeIcon = activeTheme.icon || '🌌';
   var adminBadgeHtml = PROFILE.is_admin
@@ -2937,7 +2940,10 @@ async function getUserIdeas() {
         .order('created_at', { ascending: false });
       if (r.data && ME) {
         var profilesMap = {};
-        profilesMap[ME.id] = PROFILE.username;
+        profilesMap[ME.id] = {
+          username: PROFILE.username,
+          avatar_color: PROFILE.avatar_color || 0
+        };
         return r.data.map(function(row) {
           return dbRowToLiveIdea(row, profilesMap);
         });
@@ -3370,6 +3376,9 @@ function cardHTML(x, isProfile) {
   var safeTime = escapeHTML(x.tm);
   var safeBg = sanitizeCssBackground(x.bg);
   var safeAv = safeAvatar(x.av);
+  var avatarColor = x.avatar_color || 0;
+  var avatarGradient = window.ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avatarColor) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
+  console.log('[Avatar Debug] Card ID:', x.id, 'Author ID:', x.author_id, 'Username:', x.u, 'Avatar Color:', avatarColor, 'Gradient:', avatarGradient);
   var expired = isExpired(x);
   var triggerId = x.author_id || (x.u === '@future_founder' ? 1 : '');
   var triggerAttr = triggerId ? ' class="cav mp-trigger" data-user-id="' + triggerId + '"' : ' class="cav"';
@@ -3409,7 +3418,7 @@ function cardHTML(x, isProfile) {
   }
   
   return '<div class="card' + (fire ? ' fire' : '') + '" data-cid="' + x.id + '">'
-    + '<div class="ch"><div' + triggerAttr + ' style="background:' + safeBg + '">' + safeAv + '</div>'
+    + '<div class="ch"><div' + triggerAttr + ' style="background:' + avatarGradient + '">' + safeAv + '</div>'
     + '<div class="cm"><div' + nameTriggerAttr + '>' + safeUser + authorAdminBadge + '</div><div class="ct">' + safeTime + ' · #' + safeTag + '</div></div>'
     + adminDeleteBtn
     + profileActions
