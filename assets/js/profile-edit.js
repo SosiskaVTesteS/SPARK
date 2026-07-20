@@ -124,11 +124,16 @@ var ProfileEditEngine = (function () {
         var currentSfx = sfxMatch[1];
         
         var body = document.getElementById('peditBody-' + currentSfx);
+        console.log('[ProfileEdit] Found body:', body);
         if (body) {
           var open = body.classList.contains('open');
+          console.log('[ProfileEdit] Current open state:', open);
           body.classList.toggle('open', !open);
           toggle.classList.toggle('open', !open);
+          console.log('[ProfileEdit] Body classes after toggle:', body.className);
           console.log('[ProfileEdit] Toggle state changed. open:', !open);
+        } else {
+          console.error('[ProfileEdit] Body element not found for sfx:', currentSfx);
         }
       });
       globalDelegationSetup = true;
