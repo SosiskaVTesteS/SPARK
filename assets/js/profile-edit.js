@@ -104,15 +104,20 @@ var ProfileEditEngine = (function () {
 
   /* ────── Wire up a rendered edit section ────── */
   function initSection(sfx) {
+    console.log('[ProfileEdit] initSection called with sfx:', sfx);
     /* Toggle */
     var toggle = document.getElementById('peditToggle-' + sfx);
     var body   = document.getElementById('peditBody-' + sfx);
+    console.log('[ProfileEdit] toggle:', toggle, 'body:', body);
     if (toggle && body) {
       toggle.addEventListener('click', function () {
+        console.log('[ProfileEdit] Toggle clicked!');
         var open = body.classList.contains('open');
         body.classList.toggle('open', !open);
         toggle.classList.toggle('open', !open);
       });
+    } else {
+      console.error('[ProfileEdit] Toggle or body not found! toggle:', toggle, 'body:', body);
     }
 
     /* Emoji selection */
