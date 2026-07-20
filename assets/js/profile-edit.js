@@ -143,6 +143,25 @@ var ProfileEditEngine = (function () {
           console.log('  opacity:', computed.opacity);
           console.log('  visibility:', computed.visibility);
           console.log('  innerHTML length:', body.innerHTML.length);
+          
+          // Log bounding rect and dimensions
+          console.log('[ProfileEdit] BoundingRect:', JSON.stringify(body.getBoundingClientRect()));
+          console.log('[ProfileEdit] offsetWidth:', body.offsetWidth, 'offsetHeight:', body.offsetHeight);
+          
+          // Check parent containers for overflow issues
+          var parent = body.parentElement;
+          var depth = 0;
+          console.log('[ProfileEdit] Parent containers:');
+          while (parent && depth < 5) {
+            var parentStyle = getComputedStyle(parent);
+            console.log('  Parent ' + depth + ' (' + (parent.className || parent.tagName) + '):', 
+              'overflow:', parentStyle.overflow, 
+              'height:', parentStyle.height, 
+              'max-height:', parentStyle.maxHeight,
+              'display:', parentStyle.display);
+            parent = parent.parentElement;
+            depth++;
+          }
         } else {
           console.error('[ProfileEdit] Body element not found for sfx:', currentSfx);
         }
