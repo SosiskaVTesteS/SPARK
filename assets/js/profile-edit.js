@@ -281,11 +281,15 @@ var ProfileEditEngine = (function () {
       if (avatarPhoto) {
         updateData.avatar_photo = avatarPhoto;
       }
+      console.log('[ProfileEdit] Sending to Supabase:', updateData);
       var res = await window.supa.from('profiles').update(updateData).eq('id', window.ME.id);
+      console.log('[ProfileEdit] Supabase response:', res);
 
       if (res.error) {
+        console.error('[ProfileEdit] Supabase error:', res.error);
         _status(status, '✗ ' + res.error.message, 'error');
       } else {
+        console.log('[ProfileEdit] Save successful, applying locally');
         _applyProfileLocally('@' + newNick, newBio, avatarColor, avatarEmoji, avatarPhoto);
         _status(status, lblProfUpdated, 'success');
         if (window.toast) window.toast(lblProfUpdated, 'var(--ac2)');
