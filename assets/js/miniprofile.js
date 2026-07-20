@@ -153,6 +153,8 @@ const MiniProfile = (() => {
             invested:    bal.toLocaleString(),
             rankNum:     rankNum,
             avatarLabel: uname.replace('@', '').slice(0, 2).toUpperCase(),
+            avatarEmoji: row.avatar_emoji || '',
+            avatarPhoto: row.avatar_photo || '',
             theme:       theme,
             specialBadges: (function () {
               var badges = row.special_badges;
@@ -185,7 +187,13 @@ const MiniProfile = (() => {
   /* ── Заполнить карточку данными ─────────────────────── */
   function populate(user) {
     /* Аватарка */
-    elAvatar.textContent = user.avatarLabel;
+    if (user.avatarPhoto) {
+      elAvatar.innerHTML = '<img src="' + user.avatarPhoto + '" alt="Avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+    } else if (user.avatarEmoji) {
+      elAvatar.textContent = user.avatarEmoji;
+    } else {
+      elAvatar.textContent = user.avatarLabel;
+    }
 
     /* Тема карточки (цвет рамки, туманности, кнопок) */
     card.dataset.theme = user.theme;
