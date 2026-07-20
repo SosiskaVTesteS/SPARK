@@ -2283,6 +2283,65 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
   flex-shrink: 0;
 }
 
+/* Profile Edit Modal */
+.profile-edit-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+.profile-edit-modal.open {
+  display: flex;
+}
+.profile-edit-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+}
+.profile-edit-modal-content {
+  position: relative;
+  background: var(--sf2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 24px;
+  width: 90%;
+  max-width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+.profile-edit-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  border: none;
+  color: var(--mu2);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+.profile-edit-modal-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--tx);
+}
+.profile-edit-modal-header {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--tx);
+  margin-bottom: 20px;
+  text-align: center;
+}
+
 .pedit-field { margin-bottom: 12px; }
 .pedit-field label {
   display: flex;

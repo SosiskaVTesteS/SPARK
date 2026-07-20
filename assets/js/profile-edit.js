@@ -33,6 +33,263 @@ var ProfileEditEngine = (function () {
     return AVATAR_COLORS[Number(idx) || 0] || AVATAR_COLORS[0];
   }
 
+  /* ────── Profile Edit Modal ────── */
+  function openProfileEditModal() {
+    // Create modal if it doesn't exist
+    var modal = document.getElementById('profileEditModal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'profileEditModal';
+      modal.className = 'profile-edit-modal';
+      document.body.appendChild(modal);
+    }
+
+    // Render modal content
+    modal.innerHTML = renderProfileEditModalContent();
+
+    // Show modal
+    modal.classList.add('open');
+
+    // Initialize event handlers
+    initProfileEditModalHandlers();
+  }
+
+  function closeProfileEditModal() {
+    var modal = document.getElementById('profileEditModal');
+    if (modal) {
+      modal.classList.remove('open');
+    }
+  }
+
+  function renderProfileEditModalContent() {
+    var profile = window.PROFILE || {};
+    var avatarIdx = Number(profile.avatar_color) || 0;
+    var bio       = profile.bio || '';
+    var username  = (profile.username || '').replace('@', '');
+    var avatarEmoji = profile.avatar_emoji || '';
+    var avatarPhoto = profile.avatar_photo || '';
+
+    // Determine current avatar display
+    var currentAvatarDisplay = '';
+    if (avatarPhoto) {
+      currentAvatarDisplay = '<img src="' + avatarPhoto + '" alt="Avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+    } else if (avatarEmoji) {
+      currentAvatarDisplay = avatarEmoji;
+    } else {
+      currentAvatarDisplay = username.charAt(0).toUpperCase() || 'U';
+    }
+
+    var avatarDots = AVATAR_COLORS.map(function (grad, i) {
+      return '<button type="button" class="avatar-dot' + (i === avatarIdx ? ' selected' : '') + '" '
+        + 'data-av-idx="' + i + '" style="background:' + grad + '" aria-label="Avatar colour ' + i + '"></button>';
+    }).join('');
+
+    var emojiOptions = AVATAR_EMOJIS.map(function (emoji, i) {
+      return '<button type="button" class="avatar-emoji' + (avatarEmoji === emoji ? ' selected' : '') + '" '
+        + 'data-emoji="' + emoji + '">' + emoji + '</button>';
+    }).join('');
+
+    return ''
+      + '<div class="profile-edit-modal-backdrop"></div>'
+      + '<div class="profile-edit-modal-content">'
+      + '<button type="button" class="profile-edit-modal-close" id="profileEditModalClose">✕</button>'
+      + '<div class="profile-edit-modal-header">' + (window.T ? T('editProfile') : 'Edit Profile') + '</div>'
+      /* Current Avatar Preview */
+      + '<div class="pedit-current-avatar">'
+      + '<div class="pedit-avatar-large" id="peditAvatarLarge-modal" style="background:' + getAvatarGradient(avatarIdx) + '">' + currentAvatarDisplay + '</div>'
+      + '</div>'
+      /* Change Avatar Section */
+      + '<div class="pedit-sublabel">' + (window.T ? T('changeAvatar') : 'Change Avatar') + '</div>'
+      + '<div class="avatar-emoji-grid" id="peditEmojiGrid-modal">' + emojiOptions + '</div>'
+      + '<button type="button" class="pedit-upload-btn" id="peditUpload-modal">' + (window.T ? T('uploadOwn') : 'Upload your own') + '</button>'
+      + '<input type="file" id="peditFileInput-modal" accept="image/*" style="display:none">'
+      /* Avatar Color Section */
+      + '<div class="pedit-sublabel" style="margin-top:20px">' + (window.T ? T('avatarColor') : 'Avatar Colour') + '</div>'
+      + '<div class="pedit-color-row">'
+      + '<div class="pedit-av-preview-small" id="peditAvPrev-modal" style="background:' + getAvatarGradient(avatarIdx) + '">' + (username.charAt(0).toUpperCase() || 'U') + '</div>'
+      + '<div class="avatar-grid" id="peditAvGrid-modal">' + avatarDots + '</div>'
+      + '</div>'
+      /* Username */
+      + '<div class="pedit-field" style="margin-top:20px">'
+      + '<label>Username <span class="pedit-sublabel">' + (window.T ? T('usernameLetters') : '(letters, numbers, _)') + '</span></label>'
+      + '<div class="pedit-input-wrap"><span class="pedit-at">@</span>'
+      + '<input type="text" class="pedit-input" id="peditNick-modal" value="' + _esc(username) + '" maxlength="29" placeholder="your_name" autocomplete="off" spellcheck="false">'
+      + '</div>'
+      + '<div class="pedit-hint" id="peditNickHint-modal"></div>'
+      + '</div>'
+      /* Bio */
+      + '<div class="pedit-field">'
+      + '<label>' + (window.T ? T('bioLabel') : 'Bio') + ' <span class="pedit-char-count" id="peditBioCount-modal">' + bio.length + '/160</span></label>'
+      + '<textarea class="pedit-input pedit-bio" id="peditBio-modal" maxlength="160" rows="3" placeholder="' + (window.T ? T('bioPlaceholder') : 'A short bio about you…') + '">' + _esc(bio) + '</textarea>'
+      + '</div>'
+      /* Save */
+      + '<button type="button" class="pedit-save-btn" id="peditSave-modal">' + (window.T ? T('saveChanges') : 'Save Changes') + '</button>'
+      + '<div class="pedit-status" id="peditStatus-modal"></div>'
+      + '</div>';
+  }
+
+  function initProfileEditModalHandlers() {
+    // Close button
+    var closeBtn = document.getElementById('profileEditModalClose');
+    if (closeBtn) {
+      closeBtn.onclick = function () { closeProfileEditModal(); };
+    }
+
+    // Backdrop click
+    var backdrop = document.querySelector('.profile-edit-modal-backdrop');
+    if (backdrop) {
+      backdrop.onclick = function () { closeProfileEditModal(); };
+    }
+
+    // Emoji selection
+    var emojiGrid = document.getElementById('peditEmojiGrid-modal');
+    if (emojiGrid) {
+      emojiGrid.addEventListener('click', function (e) {
+        var btn = e.target.closest('.avatar-emoji');
+        if (!btn) return;
+        var selectedEmoji = btn.dataset.emoji;
+        emojiGrid.querySelectorAll('.avatar-emoji').forEach(function (b) { b.classList.remove('selected'); });
+        btn.classList.add('selected');
+        updateAvatarPreview('modal', selectedEmoji, null, null);
+      });
+    }
+
+    // Photo upload
+    var uploadBtn = document.getElementById('peditUpload-modal');
+    var fileInput = document.getElementById('peditFileInput-modal');
+    if (uploadBtn && fileInput) {
+      uploadBtn.addEventListener('click', function () { fileInput.click(); });
+      fileInput.addEventListener('change', function (e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+          alert('Please select an image file');
+          return;
+        }
+        var reader = new FileReader();
+        reader.onload = function (e) {
+          updateAvatarPreview('modal', null, e.target.result, null);
+          if (emojiGrid) {
+            emojiGrid.querySelectorAll('.avatar-emoji').forEach(function (b) { b.classList.remove('selected'); });
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // Avatar dots
+    var grid = document.getElementById('peditAvGrid-modal');
+    if (grid) {
+      grid.addEventListener('click', function (e) {
+        var dot = e.target.closest('.avatar-dot');
+        if (!dot) return;
+        grid.querySelectorAll('.avatar-dot').forEach(function (d) { d.classList.remove('selected'); });
+        dot.classList.add('selected');
+        var prev = document.getElementById('peditAvPrev-modal');
+        var large = document.getElementById('peditAvatarLarge-modal');
+        if (prev) prev.style.background = dot.style.background;
+        if (large) large.style.background = dot.style.background;
+      });
+    }
+
+    // Bio char counter
+    var bioEl    = document.getElementById('peditBio-modal');
+    var bioCount = document.getElementById('peditBioCount-modal');
+    if (bioEl && bioCount) {
+      bioEl.addEventListener('input', function () {
+        bioCount.textContent = bioEl.value.length + '/160';
+      });
+    }
+
+    // Nick hint
+    var nickEl   = document.getElementById('peditNick-modal');
+    var nickHint = document.getElementById('peditNickHint-modal');
+    if (nickEl && nickHint) {
+      nickEl.addEventListener('input', function () {
+        var v = nickEl.value;
+        if (v && v.length < 3)                       { _hint(nickHint, (window.T ? T('min3chars') : 'Minimum 3 characters'), 'err'); }
+        else if (v && !/^[a-zA-Z0-9_-]+$/.test(v))  { _hint(nickHint, (window.T ? T('onlyLettersNums') : 'Only letters, numbers, _ and -'),  'err'); }
+        else                                          { _hint(nickHint, '', ''); }
+      });
+    }
+
+    // Save
+    var saveBtn = document.getElementById('peditSave-modal');
+    if (saveBtn) {
+      saveBtn.addEventListener('click', function () { saveProfileModal(); });
+    }
+  }
+
+  async function saveProfileModal() {
+    var saveBtn  = document.getElementById('peditSave-modal');
+    var status   = document.getElementById('peditStatus-modal');
+    var nickEl   = document.getElementById('peditNick-modal');
+    var bioEl    = document.getElementById('peditBio-modal');
+    var modal    = document.getElementById('profileEditModal');
+    if (!nickEl || !bioEl) return;
+
+    var newNick = nickEl.value.trim();
+    var newBio  = bioEl.value.trim();
+
+    /* Validate */
+    if (!newNick || newNick.length < 3)           { _status(status, 'Username must be 3+ characters', 'error'); return; }
+    if (!/^[a-zA-Z0-9_-]+$/.test(newNick))       { _status(status, (window.T ? T('onlyLettersNums') : 'Only letters, numbers, _ and -'), 'error'); return; }
+
+    var selectedDot = modal ? modal.querySelector('.avatar-dot.selected') : null;
+    var avatarColor = selectedDot ? parseInt(selectedDot.dataset.avIdx, 10) : (window.PROFILE && window.PROFILE.avatar_color || 0);
+
+    var selectedEmoji = modal ? modal.querySelector('.avatar-emoji.selected') : null;
+    var avatarEmoji = selectedEmoji ? selectedEmoji.dataset.emoji : '';
+
+    var largeAvatar = document.getElementById('peditAvatarLarge-modal');
+    var avatarPhoto = '';
+    if (largeAvatar) {
+      var img = largeAvatar.querySelector('img');
+      if (img) avatarPhoto = img.src;
+    }
+
+    var lblSaving = window.T ? T('saving') : 'Saving…';
+    var lblSaved = window.T ? T('saved') : '✓ Saved';
+    var lblSaveBtn = window.T ? T('saveChanges') : 'Save Changes';
+    var lblNetErr = window.T ? T('networkError') : '✗ Network error. Try again.';
+    var lblProfUpdated = window.T ? T('profileUpdated') : '✓ Profile updated!';
+
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = lblSaving; }
+    _status(status, '', '');
+
+    try {
+      if (!window.supa || !window.ME) {
+        _applyProfileLocally('@' + newNick, newBio, avatarColor, avatarEmoji, avatarPhoto);
+        _status(status, lblSaved, 'success');
+        closeProfileEditModal();
+        return;
+      }
+      var updateData = {
+        username:     '@' + newNick,
+        bio:          newBio,
+        avatar_color: avatarColor,
+        avatar_emoji: avatarEmoji
+      };
+      if (avatarPhoto) {
+        updateData.avatar_photo = avatarPhoto;
+      }
+      var res = await window.supa.from('profiles').update(updateData).eq('id', window.ME.id);
+
+      if (res.error) {
+        _status(status, '✗ ' + res.error.message, 'error');
+      } else {
+        _applyProfileLocally('@' + newNick, newBio, avatarColor, avatarEmoji, avatarPhoto);
+        _status(status, lblProfUpdated, 'success');
+        if (window.toast) window.toast(lblProfUpdated, 'var(--ac2)');
+        closeProfileEditModal();
+      }
+    } catch (e) {
+      _status(status, lblNetErr, 'error');
+    } finally {
+      if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = lblSaveBtn; }
+    }
+  }
+
   /* ────── Profile Edit Section HTML ────── */
   function renderEditSection(sfx) {
     var profile = window.PROFILE || {};
@@ -123,14 +380,8 @@ var ProfileEditEngine = (function () {
         if (!sfxMatch) return;
         var currentSfx = sfxMatch[1];
         
-        // Open desktop profile panel if it's closed
-        var dpOverlay = document.getElementById('dpOverlay');
-        if (dpOverlay && !dpOverlay.classList.contains('open')) {
-          console.log('[ProfileEdit] Opening desktop profile panel');
-          dpOverlay.classList.add('open');
-          var btnProfDesk = document.getElementById('btnProfDesk');
-          if (btnProfDesk) btnProfDesk.classList.add('active');
-        }
+        // Open profile edit modal instead of inline section
+        openProfileEditModal();
         
         var body = document.getElementById('peditBody-' + currentSfx);
         console.log('[ProfileEdit] Found body:', body);
