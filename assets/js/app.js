@@ -1101,6 +1101,7 @@ window.claimDailyBonus = async function() {
 
 // ═══ Load ideas from DB and populate LIVE array ═══
 async function loadIdeasFromDB() {
+  console.log('[loadIdeasFromDB Debug] Called');
   // Show loading state in feed
   var cl = document.getElementById('cardsList');
   if (cl) cl.innerHTML = '<div style="text-align:center;color:var(--mu);padding:40px 20px;font-size:14px">Loading ideas...</div>';
@@ -1120,6 +1121,7 @@ async function loadIdeasFromDB() {
       .order('created_at', { ascending: false })
       .limit(50);
   }, { silent: true, timeout: 25000 });
+  console.log('[loadIdeasFromDB Debug] Ideas response:', r);
 
   if (r.ok && r.data && r.data.data) {
     var rows = r.data.data;
@@ -1173,12 +1175,15 @@ function countUniqueInvestors(investorIds, history) {
 
 // ═══ Convert a DB ideas row to LIVE array object ═══
 function dbRowToLiveIdea(row, profilesMap) {
+  console.log('[dbRowToLiveIdea Debug] Called with row.author_id:', row.author_id, 'profilesMap:', profilesMap);
   var profile = profilesMap && profilesMap[row.author_id];
+  console.log('[dbRowToLiveIdea Debug] profile for author:', profile);
   var uname = profile && profile.username || '@user';
   var letter = uname.replace('@', '').charAt(0).toUpperCase();
   var avatarColor = profile && profile.avatar_color || 0;
   var avatarEmoji = profile && profile.avatar_emoji || '';
   var avatarPhoto = profile && profile.avatar_photo || '';
+  console.log('[dbRowToLiveIdea Debug] avatarEmoji:', avatarEmoji, 'avatarPhoto:', avatarPhoto);
   var history = Array.isArray(row.investment_history) ? row.investment_history : [];
   // БАГ #7: считаем УНИКАЛЬНЫХ инвесторов (investor_ids), а не число транзакций.
   // Для старых идей (до миграции investor_ids) фолбэк — длина истории.
@@ -3672,18 +3677,23 @@ function achSparkEffect() {
 }
 
 async function getUserIdeas() {
+  console.log('[getUserIdeas Debug] Called');
   if (supa && ME) {
     try {
       var r = await supa.from('ideas')
         .select('id, title, description, min_bet, total_invested, investment_history, investor_ids, expires_at, created_at, author_id, reactions, status')
         .eq('author_id', ME.id)
         .order('created_at', { ascending: false });
+      console.log('[getUserIdeas Debug] Supabase response:', r);
       if (r.data && ME) {
         var profilesMap = {};
         profilesMap[ME.id] = {
           username: PROFILE.username,
-          avatar_color: PROFILE.avatar_color || 0
+          avatar_color: PROFILE.avatar_color || 0,
+          avatar_emoji: PROFILE.avatar_emoji || '',
+          avatar_photo: PROFILE.avatar_photo || ''
         };
+        console.log('[getUserIdeas Debug] profilesMap:', profilesMap);
         return r.data.map(function(row) {
           return dbRowToLiveIdea(row, profilesMap);
         });
