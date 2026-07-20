@@ -1306,11 +1306,20 @@ async function renderLeaders(limit) {
     var selfBal    = Number(PROFILE.spk_balance) || 0;
     var selfInv    = Number(PROFILE.investments_count) || 0;
     var selfRank   = PROFILE.rank ? '#' + PROFILE.rank : '#—';
+    
+    // Determine avatar display
+    var selfAvatarDisplay = selfLetter;
+    if (PROFILE.avatar_photo) {
+      selfAvatarDisplay = '<img src="' + PROFILE.avatar_photo + '" alt="Avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+    } else if (PROFILE.avatar_emoji) {
+      selfAvatarDisplay = PROFILE.avatar_emoji;
+    }
+    
     selfHtml = '<div class="divider"></div>'
       + '<div class="stitle">' + T('you') + '</div>'
       + '<div class="li li-self">'
       + '<span class="lrank" style="width:auto;min-width:22px;color:var(--mu)">' + selfRank + '</span>'
-      + '<div class="lav" style="background:' + selfAvGrad + '">' + selfLetter + '</div>'
+      + '<div class="lav" style="background:' + selfAvGrad + '">' + selfAvatarDisplay + '</div>'
       + '<div class="linf">'
       + '<div class="lname">' + selfUname + '</div>'
       + '<div class="lsub">' + selfInv + ' ' + (LANG === 'ru' ? 'вложений' : 'investments') + '</div>'
@@ -1330,7 +1339,7 @@ async function renderLeaders(limit) {
 
   var r = await safeSupabaseCall('database', function () {
     return supa.from('profiles')
-      .select('id, username, spk_balance, investments_count, avatar_color, is_admin')
+      .select('id, username, spk_balance, investments_count, avatar_color, avatar_emoji, avatar_photo, is_admin')
       .or('is_admin.is.null,is_admin.eq.false')
       .order('spk_balance', { ascending: false })
       .limit(limit);
@@ -1349,13 +1358,22 @@ async function renderLeaders(limit) {
       var rankStyle = i >= 3 ? ' style="color:var(--mu)"' : '';
       var bal = Number(p.spk_balance) || 0;
       var invCount = Number(p.investments_count) || 0;
+      
+      // Determine avatar display
+      var avatarDisplay = letter;
+      if (p.avatar_photo) {
+        avatarDisplay = '<img src="' + p.avatar_photo + '" alt="Avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+      } else if (p.avatar_emoji) {
+        avatarDisplay = p.avatar_emoji;
+      }
+      
       var profitColor = i < 3 ? '' : ' style="color:var(--ac)"';
       var triggerId = p.id;
       var lavTriggerAttr = triggerId ? ' class="lav mp-trigger" data-user-id="' + triggerId + '"' : ' class="lav"';
       var linfTriggerAttr = triggerId ? ' class="linf mp-trigger" data-user-id="' + triggerId + '"' : ' class="linf"';
       return '<div class="li">'
         + '<span class="' + rankClass + '"' + rankStyle + '>' + (i + 1) + '</span>'
-        + '<div' + lavTriggerAttr + ' style="background:' + avatarGradient + '">' + letter + '</div>'
+        + '<div' + lavTriggerAttr + ' style="background:' + avatarGradient + ';overflow:hidden">' + avatarDisplay + '</div>'
         + '<div' + linfTriggerAttr + '>'
         + '<div class="lname">' + uname + '</div>'
         + '<div class="lsub">' + invCount + ' ' + (LANG === 'ru' ? 'вложений' : 'investments') + '</div>'
@@ -1391,11 +1409,20 @@ async function renderLeadersFull() {
     var selfBal    = Number(PROFILE.spk_balance) || 0;
     var selfInv    = Number(PROFILE.investments_count) || 0;
     var selfRank   = PROFILE.rank ? '#' + PROFILE.rank : '#—';
+    
+    // Determine avatar display
+    var selfAvatarDisplay = selfLetter;
+    if (PROFILE.avatar_photo) {
+      selfAvatarDisplay = '<img src="' + PROFILE.avatar_photo + '" alt="Avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+    } else if (PROFILE.avatar_emoji) {
+      selfAvatarDisplay = PROFILE.avatar_emoji;
+    }
+    
     selfHtml = '<div class="divider"></div>'
       + '<div class="stitle">' + T('you') + '</div>'
       + '<div class="li li-self">'
       + '<span class="lrank" style="width:auto;min-width:22px;color:var(--mu)">' + selfRank + '</span>'
-      + '<div class="lav" style="background:' + selfAvGrad + '">' + selfLetter + '</div>'
+      + '<div class="lav" style="background:' + selfAvGrad + '">' + selfAvatarDisplay + '</div>'
       + '<div class="linf">'
       + '<div class="lname">' + selfUname + '</div>'
       + '<div class="lsub">' + selfInv + ' ' + (LANG === 'ru' ? 'вложений' : 'investments') + '</div>'
@@ -1413,7 +1440,7 @@ async function renderLeadersFull() {
 
   var r = await safeSupabaseCall('database', function () {
     return supa.from('profiles')
-      .select('id, username, spk_balance, investments_count, avatar_color, is_admin')
+      .select('id, username, spk_balance, investments_count, avatar_color, avatar_emoji, avatar_photo, is_admin')
       .or('is_admin.is.null,is_admin.eq.false')
       .order('spk_balance', { ascending: false })
       .limit(10);
@@ -1432,13 +1459,21 @@ async function renderLeadersFull() {
       var rankStyle = i >= 3 ? ' style="color:var(--mu)"' : '';
       var bal = Number(p.spk_balance) || 0;
       var invCount = Number(p.investments_count) || 0;
+      
+      // Determine avatar display
+      var avatarDisplay = letter;
+      if (p.avatar_photo) {
+        avatarDisplay = '<img src="' + p.avatar_photo + '" alt="Avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+      } else if (p.avatar_emoji) {
+        avatarDisplay = p.avatar_emoji;
+      }
       var profitColor = i < 3 ? '' : ' style="color:var(--ac)"';
       var triggerId = p.id;
       var lavTriggerAttr = triggerId ? ' class="lav mp-trigger" data-user-id="' + triggerId + '"' : ' class="lav"';
       var linfTriggerAttr = triggerId ? ' class="linf mp-trigger" data-user-id="' + triggerId + '"' : ' class="linf"';
       return '<div class="li">'
         + '<span class="' + rankClass + '"' + rankStyle + '>' + (i + 1) + '</span>'
-        + '<div' + lavTriggerAttr + ' style="background:' + avatarGradient + '">' + letter + '</div>'
+        + '<div' + lavTriggerAttr + ' style="background:' + avatarGradient + ';overflow:hidden">' + avatarDisplay + '</div>'
         + '<div' + linfTriggerAttr + '>'
         + '<div class="lname">' + uname + '</div>'
         + '<div class="lsub">' + invCount + ' ' + (LANG === 'ru' ? 'вложений' : 'investments') + '</div>'
@@ -1470,7 +1505,7 @@ async function renderTopInvestments() {
   
   var r = await safeSupabaseCall('database', function () {
     return supa.from('profiles')
-      .select('id, username, investments_count, avatar_color')
+      .select('id, username, investments_count, avatar_color, avatar_emoji, avatar_photo')
       .or('is_admin.is.null,is_admin.eq.false')
       .order('investments_count', { ascending: false })
       .limit(5);
@@ -1486,9 +1521,18 @@ async function renderTopInvestments() {
       var avatarColor = p.avatar_color || 0;
       var avatarGradient = window.ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avatarColor) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
       var invCount = Number(p.investments_count) || 0;
+      
+      // Determine avatar display
+      var avatarDisplay = letter;
+      if (p.avatar_photo) {
+        avatarDisplay = '<img src="' + p.avatar_photo + '" alt="Avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+      } else if (p.avatar_emoji) {
+        avatarDisplay = p.avatar_emoji;
+      }
+      
       console.log('[Leaders Debug] Top Investments:', i + 1, 'User ID:', p.id, 'Username:', uname, 'Count:', invCount);
       return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0">'
-        + '<div style="width:24px;height:24px;border-radius:50%;background:' + avatarGradient + ';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff">' + letter + '</div>'
+        + '<div style="width:24px;height:24px;border-radius:50%;background:' + avatarGradient + ';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;overflow:hidden">' + avatarDisplay + '</div>'
         + '<div style="flex:1">'
         + '<div style="font-size:11px;font-weight:500;color:var(--mu2)">' + uname + '</div>'
         + '<div style="font-size:10px;color:var(--mu)">' + invCount + ' ' + (LANG === 'ru' ? 'вложений' : 'investments') + '</div>'

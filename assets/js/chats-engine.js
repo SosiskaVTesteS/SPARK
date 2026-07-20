@@ -913,6 +913,20 @@ var ChatsEngine = (function () {
       var avColor = isSent ? (window.PROFILE && PROFILE.avatar_color || 0) : m.sender_avatar_color;
       var avGrad = ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avColor) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
       
+      // Determine avatar display
+      var avatarDisplay = avText;
+      if (isSent && window.PROFILE) {
+        if (PROFILE.avatar_photo) {
+          avatarDisplay = '<img src="' + PROFILE.avatar_photo + '" alt="Avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+        } else if (PROFILE.avatar_emoji) {
+          avatarDisplay = PROFILE.avatar_emoji;
+        }
+      } else if (m.sender_avatar_emoji) {
+        avatarDisplay = m.sender_avatar_emoji;
+      } else if (m.sender_avatar_photo) {
+        avatarDisplay = '<img src="' + m.sender_avatar_photo + '" alt="Avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+      }
+      
       var statusTicks = '';
       if (isSent) {
         if (m.id.startsWith('m_local_')) {
@@ -988,7 +1002,7 @@ var ChatsEngine = (function () {
       var senderTriggerAttr = triggerId ? ' class="chat-msg-sender-name mp-trigger" data-user-id="' + triggerId + '"' : ' class="chat-msg-sender-name"';
       return ''
         + '<div class="chat-message-row' + rowClass + '" data-msg-id="' + m.id + '">'
-        + '  <div' + avatarTriggerAttr + ' style="background:' + avGrad + '">' + avText + '</div>'
+        + '  <div' + avatarTriggerAttr + ' style="background:' + avGrad + ';overflow:hidden">' + avatarDisplay + '</div>'
         + '  <div class="chat-msg-content-wrapper">'
         + '    <div' + senderTriggerAttr + '>' + _esc(m.sender_name) + '</div>'
         + '    <div class="chat-msg-bubble">'
