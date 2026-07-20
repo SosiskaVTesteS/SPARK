@@ -1239,7 +1239,7 @@ function dbRowToLiveIdea(row, profilesMap) {
   // Fast gradient seed from first 8 chars of UUID (much cheaper than full string)
   var idxSeed = String(row.id || '').slice(0, 8).split('').reduce(function(a, c) { return a + c.charCodeAt(0); }, 0);
   var bg = gradients[idxSeed % gradients.length];
-  return {
+  var ideaObj = {
     id: row.id,
     author_id: row.author_id,
     u: uname,
@@ -1261,6 +1261,8 @@ function dbRowToLiveIdea(row, profilesMap) {
     expires_at: row.expires_at,
     status: row.status || 'active'
   };
+  console.log('[dbRowToLiveIdea Debug] Returning idea object:', ideaObj);
+  return ideaObj;
 }
 
 // Simple tag detection from title keywords
@@ -4118,6 +4120,7 @@ function _contactBtnHTML(x) {
 }
 
 function cardHTML(x, isProfile) {
+  console.log('[cardHTML Debug] Received idea object:', x);
   var fire = (getRS(x.id).counts['🔥'] || 0) >= FIRE_T;
   var safeUser = escapeHTML(x.u);
   var safeTag = escapeHTML(x.tag);
