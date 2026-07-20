@@ -132,6 +132,17 @@ var ProfileEditEngine = (function () {
           toggle.classList.toggle('open', !open);
           console.log('[ProfileEdit] Body classes after toggle:', body.className);
           console.log('[ProfileEdit] Toggle state changed. open:', !open);
+          
+          // Log computed styles for debugging
+          var computed = getComputedStyle(body);
+          console.log('[ProfileEdit] Computed styles:');
+          console.log('  max-height:', computed.maxHeight);
+          console.log('  height:', computed.height);
+          console.log('  display:', computed.display);
+          console.log('  overflow:', computed.overflow);
+          console.log('  opacity:', computed.opacity);
+          console.log('  visibility:', computed.visibility);
+          console.log('  innerHTML length:', body.innerHTML.length);
         } else {
           console.error('[ProfileEdit] Body element not found for sfx:', currentSfx);
         }
