@@ -2470,11 +2470,19 @@ function updateHeader() {
   var spk = document.getElementById('hdrSpk');
   var bal = document.getElementById('invBal');
   if (av) {
-    av.textContent = letter;
     var avIdx = Number(PROFILE.avatar_color) || 0;
     var avGrad = window.ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avIdx) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
     console.log('[Avatar Debug] Header User ID:', ME.id, 'Username:', PROFILE.username, 'Avatar Color:', avIdx, 'Gradient:', avGrad);
     av.style.background = avGrad;
+    
+    // Determine avatar display
+    if (PROFILE.avatar_photo) {
+      av.innerHTML = '<img src="' + PROFILE.avatar_photo + '" alt="Avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+    } else if (PROFILE.avatar_emoji) {
+      av.textContent = PROFILE.avatar_emoji;
+    } else {
+      av.textContent = letter;
+    }
   }
   if (un) un.textContent = PROFILE.username;
   if (spk) spk.textContent = PROFILE.spk_balance.toLocaleString() + ' SPK';
