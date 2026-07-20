@@ -2196,6 +2196,93 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
 .avatar-dot:hover    { transform: scale(1.18); }
 .avatar-dot.selected { border-color: #fff; transform: scale(1.1); box-shadow: 0 0 10px rgba(255,255,255,0.4); }
 
+.pedit-current-avatar {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+.pedit-avatar-large {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  font-weight: 700;
+  color: #fff;
+  box-shadow: 0 0 20px rgba(123,92,250,0.4);
+  transition: background 0.25s ease;
+  overflow: hidden;
+}
+.avatar-emoji-grid {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.avatar-emoji {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.05);
+  border: 2px solid transparent;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+.avatar-emoji:hover {
+  background: rgba(123,92,250,0.15);
+  transform: scale(1.1);
+}
+.avatar-emoji.selected {
+  border-color: var(--ac);
+  background: rgba(123,92,250,0.2);
+  transform: scale(1.1);
+  box-shadow: 0 0 12px rgba(123,92,250,0.4);
+}
+.pedit-upload-btn {
+  width: 100%;
+  padding: 10px;
+  background: rgba(255,255,255,0.05);
+  border: 1px dashed rgba(255,255,255,0.2);
+  border-radius: 8px;
+  color: var(--mu2);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 16px;
+}
+.pedit-upload-btn:hover {
+  background: rgba(123,92,250,0.1);
+  border-color: rgba(123,92,250,0.3);
+  color: var(--vl2);
+}
+.pedit-color-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.pedit-av-preview-small {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  box-shadow: 0 0 12px rgba(123,92,250,0.3);
+  transition: background 0.25s ease;
+  flex-shrink: 0;
+}
+
 .pedit-field { margin-bottom: 12px; }
 .pedit-field label {
   display: flex;

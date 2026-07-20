@@ -23,6 +23,9 @@ var ProfileEditEngine = (function () {
     'linear-gradient(135deg,#475569,#94A3B8)'   // 11 slate
   ];
 
+  /* 8 space-themed emoji avatars */
+  var AVATAR_EMOJIS = ['🚀', '👨‍🚀', '👽', '🛸', '🛰️', '🪐', '✨', '👾'];
+
   function getAvatarGradient(idx) {
     return AVATAR_COLORS[Number(idx) || 0] || AVATAR_COLORS[0];
   }
@@ -33,10 +36,27 @@ var ProfileEditEngine = (function () {
     var avatarIdx = Number(profile.avatar_color) || 0;
     var bio       = profile.bio || '';
     var username  = (profile.username || '').replace('@', '');
+    var avatarEmoji = profile.avatar_emoji || '';
+    var avatarPhoto = profile.avatar_photo || '';
+
+    // Determine current avatar display
+    var currentAvatarDisplay = '';
+    if (avatarPhoto) {
+      currentAvatarDisplay = '<img src="' + avatarPhoto + '" alt="Avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+    } else if (avatarEmoji) {
+      currentAvatarDisplay = avatarEmoji;
+    } else {
+      currentAvatarDisplay = username.charAt(0).toUpperCase() || 'U';
+    }
 
     var avatarDots = AVATAR_COLORS.map(function (grad, i) {
       return '<button type="button" class="avatar-dot' + (i === avatarIdx ? ' selected' : '') + '" '
         + 'data-av-idx="' + i + '" style="background:' + grad + '" aria-label="Avatar colour ' + i + '"></button>';
+    }).join('');
+
+    var emojiOptions = AVATAR_EMOJIS.map(function (emoji, i) {
+      return '<button type="button" class="avatar-emoji' + (avatarEmoji === emoji ? ' selected' : '') + '" '
+        + 'data-emoji="' + emoji + '">' + emoji + '</button>';
     }).join('');
 
     return ''
@@ -47,13 +67,23 @@ var ProfileEditEngine = (function () {
       + '<svg class="pedit-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>'
       + '</button>'
       + '<div class="pedit-body" id="peditBody-' + sfx + '">'
-      /* Avatar row */
-      + '<div class="pedit-av-row">'
-      + '<div class="pedit-av-preview" id="peditAvPrev-' + sfx + '" style="background:' + getAvatarGradient(avatarIdx) + '">' + (username.charAt(0).toUpperCase() || 'U') + '</div>'
-      + '<div class="pedit-av-right"><div class="pedit-sublabel">' + (window.T ? T('avatarColor') : 'Avatar Colour') + '</div><div class="avatar-grid" id="peditAvGrid-' + sfx + '">' + avatarDots + '</div></div>'
+      /* Current Avatar Preview */
+      + '<div class="pedit-current-avatar">'
+      + '<div class="pedit-avatar-large" id="peditAvatarLarge-' + sfx + '" style="background:' + getAvatarGradient(avatarIdx) + '">' + currentAvatarDisplay + '</div>'
+      + '</div>'
+      /* Change Avatar Section */
+      + '<div class="pedit-sublabel">' + (window.T ? T('changeAvatar') : 'Change Avatar') + '</div>'
+      + '<div class="avatar-emoji-grid" id="peditEmojiGrid-' + sfx + '">' + emojiOptions + '</div>'
+      + '<button type="button" class="pedit-upload-btn" id="peditUpload-' + sfx + '">' + (window.T ? T('uploadOwn') : 'Upload your own') + '</button>'
+      + '<input type="file" id="peditFileInput-' + sfx + '" accept="image/*" style="display:none">'
+      /* Avatar Color Section */
+      + '<div class="pedit-sublabel" style="margin-top:20px">' + (window.T ? T('avatarColor') : 'Avatar Colour') + '</div>'
+      + '<div class="pedit-color-row">'
+      + '<div class="pedit-av-preview-small" id="peditAvPrev-' + sfx + '" style="background:' + getAvatarGradient(avatarIdx) + '">' + (username.charAt(0).toUpperCase() || 'U') + '</div>'
+      + '<div class="avatar-grid" id="peditAvGrid-' + sfx + '">' + avatarDots + '</div>'
       + '</div>'
       /* Username */
-      + '<div class="pedit-field">'
+      + '<div class="pedit-field" style="margin-top:20px">'
       + '<label>Username <span class="pedit-sublabel">' + (window.T ? T('usernameLetters') : '(letters, numbers, _)') + '</span></label>'
       + '<div class="pedit-input-wrap"><span class="pedit-at">@</span>'
       + '<input type="text" class="pedit-input" id="peditNick-' + sfx + '" value="' + _esc(username) + '" maxlength="29" placeholder="your_name" autocomplete="off" spellcheck="false">'
@@ -85,6 +115,43 @@ var ProfileEditEngine = (function () {
       });
     }
 
+    /* Emoji selection */
+    var emojiGrid = document.getElementById('peditEmojiGrid-' + sfx);
+    if (emojiGrid) {
+      emojiGrid.addEventListener('click', function (e) {
+        var btn = e.target.closest('.avatar-emoji');
+        if (!btn) return;
+        var selectedEmoji = btn.dataset.emoji;
+        emojiGrid.querySelectorAll('.avatar-emoji').forEach(function (b) { b.classList.remove('selected'); });
+        btn.classList.add('selected');
+        updateAvatarPreview(sfx, selectedEmoji, null, null);
+      });
+    }
+
+    /* Photo upload */
+    var uploadBtn = document.getElementById('peditUpload-' + sfx);
+    var fileInput = document.getElementById('peditFileInput-' + sfx);
+    if (uploadBtn && fileInput) {
+      uploadBtn.addEventListener('click', function () { fileInput.click(); });
+      fileInput.addEventListener('change', function (e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+          alert('Please select an image file');
+          return;
+        }
+        var reader = new FileReader();
+        reader.onload = function (e) {
+          updateAvatarPreview(sfx, null, e.target.result, null);
+          // Clear emoji selection when photo is uploaded
+          if (emojiGrid) {
+            emojiGrid.querySelectorAll('.avatar-emoji').forEach(function (b) { b.classList.remove('selected'); });
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
     /* Avatar dots */
     var grid = document.getElementById('peditAvGrid-' + sfx);
     if (grid) {
@@ -94,7 +161,9 @@ var ProfileEditEngine = (function () {
         grid.querySelectorAll('.avatar-dot').forEach(function (d) { d.classList.remove('selected'); });
         dot.classList.add('selected');
         var prev = document.getElementById('peditAvPrev-' + sfx);
+        var large = document.getElementById('peditAvatarLarge-' + sfx);
         if (prev) prev.style.background = dot.style.background;
+        if (large) large.style.background = dot.style.background;
       });
     }
 
@@ -127,6 +196,34 @@ var ProfileEditEngine = (function () {
     }
   }
 
+  /* Update avatar preview */
+  function updateAvatarPreview(sfx, emoji, photo, colorIdx) {
+    var large = document.getElementById('peditAvatarLarge-' + sfx);
+    var small = document.getElementById('peditAvPrev-' + sfx);
+    if (!large) return;
+
+    var profile = window.PROFILE || {};
+    var username = (profile.username || '').replace('@', '');
+    var currentColorIdx = colorIdx !== null ? colorIdx : (profile.avatar_color || 0);
+    var gradient = getAvatarGradient(currentColorIdx);
+
+    if (photo) {
+      large.innerHTML = '<img src="' + photo + '" alt="Avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+      large.style.background = gradient;
+    } else if (emoji) {
+      large.innerHTML = emoji;
+      large.style.background = gradient;
+    } else {
+      large.innerHTML = username.charAt(0).toUpperCase() || 'U';
+      large.style.background = gradient;
+    }
+
+    if (small) {
+      small.style.background = gradient;
+      small.innerHTML = username.charAt(0).toUpperCase() || 'U';
+    }
+  }
+
   /* ────── Save to Supabase ────── */
   async function saveProfile(sfx) {
     var saveBtn  = document.getElementById('peditSave-'   + sfx);
@@ -147,6 +244,16 @@ var ProfileEditEngine = (function () {
     var selectedDot = sec ? sec.querySelector('.avatar-dot.selected') : null;
     var avatarColor = selectedDot ? parseInt(selectedDot.dataset.avIdx, 10) : (window.PROFILE && window.PROFILE.avatar_color || 0);
 
+    var selectedEmoji = sec ? sec.querySelector('.avatar-emoji.selected') : null;
+    var avatarEmoji = selectedEmoji ? selectedEmoji.dataset.emoji : '';
+
+    var largeAvatar = document.getElementById('peditAvatarLarge-' + sfx);
+    var avatarPhoto = '';
+    if (largeAvatar) {
+      var img = largeAvatar.querySelector('img');
+      if (img) avatarPhoto = img.src;
+    }
+
     var lblSaving = window.T ? T('saving') : 'Saving…';
     var lblSaved = window.T ? T('saved') : '✓ Saved';
     var lblSaveBtn = window.T ? T('saveChanges') : 'Save Changes';
@@ -159,20 +266,25 @@ var ProfileEditEngine = (function () {
     try {
       if (!window.supa || !window.ME) {
         /* Offline fallback */
-        _applyProfileLocally('@' + newNick, newBio, avatarColor);
+        _applyProfileLocally('@' + newNick, newBio, avatarColor, avatarEmoji, avatarPhoto);
         _status(status, lblSaved, 'success');
         return;
       }
-      var res = await window.supa.from('profiles').update({
+      var updateData = {
         username:     '@' + newNick,
         bio:          newBio,
-        avatar_color: avatarColor
-      }).eq('id', window.ME.id);
+        avatar_color: avatarColor,
+        avatar_emoji: avatarEmoji
+      };
+      if (avatarPhoto) {
+        updateData.avatar_photo = avatarPhoto;
+      }
+      var res = await window.supa.from('profiles').update(updateData).eq('id', window.ME.id);
 
       if (res.error) {
         _status(status, '✗ ' + res.error.message, 'error');
       } else {
-        _applyProfileLocally('@' + newNick, newBio, avatarColor);
+        _applyProfileLocally('@' + newNick, newBio, avatarColor, avatarEmoji, avatarPhoto);
         _status(status, lblProfUpdated, 'success');
         if (window.toast) window.toast(lblProfUpdated, 'var(--ac2)');
       }
@@ -183,11 +295,13 @@ var ProfileEditEngine = (function () {
     }
   }
 
-  function _applyProfileLocally(username, bio, avatarColor) {
+  function _applyProfileLocally(username, bio, avatarColor, avatarEmoji, avatarPhoto) {
     if (window.PROFILE) {
       window.PROFILE.username     = username;
       window.PROFILE.bio          = bio;
       window.PROFILE.avatar_color = avatarColor;
+      window.PROFILE.avatar_emoji = avatarEmoji || '';
+      window.PROFILE.avatar_photo = avatarPhoto || '';
     }
     if (window.renderProfile) window.renderProfile();
     if (window.updateHeader)  window.updateHeader();
