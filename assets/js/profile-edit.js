@@ -110,12 +110,17 @@ var ProfileEditEngine = (function () {
     var body   = document.getElementById('peditBody-' + sfx);
     console.log('[ProfileEdit] toggle:', toggle, 'body:', body);
     if (toggle && body) {
-      toggle.addEventListener('click', function () {
-        console.log('[ProfileEdit] Toggle clicked!');
+      console.log('[ProfileEdit] About to add event listener to toggle');
+      toggle.addEventListener('click', function (e) {
+        console.log('[ProfileEdit] Toggle clicked! Event:', e);
+        e.preventDefault();
+        e.stopPropagation();
         var open = body.classList.contains('open');
         body.classList.toggle('open', !open);
         toggle.classList.toggle('open', !open);
+        console.log('[ProfileEdit] Toggle state changed. open:', !open);
       });
+      console.log('[ProfileEdit] Event listener added successfully');
     } else {
       console.error('[ProfileEdit] Toggle or body not found! toggle:', toggle, 'body:', body);
     }
