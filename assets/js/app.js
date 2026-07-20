@@ -2895,8 +2895,18 @@ function profileHTML(sfx) {
     : '';
   var specialBadgesHtml = renderSpecialBadges(PROFILE.special_badges);
 
+  // Determine avatar display
+  var avatarDisplay = '';
+  if (PROFILE.avatar_photo) {
+    avatarDisplay = '<img src="' + PROFILE.avatar_photo + '" alt="Avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+  } else if (PROFILE.avatar_emoji) {
+    avatarDisplay = PROFILE.avatar_emoji;
+  } else {
+    avatarDisplay = L;
+  }
+
   return '<div class="phero">'
-    + '<div class="pav-lg" style="background:' + avGrad + '">' + L + '</div>'
+    + '<div class="pav-lg" style="background:' + avGrad + '">' + avatarDisplay + '</div>'
     + '<div class="pname">' + safeUser + adminBadgeHtml + specialBadgesHtml + '</div>'
     + (safeBio ? '<div class="pbio">' + safeBio + '</div>' : '')
     + '<span class="pbadge">' + T('verifiedInvestor') + '</span></div>'
