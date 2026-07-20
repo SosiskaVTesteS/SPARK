@@ -2146,7 +2146,7 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
   opacity: 0;
 }
 .pedit-body.open {
-  max-height: 600px;
+  max-height: 2000px;
   opacity: 1;
 }
 .pedit-av-row {
