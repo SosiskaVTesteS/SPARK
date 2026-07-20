@@ -26,6 +26,9 @@ var ProfileEditEngine = (function () {
   /* 8 space-themed emoji avatars */
   var AVATAR_EMOJIS = ['🚀', '👨‍🚀', '👽', '🛸', '🛰️', '🪐', '✨', '👾'];
 
+  /* Track if global event delegation is set up */
+  var globalDelegationSetup = false;
+
   function getAvatarGradient(idx) {
     return AVATAR_COLORS[Number(idx) || 0] || AVATAR_COLORS[0];
   }
@@ -105,24 +108,31 @@ var ProfileEditEngine = (function () {
   /* ────── Wire up a rendered edit section ────── */
   function initSection(sfx) {
     console.log('[ProfileEdit] initSection called with sfx:', sfx);
-    /* Toggle */
-    var toggle = document.getElementById('peditToggle-' + sfx);
-    var body   = document.getElementById('peditBody-' + sfx);
-    console.log('[ProfileEdit] toggle:', toggle, 'body:', body);
-    if (toggle && body) {
-      console.log('[ProfileEdit] About to add event listener to toggle');
-      toggle.addEventListener('click', function (e) {
-        console.log('[ProfileEdit] Toggle clicked! Event:', e);
+    
+    /* Set up global event delegation once */
+    if (!globalDelegationSetup) {
+      console.log('[ProfileEdit] Setting up global event delegation');
+      document.addEventListener('click', function (e) {
+        var toggle = e.target.closest('.pedit-toggle');
+        if (!toggle) return;
+        console.log('[ProfileEdit] Toggle clicked via delegation! Event:', e);
         e.preventDefault();
         e.stopPropagation();
-        var open = body.classList.contains('open');
-        body.classList.toggle('open', !open);
-        toggle.classList.toggle('open', !open);
-        console.log('[ProfileEdit] Toggle state changed. open:', !open);
+        
+        var sfxMatch = toggle.id.match(/peditToggle-(.+)/);
+        if (!sfxMatch) return;
+        var currentSfx = sfxMatch[1];
+        
+        var body = document.getElementById('peditBody-' + currentSfx);
+        if (body) {
+          var open = body.classList.contains('open');
+          body.classList.toggle('open', !open);
+          toggle.classList.toggle('open', !open);
+          console.log('[ProfileEdit] Toggle state changed. open:', !open);
+        }
       });
-      console.log('[ProfileEdit] Event listener added successfully');
-    } else {
-      console.error('[ProfileEdit] Toggle or body not found! toggle:', toggle, 'body:', body);
+      globalDelegationSetup = true;
+      console.log('[ProfileEdit] Global event delegation set up');
     }
 
     /* Emoji selection */
