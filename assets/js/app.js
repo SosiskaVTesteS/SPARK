@@ -972,8 +972,13 @@ async function fetchProfile() {
     return supa.from('profiles').select('*').eq('id', ME.id).single();
   }, { silent: true, timeout: 25000 });
 
+  console.log('[fetchProfile Debug] Supabase response:', r);
+
   if (r.ok && r.data && r.data.data) {
     var row = r.data.data;
+    console.log('[fetchProfile Debug] Row data:', row);
+    console.log('[fetchProfile Debug] avatar_emoji from DB:', row.avatar_emoji);
+    console.log('[fetchProfile Debug] avatar_photo from DB:', row.avatar_photo);
     PROFILE.username = row.username || '@user';
     PROFILE.spk_balance = Number(row.spk_balance) || 0;
     PROFILE.investments_count = Number(row.investments_count) || 0;
@@ -982,6 +987,8 @@ async function fetchProfile() {
     PROFILE.avatar_color = row.avatar_color || 0;
     PROFILE.avatar_emoji = row.avatar_emoji || '';
     PROFILE.avatar_photo = row.avatar_photo || '';
+    console.log('[fetchProfile Debug] PROFILE.avatar_emoji after assignment:', PROFILE.avatar_emoji);
+    console.log('[fetchProfile Debug] PROFILE.avatar_photo after assignment:', PROFILE.avatar_photo);
     PROFILE.is_admin = row.is_admin === true;
     if (PROFILE.is_admin) ADMIN_USER_IDS.add(ME.id);
     // БАГ #1: онбординг показывается только один раз — статус хранится в БД
@@ -1123,8 +1130,10 @@ async function loadIdeasFromDB() {
       var pRes = await safeSupabaseCall('database', function () {
         return supa.from('profiles').select('id, username, avatar_color, avatar_emoji, avatar_photo, is_admin').in('id', authorIds);
       }, { silent: true, timeout: 25000 });
+      console.log('[Feed Profiles Debug] Supabase profiles response:', pRes);
       if (pRes.ok && pRes.data && pRes.data.data) {
         pRes.data.data.forEach(function(p) {
+          console.log('[Feed Profiles Debug] Profile ID:', p.id, 'Username:', p.username, 'avatar_emoji:', p.avatar_emoji, 'avatar_photo:', p.avatar_photo);
           profilesMap[p.id] = {
             username: p.username || '@user',
             avatar_color: p.avatar_color || 0,
@@ -1133,6 +1142,7 @@ async function loadIdeasFromDB() {
           };
           if (p.is_admin === true) ADMIN_USER_IDS.add(p.id);
         });
+        console.log('[Feed Profiles Debug] profilesMap:', profilesMap);
       }
     }
 
@@ -2948,6 +2958,8 @@ function profileHTML(sfx) {
   var avIdx     = Number(PROFILE.avatar_color) || 0;
   var avGrad    = window.ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avIdx) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
   console.log('[Avatar Debug] Profile Page User ID:', ME.id, 'Username:', PROFILE.username, 'Avatar Color:', avIdx, 'Gradient:', avGrad);
+  console.log('[Avatar Debug] PROFILE.avatar_emoji:', PROFILE.avatar_emoji);
+  console.log('[Avatar Debug] PROFILE.avatar_photo:', PROFILE.avatar_photo);
   var activeTheme = window.ThemeEngine ? ThemeEngine.getActive() : {};
   var themeIcon = activeTheme.icon || '🌌';
   var adminBadgeHtml = PROFILE.is_admin
@@ -2964,6 +2976,7 @@ function profileHTML(sfx) {
   } else {
     avatarDisplay = L;
   }
+  console.log('[Avatar Debug] avatarDisplay:', avatarDisplay);
 
   return '<div class="phero">'
     + '<div class="pav-lg" style="background:' + avGrad + '">' + avatarDisplay + '</div>'
