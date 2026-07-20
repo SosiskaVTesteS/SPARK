@@ -123,6 +123,15 @@ var ProfileEditEngine = (function () {
         if (!sfxMatch) return;
         var currentSfx = sfxMatch[1];
         
+        // Open desktop profile panel if it's closed
+        var dpOverlay = document.getElementById('dpOverlay');
+        if (dpOverlay && !dpOverlay.classList.contains('open')) {
+          console.log('[ProfileEdit] Opening desktop profile panel');
+          dpOverlay.classList.add('open');
+          var btnProfDesk = document.getElementById('btnProfDesk');
+          if (btnProfDesk) btnProfDesk.classList.add('active');
+        }
+        
         var body = document.getElementById('peditBody-' + currentSfx);
         console.log('[ProfileEdit] Found body:', body);
         if (body) {
