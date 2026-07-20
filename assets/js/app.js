@@ -980,6 +980,8 @@ async function fetchProfile() {
     PROFILE.last_daily_bonus_claim = row.last_daily_bonus_claim || null;
     PROFILE.bio = row.bio || '';
     PROFILE.avatar_color = row.avatar_color || 0;
+    PROFILE.avatar_emoji = row.avatar_emoji || '';
+    PROFILE.avatar_photo = row.avatar_photo || '';
     PROFILE.is_admin = row.is_admin === true;
     if (PROFILE.is_admin) ADMIN_USER_IDS.add(ME.id);
     // БАГ #1: онбординг показывается только один раз — статус хранится в БД
@@ -1119,13 +1121,15 @@ async function loadIdeasFromDB() {
     var profilesMap = {};
     if (authorIds.length > 0) {
       var pRes = await safeSupabaseCall('database', function () {
-        return supa.from('profiles').select('id, username, avatar_color, is_admin').in('id', authorIds);
+        return supa.from('profiles').select('id, username, avatar_color, avatar_emoji, avatar_photo, is_admin').in('id', authorIds);
       }, { silent: true, timeout: 25000 });
       if (pRes.ok && pRes.data && pRes.data.data) {
         pRes.data.data.forEach(function(p) {
           profilesMap[p.id] = {
             username: p.username || '@user',
-            avatar_color: p.avatar_color || 0
+            avatar_color: p.avatar_color || 0,
+            avatar_emoji: p.avatar_emoji || '',
+            avatar_photo: p.avatar_photo || ''
           };
           if (p.is_admin === true) ADMIN_USER_IDS.add(p.id);
         });
@@ -1163,6 +1167,8 @@ function dbRowToLiveIdea(row, profilesMap) {
   var uname = profile && profile.username || '@user';
   var letter = uname.replace('@', '').charAt(0).toUpperCase();
   var avatarColor = profile && profile.avatar_color || 0;
+  var avatarEmoji = profile && profile.avatar_emoji || '';
+  var avatarPhoto = profile && profile.avatar_photo || '';
   var history = Array.isArray(row.investment_history) ? row.investment_history : [];
   // БАГ #7: считаем УНИКАЛЬНЫХ инвесторов (investor_ids), а не число транзакций.
   // Для старых идей (до миграции investor_ids) фолбэк — длина истории.
@@ -1224,6 +1230,8 @@ function dbRowToLiveIdea(row, profilesMap) {
     u: uname,
     av: letter,
     avatar_color: avatarColor,
+    avatar_emoji: avatarEmoji,
+    avatar_photo: avatarPhoto,
     bg: bg,
     tm: tm,
     tag: tag,
@@ -4097,7 +4105,16 @@ function cardHTML(x, isProfile) {
   var safeAv = safeAvatar(x.av);
   var avatarColor = x.avatar_color || 0;
   var avatarGradient = window.ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avatarColor) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
-  console.log('[Avatar Debug] Card ID:', x.id, 'Author ID:', x.author_id, 'Username:', x.u, 'Avatar Color:', avatarColor, 'Gradient:', avatarGradient);
+  console.log('[Avatar Debug] Card ID:', x.id, 'Author ID:', x.author_id, 'Username:', x.u, 'Avatar Color:', avatarColor, 'Gradient:', avatarGradient, 'Avatar Emoji:', x.avatar_emoji, 'Avatar Photo:', x.avatar_photo);
+  
+  // Determine avatar display
+  var avatarDisplay = safeAv;
+  if (x.avatar_photo) {
+    avatarDisplay = '<img src="' + x.avatar_photo + '" alt="Avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+  } else if (x.avatar_emoji) {
+    avatarDisplay = x.avatar_emoji;
+  }
+  
   var expired = isExpired(x);
   var triggerId = x.author_id || (x.u === '@future_founder' ? 1 : '');
   var triggerAttr = triggerId ? ' class="cav mp-trigger" data-user-id="' + triggerId + '"' : ' class="cav"';
@@ -4137,7 +4154,7 @@ function cardHTML(x, isProfile) {
   }
   
   return '<div class="card' + (fire ? ' fire' : '') + '" data-cid="' + x.id + '">'
-    + '<div class="ch"><div' + triggerAttr + ' style="background:' + avatarGradient + '">' + safeAv + '</div>'
+    + '<div class="ch"><div' + triggerAttr + ' style="background:' + avatarGradient + ';overflow:hidden">' + avatarDisplay + '</div>'
     + '<div class="cm"><div' + nameTriggerAttr + '>' + safeUser + authorAdminBadge + '</div><div class="ct">' + safeTime + ' · #' + safeTag + '</div></div>'
     + adminDeleteBtn
     + profileActions
