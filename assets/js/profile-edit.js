@@ -248,6 +248,14 @@ var ProfileEditEngine = (function () {
       if (img) avatarPhoto = img.src;
     }
 
+    console.log('[ProfileEdit] Saving profile with:', {
+      username: '@' + newNick,
+      bio: newBio,
+      avatarColor: avatarColor,
+      avatarEmoji: avatarEmoji,
+      avatarPhoto: avatarPhoto ? 'present' : 'none'
+    });
+
     var lblSaving = window.T ? T('saving') : 'Saving…';
     var lblSaved = window.T ? T('saved') : '✓ Saved';
     var lblSaveBtn = window.T ? T('saveChanges') : 'Save Changes';
