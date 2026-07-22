@@ -510,7 +510,7 @@ header {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: 88px 1fr 258px; /* 72px nav + 16px gap */
+  grid-template-columns: 72px 1fr 258px; /* 72px nav, no left gap */
   height: calc(100vh - 62px);
   overflow: hidden;
 }
@@ -1919,8 +1919,8 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
    ════════════════════════════════════════════════ */
 @media (min-width: 1024px) {
   .desk-nav { display: flex; }
-  .layout { margin-left: 104px; } /* 72px nav + 32px gap */
-  header { padding-left: 120px; }
+  .layout { margin-left: 72px; } /* 72px nav width */
+  header { padding-left: 88px; }
 }
 
 /* ════════════════════════════════════════════════
