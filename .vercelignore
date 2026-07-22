@@ -1,0 +1,21 @@
+# Supabase CLI and local development files
+supabase/
+.env
+.env.local
+.env.deploy
+.env.*.bak
+
+# Local development scripts
+scripts/
+.cursor/
+.vscode/
+docs/
+scratch/
+taster_temp/
+
+# Git files
+.git/
+.gitignore
+
+# Test files
+testsprite_tests/
