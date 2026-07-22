@@ -991,6 +991,57 @@ html.auth-active, html.auth-active body { overflow: hidden !important; height: 1
   </div>
 </div>
 
+<!-- ════ МОДАЛКА ПОДДЕРЖКИ ПРОЕКТА ════ -->
+<div class="mo" id="moDonate" role="dialog" aria-modal="true" aria-labelledby="donateTitle">
+  <div class="mo-box mo-box--donate">
+    <div class="mo-handle"></div>
+    <button class="mo-close-btn" onclick="closeMo('moDonate')" aria-label="Закрыть">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
+    
+    <!-- Иконка -->
+    <div class="donate-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+    </div>
+    
+    <!-- Заголовок -->
+    <div class="mo-title" id="donateTitle">Бонус для сторонников <span style="font-family:var(--fh);font-weight:800;font-size:inherit">SPARK</span></div>
+    
+    <!-- Текст -->
+    <p style="font-size:14px;color:var(--tx-d);line-height:1.6;margin-bottom:24px">
+      SPARK — независимый проект. Ваша поддержка помогает развивать новые функции, поддерживать серверы и оставаться бесплатными для всех.
+    </p>
+    
+    <!-- CloudTips карточка -->
+    <a href="https://pay.cloudtips.ru/p/60a6cd8b" target="_blank" class="donate-cloudtips-card">
+      <div class="donate-cloudtips-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+      </div>
+      <div class="donate-cloudtips-text">
+        <div class="donate-cloudtips-title">CloudTips</div>
+        <div class="donate-cloudtips-subtitle">Поддержать через CloudTips</div>
+      </div>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--mu)"><polyline points="9 18 15 12 9 6"/></svg>
+    </a>
+    
+    <!-- Разделитель -->
+    <div class="donate-divider">
+      <span>или отсканируй QR</span>
+    </div>
+    
+    <!-- QR-код -->
+    <div class="donate-qr">
+      <img src="assets/images/donate-qr.png" alt="QR-код для поддержки через CloudTips" width="200" height="200" />
+    </div>
+    
+    <!-- Информация о бонусе SPK -->
+    <div class="donate-bonus-card">
+      <div class="donate-bonus-title">Получите SPK за донат</div>
+      <div class="donate-bonus-text">🎁 Дарим токены SPK в знак благодарности за поддержку проекта! Укажите ваш @username в комментарии к донату — мы вручную начислим бонус на ваш счёт в течение 24 часов.</div>
+    </div>
+  </div>
+</div>
+
 <!-- ════ МОДАЛКА ПОДТВЕРЖДЕНИЯ УДАЛЕНИЯ (ADMIN) ════ -->
 <div class="mo" id="moAdminDelete" role="dialog" aria-modal="true" aria-labelledby="adminDelTitle">
   <div class="mo-box">

@@ -3023,7 +3023,7 @@ function profileHTML(sfx) {
     + '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--ac);opacity:.55"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8L2 7h20l-6-4z"/></svg></div>'
     + renderDailyStreakHTML()
     + '<div class="divider"></div>'
-    + '<div class="sset" data-open-mo="moSupport" onclick="openMo(\'moSupport\')">'
+    + '<div class="sset" data-open-mo="moDonate" onclick="openMo(\'moDonate\')">'
     + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--ac)"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>'
     + '<span>' + (window.LANG === 'ru' ? 'Поддержать проект' : 'Support Project') + '</span>'
     + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--mu)"><polyline points="9 18 15 12 9 6"/></svg></div>'
