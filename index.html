@@ -1042,6 +1042,101 @@ html.auth-active, html.auth-active body { overflow: hidden !important; height: 1
   </div>
 </div>
 
+<!-- ════ МОДАЛКА ПОЛНЫЙ ДОСТУП ════ -->
+<div class="mo" id="moPremium" role="dialog" aria-modal="true" aria-labelledby="premiumTitle">
+  <div class="mo-box mo-box--premium">
+    <div class="mo-handle"></div>
+    <button class="mo-close-btn" onclick="closeMo('moPremium')" aria-label="Закрыть">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
+    
+    <!-- Иконка молнии -->
+    <div class="premium-icon">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+    </div>
+    
+    <!-- Заголовок -->
+    <div class="mo-title" id="premiumTitle">Полный доступ</div>
+    
+    <!-- Плашка статуса -->
+    <div class="premium-status" id="premiumStatus">
+      <span id="premiumStatusText">Не активирован</span>
+    </div>
+    
+    <!-- Карточка с ценой -->
+    <div class="premium-price-card">
+      <div class="premium-price">
+        <span class="premium-price-amount">500 SPK</span>
+        <span class="premium-price-period">/ 30 дн.</span>
+      </div>
+      <div class="premium-balance">Ваш баланс: <span id="premiumBalance">0</span> SPK</div>
+    </div>
+    
+    <!-- Список функций -->
+    <div class="premium-features">
+      <div class="premium-feature">
+        <span class="premium-feature-icon">✦</span>
+        <span>🤖 AI-оценка и скоринг идеи</span>
+      </div>
+      <div class="premium-feature">
+        <span class="premium-feature-icon">✦</span>
+        <span>✍️ AI-перефраз описания</span>
+      </div>
+      <div class="premium-feature">
+        <span class="premium-feature-icon">✦</span>
+        <span>💡 AI-генерация заголовка</span>
+      </div>
+      <div class="premium-feature">
+        <span class="premium-feature-icon">✦</span>
+        <span>📈 Прогноз успеха и аналитика</span>
+      </div>
+      <div class="premium-feature">
+        <span class="premium-feature-icon">✦</span>
+        <span>⭐ Все будущие премиум-функции</span>
+      </div>
+      <div class="premium-feature">
+        <span class="premium-feature-icon">✦</span>
+        <span>🚀 Буст идей в топ ленты</span>
+      </div>
+    </div>
+    
+    <!-- Кнопка активации -->
+    <button class="premium-activate-btn" id="premiumActivateBtn" onclick="openPremiumConfirm()">
+      ⚡ Активировать полный доступ
+    </button>
+  </div>
+</div>
+
+<!-- ════ МОДАЛКА ПОДТВЕРЖДЕНИЯ ПОКУПКИ ════ -->
+<div class="mo" id="moPremiumConfirm" role="dialog" aria-modal="true" aria-labelledby="premiumConfirmTitle">
+  <div class="mo-box mo-box--premium-confirm">
+    <div class="mo-handle"></div>
+    
+    <!-- Заголовок -->
+    <div class="mo-title" id="premiumConfirmTitle">Подтвердить покупку</div>
+    
+    <!-- Текст -->
+    <p style="font-size:15px;color:var(--tx-d);line-height:1.6;margin-bottom:12px">
+      Потратить 500 SPK на 30 дней полного доступа?
+    </p>
+    
+    <!-- Дата истечения -->
+    <div class="premium-expiry" id="premiumExpiry">
+      Истекает: <span id="premiumExpiryDate">22 авг. 2026</span>
+    </div>
+    
+    <!-- Кнопки -->
+    <div class="premium-confirm-actions">
+      <button class="premium-confirm-cancel" onclick="closeMo('moPremiumConfirm')">
+        Отмена
+      </button>
+      <button class="premium-confirm-activate" onclick="activatePremium()">
+        ⚡ Активировать полный доступ
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- ════ МОДАЛКА ПОДТВЕРЖДЕНИЯ УДАЛЕНИЯ (ADMIN) ════ -->
 <div class="mo" id="moAdminDelete" role="dialog" aria-modal="true" aria-labelledby="adminDelTitle">
   <div class="mo-box">

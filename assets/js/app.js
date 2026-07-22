@@ -993,6 +993,9 @@ async function fetchProfile() {
     if (PROFILE.is_admin) ADMIN_USER_IDS.add(ME.id);
     // БАГ #1: онбординг показывается только один раз — статус хранится в БД
     PROFILE.onboarding_completed = row.onboarding_completed === true;
+    // Premium subscription fields
+    PROFILE.premium_active = row.premium_active === true;
+    PROFILE.premium_expires_at = row.premium_expires_at || null;
     // ICC: специальные бейджи (BETA TESTER / BETA TESTER PRO)
     var badges = row.special_badges;
     if (typeof badges === 'string') {
@@ -5059,6 +5062,136 @@ function closeMo(id) { var el = document.getElementById(id); if (el) { el.classL
 window.openMo = openMo;
 window.closeMo = closeMo;
 window.toast = toast;
+
+// Premium modal functions
+function openPremium() {
+  if (!PROFILE) return;
+  
+  // Update balance display
+  var balanceEl = document.getElementById('premiumBalance');
+  if (balanceEl) {
+    balanceEl.textContent = (Number(PROFILE.spk_balance) || 0).toLocaleString();
+  }
+  
+  // Update status display
+  updatePremiumStatus();
+  
+  openMo('moPremium');
+}
+
+function updatePremiumStatus() {
+  var statusEl = document.getElementById('premiumStatus');
+  var statusTextEl = document.getElementById('premiumStatusText');
+  var activateBtn = document.getElementById('premiumActivateBtn');
+  
+  if (!statusEl || !statusTextEl) return;
+  
+  var isActive = PROFILE.premium_active && PROFILE.premium_expires_at && new Date(PROFILE.premium_expires_at) > new Date();
+  
+  if (isActive) {
+    statusEl.classList.add('active');
+    var expiryDate = new Date(PROFILE.premium_expires_at);
+    var formattedDate = formatDate(expiryDate);
+    statusTextEl.textContent = 'Активен до ' + formattedDate;
+    
+    if (activateBtn) {
+      activateBtn.disabled = true;
+      activateBtn.textContent = 'Доступ уже активирован';
+    }
+  } else {
+    statusEl.classList.remove('active');
+    statusTextEl.textContent = 'Не активирован';
+    
+    if (activateBtn) {
+      activateBtn.disabled = false;
+      activateBtn.textContent = '⚡ Активировать полный доступ';
+    }
+  }
+}
+
+function formatDate(date) {
+  var months = ['янв.', 'февр.', 'мар.', 'апр.', 'мая', 'июня', 'июля', 'авг.', 'сент.', 'окт.', 'нояб.', 'дек.'];
+  var day = date.getDate();
+  var month = months[date.getMonth()];
+  var year = date.getFullYear();
+  return day + ' ' + month + ' ' + year;
+}
+
+function openPremiumConfirm() {
+  if (!PROFILE) return;
+  
+  var balance = Number(PROFILE.spk_balance) || 0;
+  if (balance < 500) {
+    toast('Недостаточно SPK для активации', 'var(--red)');
+    return;
+  }
+  
+  // Calculate expiry date (30 days from now)
+  var expiryDate = new Date();
+  expiryDate.setDate(expiryDate.getDate() + 30);
+  var formattedDate = formatDate(expiryDate);
+  
+  var expiryEl = document.getElementById('premiumExpiryDate');
+  if (expiryEl) {
+    expiryEl.textContent = formattedDate;
+  }
+  
+  openMo('moPremiumConfirm');
+}
+
+async function activatePremium() {
+  if (!PROFILE || !supa) return;
+  
+  var balance = Number(PROFILE.spk_balance) || 0;
+  if (balance < 500) {
+    toast('Недостаточно SPK для активации', 'var(--red)');
+    closeMo('moPremiumConfirm');
+    return;
+  }
+  
+  try {
+    // Calculate expiry date
+    var expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + 30);
+    
+    // Update profile in database
+    var { error } = await supa
+      .from('profiles')
+      .update({
+        spk_balance: balance - 500,
+        premium_active: true,
+        premium_expires_at: expiryDate.toISOString()
+      })
+      .eq('id', PROFILE.id);
+    
+    if (error) throw error;
+    
+    // Update local PROFILE object
+    PROFILE.spk_balance = balance - 500;
+    PROFILE.premium_active = true;
+    PROFILE.premium_expires_at = expiryDate.toISOString();
+    
+    // Close modals
+    closeMo('moPremiumConfirm');
+    closeMo('moPremium');
+    
+    // Show success toast
+    toast('Полный доступ активирован', 'var(--ac2)');
+    
+    // Refresh profile display
+    if (window.refreshProfileDisplay) {
+      window.refreshProfileDisplay();
+    }
+    
+  } catch (err) {
+    console.error('Error activating premium:', err);
+    toast('Ошибка активации. Попробуйте позже.', 'var(--red)');
+  }
+}
+
+window.openPremium = openPremium;
+window.openPremiumConfirm = openPremiumConfirm;
+window.activatePremium = activatePremium;
 
 function toast(msg, color, type) {
   var t = document.getElementById('toast');
