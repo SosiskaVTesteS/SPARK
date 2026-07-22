@@ -3912,12 +3912,10 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
 .premium-icon {
   width: 64px;
   height: 64px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #FFD700, #FFA500);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 20px;
+  margin: 0 auto 12px;
   color: white;
   position: relative;
 }
@@ -3936,6 +3934,11 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
 @keyframes premiumGlow {
   0%, 100% { opacity: 0.5; transform: scale(1); }
   50% { opacity: 1; transform: scale(1.1); }
+}
+
+.premium-title-inline {
+  text-align: center;
+  margin-bottom: 24px;
 }
 
 .premium-status {

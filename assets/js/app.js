@@ -5154,22 +5154,34 @@ async function activatePremium() {
     var expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + 30);
     
+    console.log('[Premium Activation] Attempting to activate premium for user:', PROFILE.id);
+    console.log('[Premium Activation] Current balance:', balance);
+    console.log('[Premium Activation] Expiry date:', expiryDate.toISOString());
+    
     // Update profile in database
-    var { error } = await supa
+    var { data, error } = await supa
       .from('profiles')
       .update({
         spk_balance: balance - 500,
         premium_active: true,
         premium_expires_at: expiryDate.toISOString()
       })
-      .eq('id', PROFILE.id);
+      .eq('id', PROFILE.id)
+      .select();
     
-    if (error) throw error;
+    console.log('[Premium Activation] Update response:', { data, error });
+    
+    if (error) {
+      console.error('[Premium Activation] Database error:', error);
+      throw error;
+    }
     
     // Update local PROFILE object
     PROFILE.spk_balance = balance - 500;
     PROFILE.premium_active = true;
     PROFILE.premium_expires_at = expiryDate.toISOString();
+    
+    console.log('[Premium Activation] Premium activated successfully');
     
     // Close modals
     closeMo('moPremiumConfirm');
@@ -5184,8 +5196,8 @@ async function activatePremium() {
     }
     
   } catch (err) {
-    console.error('Error activating premium:', err);
-    toast('Ошибка активации. Попробуйте позже.', 'var(--red)');
+    console.error('[Premium Activation] Error:', err);
+    toast('Ошибка активации: ' + (err.message || 'Попробуйте позже'), 'var(--red)');
   }
 }
 
