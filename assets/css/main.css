@@ -513,6 +513,8 @@ header {
   grid-template-columns: 72px 1fr 258px; /* 72px nav, no left gap */
   height: calc(100vh - 62px);
   overflow: hidden;
+  margin: 0;
+  padding: 0;
 }
 .sidebar {
   padding: 22px 18px;
@@ -528,7 +530,7 @@ header {
    ════════════════════════════════════════════════ */
 .sidebar-nav {
   width: 72px;
-  padding: 16px 8px;
+  padding: 16px 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1919,7 +1921,7 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
    ════════════════════════════════════════════════ */
 @media (min-width: 1024px) {
   .desk-nav { display: flex; }
-  .layout { margin-left: 72px; } /* 72px nav width */
+  .layout { margin-left: 0; }
   header { padding-left: 88px; }
 }
 
