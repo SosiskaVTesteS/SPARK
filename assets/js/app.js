@@ -3037,7 +3037,7 @@ function profileHTML(sfx) {
     + '<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--ac);position:absolute;bottom:-2px;right:-2px"><path d="M12 2l3.09 6.26L22 9.27l-5 4.97 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>'
     + '</div>'
     + '<span>' + (window.LANG === 'ru' ? 'Полный доступ' : 'Full Access') + '</span>'
-    + '<span class="sset-status">' + (window.LANG === 'ru' ? 'Активен · ∞ дн.' : 'Active · ∞ days') + '</span>'
+    + '<span class="sset-status">' + (PROFILE.premium_active && PROFILE.premium_expires_at && new Date(PROFILE.premium_expires_at) > new Date() ? (window.LANG === 'ru' ? 'Активен' : 'Active') : (window.LANG === 'ru' ? 'Не активен' : 'Inactive')) + '</span>'
     + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--mu)"><polyline points="9 18 15 12 9 6"/></svg></div>'
     + '<div class="divider"></div>'
     + '<div class="ach-section" id="achSec-' + sfx + '">'
