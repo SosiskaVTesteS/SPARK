@@ -979,6 +979,7 @@ async function fetchProfile() {
     console.log('[fetchProfile Debug] Row data:', row);
     console.log('[fetchProfile Debug] avatar_emoji from DB:', row.avatar_emoji);
     console.log('[fetchProfile Debug] avatar_photo from DB:', row.avatar_photo);
+    PROFILE.id = ME.id;
     PROFILE.username = row.username || '@user';
     PROFILE.spk_balance = Number(row.spk_balance) || 0;
     PROFILE.investments_count = Number(row.investments_count) || 0;
@@ -5139,14 +5140,31 @@ function openPremiumConfirm() {
   openMo('moPremiumConfirm');
 }
 
+var premiumActivationInProgress = false;
+
 async function activatePremium() {
   if (!PROFILE || !supa) return;
+  
+  // Prevent multiple simultaneous calls
+  if (premiumActivationInProgress) {
+    console.log('[Premium Activation] Already in progress, ignoring duplicate call');
+    return;
+  }
   
   var balance = Number(PROFILE.spk_balance) || 0;
   if (balance < 500) {
     toast('Недостаточно SPK для активации', 'var(--red)');
     closeMo('moPremiumConfirm');
     return;
+  }
+  
+  premiumActivationInProgress = true;
+  
+  // Disable button
+  var activateBtn = document.querySelector('.premium-confirm-activate');
+  if (activateBtn) {
+    activateBtn.disabled = true;
+    activateBtn.textContent = 'Активация...';
   }
   
   try {
@@ -5198,6 +5216,14 @@ async function activatePremium() {
   } catch (err) {
     console.error('[Premium Activation] Error:', err);
     toast('Ошибка активации: ' + (err.message || 'Попробуйте позже'), 'var(--red)');
+  } finally {
+    premiumActivationInProgress = false;
+    
+    // Re-enable button
+    if (activateBtn) {
+      activateBtn.disabled = false;
+      activateBtn.textContent = '⚡ Активировать полный доступ';
+    }
   }
 }
 
