@@ -2946,6 +2946,17 @@ function toggleDD(e, id) {
     var isOpen = dd.classList.contains('open');
     dd.classList.toggle('open');
     console.log('[Language Dropdown] Toggling dropdown', id, 'was open:', isOpen, 'now open:', !isOpen);
+    console.log('[Language Dropdown] Dropdown element:', dd);
+    console.log('[Language Dropdown] Dropdown computed display:', window.getComputedStyle(dd).display);
+    console.log('[Language Dropdown] Dropdown computed position:', window.getComputedStyle(dd).position);
+    console.log('[Language Dropdown] Dropdown computed z-index:', window.getComputedStyle(dd).zIndex);
+    console.log('[Language Dropdown] Dropdown computed visibility:', window.getComputedStyle(dd).visibility);
+    console.log('[Language Dropdown] Dropdown computed opacity:', window.getComputedStyle(dd).opacity);
+    var parent = dd.parentElement;
+    console.log('[Language Dropdown] Parent element:', parent);
+    console.log('[Language Dropdown] Parent computed overflow:', window.getComputedStyle(parent).overflow);
+    console.log('[Language Dropdown] Parent computed overflow-y:', window.getComputedStyle(parent).overflowY);
+    console.log('[Language Dropdown] Parent computed overflow-x:', window.getComputedStyle(parent).overflowX);
   } else {
     console.error('[Language Dropdown] Dropdown element not found:', id);
   }
