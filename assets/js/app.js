@@ -2981,7 +2981,7 @@ function toggleDD(e, id) {
     while (positionedAncestor && positionedAncestor !== document.body) {
       var pos = window.getComputedStyle(positionedAncestor).position;
       if (pos === 'relative' || pos === 'absolute' || pos === 'fixed' || pos === 'sticky') {
-        console.log('[Language Dropdown] Nearest positioned ancestor:', positionedAncestor.tagName, positionedAncestor.id || positionedAn.className, 'position:', pos);
+        console.log('[Language Dropdown] Nearest positioned ancestor:', positionedAncestor.tagName, positionedAncestor.id || positionedAncestor.className, 'position:', pos);
         break;
       }
       positionedAncestor = positionedAncestor.parentElement;
