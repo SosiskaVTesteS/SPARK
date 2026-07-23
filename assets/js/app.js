@@ -2919,18 +2919,36 @@ function applyLiveActivityI18n() {
 }
 
 function setLang(l, e) {
+  console.log('[Language Switch] setLang called with language:', l);
   if (e) { e.preventDefault(); e.stopPropagation(); }
+  console.log('[Language Switch] Current LANG before change:', LANG);
   LANG = l;
+  console.log('[Language Switch] New LANG after change:', LANG);
   localStorage.setItem('spark_lang', l);
-  document.querySelectorAll('.lang-dd').forEach(function (d) { d.classList.remove('open'); });
+  console.log('[Language Switch] Saved to localStorage:', l);
+  document.querySelectorAll('.lang-dd').forEach(function (d) { 
+    console.log('[Language Switch] Closing dropdown:', d.id);
+    d.classList.remove('open'); 
+  });
+  console.log('[Language Switch] Calling applyLang()');
   applyLang();
+  console.log('[Language Switch] Language switch complete');
 }
 
 function toggleDD(e, id) {
+  console.log('[Language Dropdown] toggleDD called with id:', id);
   e.stopPropagation();
-  document.querySelectorAll('.lang-dd').forEach(function (d) { if (d.id !== id) d.classList.remove('open'); });
+  document.querySelectorAll('.lang-dd').forEach(function (d) { 
+    if (d.id !== id) d.classList.remove('open'); 
+  });
   var dd = document.getElementById(id);
-  if (dd) dd.classList.toggle('open');
+  if (dd) {
+    var isOpen = dd.classList.contains('open');
+    dd.classList.toggle('open');
+    console.log('[Language Dropdown] Toggling dropdown', id, 'was open:', isOpen, 'now open:', !isOpen);
+  } else {
+    console.error('[Language Dropdown] Dropdown element not found:', id);
+  }
 }
 
 /* Специальные бейджи (ICC: BETA TESTER / BETA TESTER PRO) из profiles.special_badges */
