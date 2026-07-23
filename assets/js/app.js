@@ -2919,116 +2919,23 @@ function applyLiveActivityI18n() {
 }
 
 function setLang(l, e) {
-  console.log('[Language Switch] setLang called with language:', l);
   if (e) { e.preventDefault(); e.stopPropagation(); }
-  console.log('[Language Switch] Current LANG before change:', LANG);
   LANG = l;
-  console.log('[Language Switch] New LANG after change:', LANG);
   localStorage.setItem('spark_lang', l);
-  console.log('[Language Switch] Saved to localStorage:', l);
   document.querySelectorAll('.lang-dd').forEach(function (d) { 
-    console.log('[Language Switch] Closing dropdown:', d.id);
     d.classList.remove('open'); 
   });
-  console.log('[Language Switch] Calling applyLang()');
   applyLang();
-  console.log('[Language Switch] Language switch complete');
 }
 
 function toggleDD(e, id) {
-  console.log('[Language Dropdown] toggleDD called with id:', id);
   e.stopPropagation();
   document.querySelectorAll('.lang-dd').forEach(function (d) { 
     if (d.id !== id) d.classList.remove('open'); 
   });
   var dd = document.getElementById(id);
   if (dd) {
-    var isOpen = dd.classList.contains('open');
     dd.classList.toggle('open');
-    console.log('[Language Dropdown] Toggling dropdown', id, 'was open:', isOpen, 'now open:', !isOpen);
-    console.log('[Language Dropdown] Dropdown element:', dd);
-    var computed = window.getComputedStyle(dd);
-    console.log('[Language Dropdown] Dropdown computed display:', computed.display);
-    console.log('[Language Dropdown] Dropdown computed position:', computed.position);
-    console.log('[Language Dropdown] Dropdown computed z-index:', computed.zIndex);
-    console.log('[Language Dropdown] Dropdown computed visibility:', computed.visibility);
-    console.log('[Language Dropdown] Dropdown computed opacity:', computed.opacity);
-    console.log('[Language Dropdown] Dropdown computed width:', computed.width);
-    console.log('[Language Dropdown] Dropdown computed height:', computed.height);
-    console.log('[Language Dropdown] Dropdown computed top:', computed.top);
-    console.log('[Language Dropdown] Dropdown computed left:', computed.left);
-    console.log('[Language Dropdown] Dropdown computed right:', computed.right);
-    console.log('[Language Dropdown] Dropdown computed bottom:', computed.bottom);
-    console.log('[Language Dropdown] Dropdown innerHTML:', dd.innerHTML);
-    console.log('[Language Dropdown] Dropdown children count:', dd.children.length);
-    
-    // Log getBoundingClientRect for actual pixel dimensions and position
-    var rect = dd.getBoundingClientRect();
-    console.log('[Language Dropdown] getBoundingClientRect:', {
-      width: rect.width,
-      height: rect.height,
-      top: rect.top,
-      left: rect.left,
-      right: rect.right,
-      bottom: rect.bottom,
-      x: rect.x,
-      y: rect.y
-    });
-    
-    // Find nearest positioned ancestor (containing block)
-    var positionedAncestor = dd.parentElement;
-    var level = 0;
-    while (positionedAncestor && positionedAncestor !== document.body) {
-      var pos = window.getComputedStyle(positionedAncestor).position;
-      if (pos === 'relative' || pos === 'absolute' || pos === 'fixed' || pos === 'sticky') {
-        console.log('[Language Dropdown] Nearest positioned ancestor:', positionedAncestor.tagName, positionedAncestor.id || positionedAncestor.className, 'position:', pos);
-        break;
-      }
-      positionedAncestor = positionedAncestor.parentElement;
-      level++;
-      if (level > 20) break;
-    }
-    
-    // Check for elements with transform between dropdown and lang-row
-    var current = dd.parentElement;
-    var transformLevel = 0;
-    while (current && current !== document.body) {
-      var transform = window.getComputedStyle(current).transform;
-      if (transform !== 'none') {
-        console.log('[Language Dropdown] Element with transform found:', current.tagName, current.id || current.className, 'transform:', transform);
-      }
-      current = current.parentElement;
-      transformLevel++;
-      if (transformLevel > 20) break;
-    }
-    
-    // Check all parent containers for overflow
-    current = dd.parentElement;
-    level = 0;
-    while (current && current !== document.body) {
-      var parentComputed = window.getComputedStyle(current);
-      console.log('[Language Dropdown] Parent level', level, ':', current.tagName, current.id || current.className, 'overflow:', parentComputed.overflow, 'overflow-y:', parentComputed.overflowY, 'overflow-x:', parentComputed.overflowX, 'position:', parentComputed.position);
-      current = current.parentElement;
-      level++;
-      if (level > 20) break; // Prevent infinite loop
-    }
-    
-    // Check for elements with high z-index that might overlay
-    var allElements = document.querySelectorAll('*');
-    var highZIndexElements = [];
-    allElements.forEach(function(el) {
-      var zIndex = parseInt(window.getComputedStyle(el).zIndex);
-      if (!isNaN(zIndex) && zIndex > 100) {
-        highZIndexElements.push({
-          element: el.tagName + (el.id ? '#' + el.id : '') + (el.className ? '.' + el.className.split(' ')[0] : ''),
-          zIndex: zIndex
-        });
-      }
-    });
-    highZIndexElements.sort(function(a, b) { return b.zIndex - a.zIndex; });
-    console.log('[Language Dropdown] Elements with z-index > 100:', highZIndexElements.slice(0, 10));
-  } else {
-    console.error('[Language Dropdown] Dropdown element not found:', id);
   }
 }
 
