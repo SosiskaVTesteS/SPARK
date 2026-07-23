@@ -2933,22 +2933,6 @@ function toggleDD(e, id) {
   if (dd) dd.classList.toggle('open');
 }
 
-function attachLanguageDropdownHandler(container) {
-  if (!container) return;
-  container.addEventListener('click', function (event) {
-    var ddToggle = event.target.closest('[data-dd-id]');
-    if (ddToggle) {
-      toggleDD(event, ddToggle.dataset.ddId);
-      return;
-    }
-    var langOpt = event.target.closest('[data-set-lang]');
-    if (langOpt) {
-      setLang(langOpt.dataset.setLang, event);
-      return;
-    }
-  });
-}
-
 /* Специальные бейджи (ICC: BETA TESTER / BETA TESTER PRO) из profiles.special_badges */
 function renderSpecialBadges(badges) {
   if (typeof badges === 'string') {
@@ -3173,15 +3157,11 @@ function renderProfile() {
     initMyIdeasToggle('D');
     initSavedIdeasToggle('D');
     initAchievementsToggle('D');
-    // Re-attach language dropdown event listener after re-render
-    attachLanguageDropdownHandler(dp);
   }
   var mb = document.getElementById('mobProfInner');
   if (mb) {
     mb.innerHTML = profileHTML('M');
     if (window.ProfileEditEngine) ProfileEditEngine.initSection('M');
-    // Re-attach language dropdown event listener after re-render
-    attachLanguageDropdownHandler(mb);
   }
   var pf = document.getElementById('profileContentFull');
   if (pf) {
@@ -3190,8 +3170,6 @@ function renderProfile() {
     initMyIdeasToggle('D');
     initSavedIdeasToggle('D');
     initAchievementsToggle('D');
-    // Re-attach language dropdown event listener after re-render
-    attachLanguageDropdownHandler(pf);
   }
   renderMyIdeas();
   renderAchievements('D');

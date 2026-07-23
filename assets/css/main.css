@@ -1495,7 +1495,7 @@ svg.igsvg { width:100%; height:68px; display:block; overflow:visible; }
 .lang-row svg:first-child { flex-shrink: 0; }
 .lang-row > span:not(.lang-cur) { flex: 0 0 auto; }
 .lang-cur { font-size:13px; font-weight:600; color:var(--ac); line-height:1; margin-left: auto; }
-.lang-dd { display:none; position:absolute; top:calc(100% + 3px); left:0; right:0; background:var(--sf2); border:1px solid rgba(255,255,255,0.08); border-radius:10px; overflow:hidden; z-index:300; box-shadow:0 12px 32px rgba(0,0,0,0.6); }
+.lang-dd { display:none; position:absolute; top:calc(100% + 3px); left:0; right:0; background:var(--sf2); border:1px solid rgba(255,255,255,0.08); border-radius:10px; overflow:hidden; z-index:9999; box-shadow:0 12px 32px rgba(0,0,0,0.6); }
 .lang-dd.open { display:block; }
 .lang-opt { padding:10px 13px; font-size:13px; cursor:pointer; transition:background 0.12s; display:flex; align-items:center; gap:8px; line-height:1.4; }
 .lang-opt:hover { background:rgba(123,92,250,0.08); }
