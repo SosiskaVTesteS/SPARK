@@ -2923,19 +2923,21 @@ function setLang(l, e) {
   LANG = l;
   localStorage.setItem('spark_lang', l);
   document.querySelectorAll('.lang-dd').forEach(function (d) { 
-    d.classList.remove('open'); 
+    d.style.display = 'none'; 
   });
   applyLang();
 }
 
 function toggleDD(e, id) {
   e.stopPropagation();
-  document.querySelectorAll('.lang-dd').forEach(function (d) { 
-    if (d.id !== id) d.classList.remove('open'); 
-  });
   var dd = document.getElementById(id);
-  if (dd) {
-    dd.classList.toggle('open');
+  if (!dd) return;
+  var isOpen = dd.style.display === 'block';
+  document.querySelectorAll('.lang-dd').forEach(function (d) {
+    d.style.display = 'none';
+  });
+  if (!isOpen) {
+    dd.style.display = 'block';
   }
 }
 
@@ -3066,11 +3068,11 @@ function profileHTML(sfx) {
     + '<div class="sset-theme-dots"><div class="sset-theme-dot" style="background:var(--vl)"></div><div class="sset-theme-dot" style="background:var(--ac)"></div><div class="sset-theme-dot" style="background:var(--ac2)"></div></div>'
     + '<span style="font-size:14px">' + themeIcon + '</span>'
     + '</div>'
-    + '<div class="lang-row" data-dd-id="ldd-' + sfx + '" onclick="toggleDD(event, \'ldd-' + sfx + '\')">'
+    + '<div class="lang-row" data-dd-id="ldd-' + sfx + '">'
     + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--ac);margin-right:8px"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>'
     + '<span style="font-size:13px">' + T('language') + '</span>'
     + '<span class="lang-cur" id="lc' + sfx + '">' + LANG.toUpperCase() + '</span>'
-    + '<div class="lang-dd" id="ldd-' + sfx + '">'
+    + '<div class="lang-dd" id="ldd-' + sfx + '" style="display:none;">'
     + '<div class="lang-opt' + (LANG === 'en' ? ' sel' : '') + '" data-lang="en" data-set-lang="en"><span style="font-size:11px; font-weight:bold; color:var(--mu);">EN</span> English</div>'
     + '<div class="lang-opt' + (LANG === 'ru' ? ' sel' : '') + '" data-lang="ru" data-set-lang="ru"><span style="font-size:11px; font-weight:bold; color:var(--mu);">RU</span> Русский</div>'
     + '</div></div>'
