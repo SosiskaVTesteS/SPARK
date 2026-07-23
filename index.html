@@ -1107,6 +1107,33 @@ html.auth-active, html.auth-active body { overflow: hidden !important; height: 1
   </div>
 </div>
 
+<!-- ════ МОДАЛКА ВЫБОРА ЯЗЫКА ════ -->
+<div class="mo" id="moLang" role="dialog" aria-modal="true" aria-labelledby="langTitle">
+  <div class="mo-box">
+    <div class="mo-handle"></div>
+    <button class="mo-close-btn" onclick="closeMo('moLang')" aria-label="Закрыть">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
+    
+    <!-- Заголовок -->
+    <div class="mo-title" id="langTitle">Выберите язык</div>
+    
+    <!-- Список языков -->
+    <div class="lang-list">
+      <div class="lang-option" onclick="selectLang('en')" id="langOptEn">
+        <span class="lang-flag">🇬🇧</span>
+        <span class="lang-name">English</span>
+        <span class="lang-check" id="langCheckEn">✓</span>
+      </div>
+      <div class="lang-option" onclick="selectLang('ru')" id="langOptRu">
+        <span class="lang-flag">🇷🇺</span>
+        <span class="lang-name">Русский</span>
+        <span class="lang-check" id="langCheckRu">✓</span>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ════ МОДАЛКА ПОДТВЕРЖДЕНИЯ ПОКУПКИ ════ -->
 <div class="mo" id="moPremiumConfirm" role="dialog" aria-modal="true" aria-labelledby="premiumConfirmTitle">
   <div class="mo-box mo-box--premium-confirm">

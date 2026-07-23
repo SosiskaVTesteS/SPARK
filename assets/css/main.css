@@ -1495,11 +1495,6 @@ svg.igsvg { width:100%; height:68px; display:block; overflow:visible; }
 .lang-row svg:first-child { flex-shrink: 0; }
 .lang-row > span:not(.lang-cur) { flex: 0 0 auto; }
 .lang-cur { font-size:13px; font-weight:600; color:var(--ac); line-height:1; margin-left: auto; }
-.lang-dd { display:none; position:absolute; top:calc(100% + 5px); left:0; width:140px; background:var(--sf2); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:4px 0; z-index:9999; }
-.lang-dd.open { display:block; }
-.lang-opt { padding:8px 12px; font-size:13px; cursor:pointer; color:var(--tx); }
-.lang-opt:hover { background:rgba(123,92,250,0.1); }
-.lang-opt.sel { color:var(--vl2); font-weight:600; }
 
 /* ════════════════════════════════════════════════
    DESKTOP SIDE NAV
@@ -4048,6 +4043,62 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
 .mo-box--premium-confirm {
   max-width: 400px;
   padding: 28px 24px;
+}
+
+/* ════════════════════════════════════════════════
+   LANGUAGE MODAL
+   ════════════════════════════════════════════════ */
+#moLang .mo-box {
+  max-width: 360px;
+  padding: 28px 24px;
+}
+
+.lang-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lang-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.lang-option:hover {
+  background: rgba(123,92,250,0.08);
+}
+
+.lang-option.selected {
+  background: rgba(123,92,250,0.12);
+  border-color: rgba(123,92,250,0.3);
+}
+
+.lang-flag {
+  font-size: 22px;
+}
+
+.lang-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--tx);
+  flex: 1;
+}
+
+.lang-check {
+  font-size: 16px;
+  color: var(--vl2);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.lang-option.selected .lang-check {
+  opacity: 1;
 }
 
 .premium-expiry {

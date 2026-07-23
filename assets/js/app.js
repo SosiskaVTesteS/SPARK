@@ -324,9 +324,9 @@ document.addEventListener('DOMContentLoaded', function () {
         setLang(langOpt.dataset.setLang, event);
         return;
       }
-      var ddToggle = event.target.closest('[data-dd-id]');
-      if (ddToggle) {
-        toggleDD(event, ddToggle.dataset.ddId);
+      var langToggle = event.target.closest('[data-lang-toggle]');
+      if (langToggle) {
+        openLangModal();
         return;
       }
       var pulseBtn = event.target.closest('[data-pulse]');
@@ -2922,23 +2922,33 @@ function setLang(l, e) {
   if (e) { e.preventDefault(); e.stopPropagation(); }
   LANG = l;
   localStorage.setItem('spark_lang', l);
-  document.querySelectorAll('.lang-dd').forEach(function (d) { 
-    d.style.display = 'none'; 
-  });
   applyLang();
 }
 
-function toggleDD(e, id) {
-  e.stopPropagation();
-  var dd = document.getElementById(id);
-  if (!dd) return;
-  var isOpen = dd.style.display === 'block';
-  document.querySelectorAll('.lang-dd').forEach(function (d) {
-    d.style.display = 'none';
-  });
-  if (!isOpen) {
-    dd.style.display = 'block';
+function openLangModal() {
+  // Update modal UI to show current language
+  var langOptEn = document.getElementById('langOptEn');
+  var langOptRu = document.getElementById('langOptRu');
+  var langCheckEn = document.getElementById('langCheckEn');
+  var langCheckRu = document.getElementById('langCheckRu');
+  
+  if (langOptEn && langOptRu) {
+    langOptEn.classList.remove('selected');
+    langOptRu.classList.remove('selected');
   }
+  
+  if (LANG === 'en') {
+    if (langOptEn) langOptEn.classList.add('selected');
+  } else if (LANG === 'ru') {
+    if (langOptRu) langOptRu.classList.add('selected');
+  }
+  
+  openMo('moLang');
+}
+
+function selectLang(lang) {
+  setLang(lang);
+  closeMo('moLang');
 }
 
 /* Специальные бейджи (ICC: BETA TESTER / BETA TESTER PRO) из profiles.special_badges */
@@ -3068,14 +3078,11 @@ function profileHTML(sfx) {
     + '<div class="sset-theme-dots"><div class="sset-theme-dot" style="background:var(--vl)"></div><div class="sset-theme-dot" style="background:var(--ac)"></div><div class="sset-theme-dot" style="background:var(--ac2)"></div></div>'
     + '<span style="font-size:14px">' + themeIcon + '</span>'
     + '</div>'
-    + '<div class="lang-row" data-dd-id="ldd-' + sfx + '">'
+    + '<div class="lang-row" data-lang-toggle="1">'
     + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--ac);margin-right:8px"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>'
     + '<span style="font-size:13px">' + T('language') + '</span>'
     + '<span class="lang-cur" id="lc' + sfx + '">' + LANG.toUpperCase() + '</span>'
-    + '<div class="lang-dd" id="ldd-' + sfx + '" style="display:none;">'
-    + '<div class="lang-opt' + (LANG === 'en' ? ' sel' : '') + '" data-lang="en" data-set-lang="en"><span style="font-size:11px; font-weight:bold; color:var(--mu);">EN</span> English</div>'
-    + '<div class="lang-opt' + (LANG === 'ru' ? ' sel' : '') + '" data-lang="ru" data-set-lang="ru"><span style="font-size:11px; font-weight:bold; color:var(--mu);">RU</span> Русский</div>'
-    + '</div></div>'
+    + '</div>'
     + '<div class="sset" onclick="window.toggleFontSize && toggleFontSize()">'
     + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--ac)"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>'
     + '<span>' + (window.LANG === 'ru' ? 'Размер шрифта' : 'Font Size') + '</span>'
