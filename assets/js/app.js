@@ -2962,9 +2962,49 @@ function toggleDD(e, id) {
     console.log('[Language Dropdown] Dropdown innerHTML:', dd.innerHTML);
     console.log('[Language Dropdown] Dropdown children count:', dd.children.length);
     
-    // Check all parent containers for overflow
-    var current = dd.parentElement;
+    // Log getBoundingClientRect for actual pixel dimensions and position
+    var rect = dd.getBoundingClientRect();
+    console.log('[Language Dropdown] getBoundingClientRect:', {
+      width: rect.width,
+      height: rect.height,
+      top: rect.top,
+      left: rect.left,
+      right: rect.right,
+      bottom: rect.bottom,
+      x: rect.x,
+      y: rect.y
+    });
+    
+    // Find nearest positioned ancestor (containing block)
+    var positionedAncestor = dd.parentElement;
     var level = 0;
+    while (positionedAncestor && positionedAncestor !== document.body) {
+      var pos = window.getComputedStyle(positionedAncestor).position;
+      if (pos === 'relative' || pos === 'absolute' || pos === 'fixed' || pos === 'sticky') {
+        console.log('[Language Dropdown] Nearest positioned ancestor:', positionedAncestor.tagName, positionedAncestor.id || positionedAn.className, 'position:', pos);
+        break;
+      }
+      positionedAncestor = positionedAncestor.parentElement;
+      level++;
+      if (level > 20) break;
+    }
+    
+    // Check for elements with transform between dropdown and lang-row
+    var current = dd.parentElement;
+    var transformLevel = 0;
+    while (current && current !== document.body) {
+      var transform = window.getComputedStyle(current).transform;
+      if (transform !== 'none') {
+        console.log('[Language Dropdown] Element with transform found:', current.tagName, current.id || current.className, 'transform:', transform);
+      }
+      current = current.parentElement;
+      transformLevel++;
+      if (transformLevel > 20) break;
+    }
+    
+    // Check all parent containers for overflow
+    current = dd.parentElement;
+    level = 0;
     while (current && current !== document.body) {
       var parentComputed = window.getComputedStyle(current);
       console.log('[Language Dropdown] Parent level', level, ':', current.tagName, current.id || current.className, 'overflow:', parentComputed.overflow, 'overflow-y:', parentComputed.overflowY, 'overflow-x:', parentComputed.overflowX, 'position:', parentComputed.position);
