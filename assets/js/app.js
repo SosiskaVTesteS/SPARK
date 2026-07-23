@@ -2947,16 +2947,46 @@ function toggleDD(e, id) {
     dd.classList.toggle('open');
     console.log('[Language Dropdown] Toggling dropdown', id, 'was open:', isOpen, 'now open:', !isOpen);
     console.log('[Language Dropdown] Dropdown element:', dd);
-    console.log('[Language Dropdown] Dropdown computed display:', window.getComputedStyle(dd).display);
-    console.log('[Language Dropdown] Dropdown computed position:', window.getComputedStyle(dd).position);
-    console.log('[Language Dropdown] Dropdown computed z-index:', window.getComputedStyle(dd).zIndex);
-    console.log('[Language Dropdown] Dropdown computed visibility:', window.getComputedStyle(dd).visibility);
-    console.log('[Language Dropdown] Dropdown computed opacity:', window.getComputedStyle(dd).opacity);
-    var parent = dd.parentElement;
-    console.log('[Language Dropdown] Parent element:', parent);
-    console.log('[Language Dropdown] Parent computed overflow:', window.getComputedStyle(parent).overflow);
-    console.log('[Language Dropdown] Parent computed overflow-y:', window.getComputedStyle(parent).overflowY);
-    console.log('[Language Dropdown] Parent computed overflow-x:', window.getComputedStyle(parent).overflowX);
+    var computed = window.getComputedStyle(dd);
+    console.log('[Language Dropdown] Dropdown computed display:', computed.display);
+    console.log('[Language Dropdown] Dropdown computed position:', computed.position);
+    console.log('[Language Dropdown] Dropdown computed z-index:', computed.zIndex);
+    console.log('[Language Dropdown] Dropdown computed visibility:', computed.visibility);
+    console.log('[Language Dropdown] Dropdown computed opacity:', computed.opacity);
+    console.log('[Language Dropdown] Dropdown computed width:', computed.width);
+    console.log('[Language Dropdown] Dropdown computed height:', computed.height);
+    console.log('[Language Dropdown] Dropdown computed top:', computed.top);
+    console.log('[Language Dropdown] Dropdown computed left:', computed.left);
+    console.log('[Language Dropdown] Dropdown computed right:', computed.right);
+    console.log('[Language Dropdown] Dropdown computed bottom:', computed.bottom);
+    console.log('[Language Dropdown] Dropdown innerHTML:', dd.innerHTML);
+    console.log('[Language Dropdown] Dropdown children count:', dd.children.length);
+    
+    // Check all parent containers for overflow
+    var current = dd.parentElement;
+    var level = 0;
+    while (current && current !== document.body) {
+      var parentComputed = window.getComputedStyle(current);
+      console.log('[Language Dropdown] Parent level', level, ':', current.tagName, current.id || current.className, 'overflow:', parentComputed.overflow, 'overflow-y:', parentComputed.overflowY, 'overflow-x:', parentComputed.overflowX, 'position:', parentComputed.position);
+      current = current.parentElement;
+      level++;
+      if (level > 20) break; // Prevent infinite loop
+    }
+    
+    // Check for elements with high z-index that might overlay
+    var allElements = document.querySelectorAll('*');
+    var highZIndexElements = [];
+    allElements.forEach(function(el) {
+      var zIndex = parseInt(window.getComputedStyle(el).zIndex);
+      if (!isNaN(zIndex) && zIndex > 100) {
+        highZIndexElements.push({
+          element: el.tagName + (el.id ? '#' + el.id : '') + (el.className ? '.' + el.className.split(' ')[0] : ''),
+          zIndex: zIndex
+        });
+      }
+    });
+    highZIndexElements.sort(function(a, b) { return b.zIndex - a.zIndex; });
+    console.log('[Language Dropdown] Elements with z-index > 100:', highZIndexElements.slice(0, 10));
   } else {
     console.error('[Language Dropdown] Dropdown element not found:', id);
   }
