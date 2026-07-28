@@ -3018,40 +3018,14 @@ function setFontSize(size) {
     fontSizeXLarge.classList.add('selected');
   }
   
-  // Save to localStorage as fallback
+  // Save to localStorage
   localStorage.setItem('spark_font_size', size);
-  
-  // Save to Supabase
-  saveFontSizeToSupabase(size);
   
   closeMo('moFontSize');
 }
 
-function saveFontSizeToSupabase(size) {
-  if (!window.PROFILE || !window.PROFILE.id) return;
-  
-  var supa = window.supa;
-  if (!supa) return;
-  
-  supa
-    .from('profiles')
-    .update({ font_size_preference: size })
-    .eq('id', window.PROFILE.id)
-    .then(function(result) {
-      if (result.error) {
-        console.error('[Font Size] Failed to save to Supabase:', result.error);
-      }
-    });
-}
-
 function applySavedFontSize() {
-  // First try localStorage for immediate load
   var savedSize = localStorage.getItem('spark_font_size');
-  
-  // Then check Supabase profile if available
-  if (window.PROFILE && window.PROFILE.font_size_preference) {
-    savedSize = window.PROFILE.font_size_preference;
-  }
   
   if (savedSize) {
     var root = document.documentElement;
