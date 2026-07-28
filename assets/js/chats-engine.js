@@ -323,7 +323,7 @@ var ChatsEngine = (function () {
           var statusClass = isUserOnline(c.id) ? '' : ' offline';
           var grad = ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(c.avColor) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
           console.log('[Avatar Debug] Chat Contact ID:', c.id, 'Username:', c.username, 'Avatar Color:', c.avColor, 'Gradient:', grad);
-          var pinBadge = c.pinned ? '<span class="chat-row-pin-badge" style="color:var(--ac);font-size:10px;margin-left:5px" title="Pinned chat">📌</span>' : '';
+          var pinBadge = c.pinned ? '<span class="chat-row-pin-badge" style="color:var(--ac);font-size:0.71rem;margin-left:5px" title="Pinned chat">📌</span>' : '';
           
           var checkboxHtml = '';
           if (state.multiSelectMode) {
@@ -558,7 +558,7 @@ var ChatsEngine = (function () {
     modal.innerHTML = ''
       + '<div class="mo-box" style="max-width:400px;padding:24px;box-sizing:border-box">'
       + '  <div class="mo-title" style="margin-bottom:12px;color:var(--red)">' + title + '</div>'
-      + '  <div style="font-size:13px;color:var(--mu2);line-height:1.5;margin-bottom:24px">' + bodyText + '</div>'
+      + '  <div style="font-size:0.93rem;color:var(--mu2);line-height:1.5;margin-bottom:24px">' + bodyText + '</div>'
       + '  <div class="chat-delete-modal-buttons">'
       + '    <button class="prs-btn" id="btnCancelDelete" style="border:1px solid rgba(255,255,255,0.1)">' + cancelText + '</button>'
       +      buttonsHtml
@@ -839,20 +839,20 @@ var ChatsEngine = (function () {
       + '  <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1">'
       + '    <span style="font-size:12px">📌</span>'
       + '    <div style="display:flex;flex-direction:column;min-width:0">'
-      + '      <span style="font-size:10px;font-weight:700;color:var(--ac)">' + (window.LANG === 'ru' ? 'Закрепленное сообщение' : 'Pinned Message') + '</span>'
-      + '      <span id="chatPinnedPreviewText" style="font-size:11px;color:var(--mu2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></span>'
+      + '      <span style="font-size:0.71rem;font-weight:700;color:var(--ac)">' + (window.LANG === 'ru' ? 'Закрепленное сообщение' : 'Pinned Message') + '</span>'
+      + '      <span id="chatPinnedPreviewText" style="font-size:0.79rem;color:var(--mu2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></span>'
       + '    </div>'
       + '  </div>'
-      + '  <button id="btnUnpinActiveBtn" style="background:transparent;border:none;color:var(--red);font-size:12px;font-weight:bold;cursor:pointer;padding:4px">✕</button>'
+      + '  <button id="btnUnpinActiveBtn" style="background:transparent;border:none;color:var(--red);font-size:0.86rem;font-weight:bold;cursor:pointer;padding:4px">✕</button>'
       + '</div>'
       /* In-Chat Search Bar Overlay (hidden by default) */
       + '<div class="chat-search-bar-overlay" id="chatSearchBarOverlay" style="display:none;align-items:center;justify-content:space-between;padding:8px 20px;background:rgba(5,6,15,0.65);border-bottom:1px solid rgba(255,255,255,0.06);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:4">'
       + '  <div style="display:flex;align-items:center;gap:10px;flex:1">'
       + '    <span style="font-size:12px;color:var(--mu2)">🔍</span>'
-      + '    <input type="text" id="chatSearchBox" placeholder="' + (window.LANG === 'ru' ? 'Поиск в этом чате...' : 'Search in this chat...') + '" style="background:transparent;border:none;outline:none;color:#fff;font-size:12px;width:100%" autocomplete="off">'
+      + '    <input type="text" id="chatSearchBox" placeholder="' + (window.LANG === 'ru' ? 'Поиск в этом чате...' : 'Search in this chat...') + '" style="background:transparent;border:none;outline:none;color:#fff;font-size:0.86rem;width:100%" autocomplete="off">'
       + '  </div>'
       + '  <div style="display:flex;align-items:center;gap:12px">'
-      + '    <span id="chatSearchCount" style="font-size:11px;color:var(--mu2);white-space:nowrap">0 / 0</span>'
+      + '    <span id="chatSearchCount" style="font-size:0.79rem;color:var(--mu2);white-space:nowrap">0 / 0</span>'
       + '    <button id="btnSearchPrev" class="chat-header-icon-btn" style="width:24px;height:24px;border-radius:4px" title="Previous">▲</button>'
       + '    <button id="btnSearchNext" class="chat-header-icon-btn" style="width:24px;height:24px;border-radius:4px" title="Next">▼</button>'
       + '    <button id="btnSearchClose" class="chat-header-icon-btn" style="width:24px;height:24px;border-radius:4px;color:var(--red)" title="Close">✕</button>'

@@ -303,7 +303,7 @@ var SparkOnboarding = (function () {
 .ob3-lang-btn {
   padding:4px 12px; border-radius:6px; border:none;
   background:transparent; color:rgba(255,255,255,.3);
-  font-family:'Syne',sans-serif; font-size:11px; font-weight:700;
+  font-family:'Syne',sans-serif; font-size:0.79rem; font-weight:700;
   cursor:pointer; transition:all .22s; letter-spacing:.06em;
   line-height:1;
 }
@@ -318,7 +318,7 @@ var SparkOnboarding = (function () {
 .ob3-skip {
   background:transparent; border:none; cursor:pointer;
   color:rgba(255,255,255,.25); font-family:'DM Sans',sans-serif;
-  font-size:12px; padding:5px 8px; border-radius:7px; transition:all .2s;
+  font-size:0.86rem; padding:5px 8px; border-radius:7px; transition:all .2s;
 }
 .ob3-skip:hover { color:rgba(255,255,255,.6); background:rgba(255,255,255,.05); }
 
@@ -347,7 +347,7 @@ var SparkOnboarding = (function () {
 
 /* ─ Tag chip ─ */
 .ob3-tag {
-  display:inline-block; font-size:10px; font-weight:700; letter-spacing:.07em;
+  display:inline-block; font-size:0.71rem; font-weight:700; letter-spacing:.07em;
   text-transform:uppercase; color:#5AE8C5;
   background:rgba(90,232,197,.09); border:1px solid rgba(90,232,197,.18);
   border-radius:20px; padding:3px 11px; margin-bottom:11px;
@@ -355,14 +355,14 @@ var SparkOnboarding = (function () {
 
 /* ─ Title ─ */
 .ob3-title {
-  font-size:clamp(19px,5vw,26px); font-weight:800; line-height:1.18;
+  font-size:clamp(1.36rem,5vw,1.86rem); font-weight:800; line-height:1.18;
   color:#fff; font-family:'Syne',sans-serif; margin-bottom:12px;
   white-space:pre-line; letter-spacing:-.01em;
 }
 
 /* ─ Body ─ */
 .ob3-body {
-  font-size:13px; color:rgba(255,255,255,.48); line-height:1.68;
+  font-size:0.93rem; color:rgba(255,255,255,.48); line-height:1.68;
   max-width:410px; font-family:'DM Sans',sans-serif; margin-bottom:6px;
 }
 
@@ -370,7 +370,7 @@ var SparkOnboarding = (function () {
 .ob3-bonus {
   display:inline-flex; align-items:center; gap:6px;
   background:rgba(232,197,90,.09); border:1px solid rgba(232,197,90,.2);
-  border-radius:20px; padding:5px 14px; font-size:12px; color:#E8C55A;
+  border-radius:20px; padding:5px 14px; font-size:0.86rem; color:#E8C55A;
   font-family:'Syne',sans-serif; font-weight:700; margin-bottom:14px;
   animation:ob3Pulse 2.4s ease-in-out infinite;
 }
@@ -381,7 +381,7 @@ var SparkOnboarding = (function () {
   display:block; width:100%; max-width:310px; margin:16px auto 6px;
   padding:15px 24px;
   background:linear-gradient(135deg,#7B5CFA,#E85AA0);
-  color:#fff; font-size:14px; font-weight:700;
+  color:#fff; font-size:1rem; font-weight:700;
   font-family:'Syne',sans-serif; border:none; border-radius:13px;
   cursor:pointer;
   box-shadow:0 8px 30px rgba(123,92,250,.5), 0 0 0 1px rgba(255,255,255,.06) inset;
@@ -391,7 +391,7 @@ var SparkOnboarding = (function () {
 }
 .ob3-cta-btn:hover { transform:translateY(-2px); box-shadow:0 14px 40px rgba(123,92,250,.6); }
 .ob3-cta-btn:active { transform:translateY(0) scale(.97); }
-.ob3-cta-sub { text-align:center; font-size:11px; color:rgba(255,255,255,.22); font-family:'DM Sans',sans-serif; }
+.ob3-cta-sub { text-align:center; font-size:0.79rem; color:rgba(255,255,255,.22); font-family:'DM Sans',sans-serif; }
 
 /* ─ Nav bar ─ */
 .ob3-nav {
@@ -410,7 +410,7 @@ var SparkOnboarding = (function () {
 }
 .ob3-btn {
   background:rgba(255,255,255,.055); border:1px solid rgba(255,255,255,.08);
-  color:rgba(255,255,255,.55); font-size:13px; font-family:'Syne',sans-serif;
+  color:rgba(255,255,255,.55); font-size:0.93rem; font-family:'Syne',sans-serif;
   font-weight:600; padding:9px 18px; border-radius:10px; cursor:pointer;
   transition:all .2s; min-width:78px; text-align:center; line-height:1;
 }
@@ -428,17 +428,17 @@ var SparkOnboarding = (function () {
   #spk-ob3-modal { border-radius:20px; }
   .ob3-slide { padding:16px 17px 14px; }
   .ob3-vis { max-width:230px; height:132px; }
-  .ob3-title { font-size:19px; }
-  .ob3-body { font-size:12.5px; }
+  .ob3-title { font-size:1.36rem; }
+  .ob3-body { font-size:0.89rem; }
   .ob3-nav { padding:10px 15px 15px; }
-  .ob3-btn { padding:7px 13px; font-size:12px; min-width:66px; }
+  .ob3-btn { padding:7px 13px; font-size:0.86rem; min-width:66px; }
   .ob3-topbar { padding:12px 16px 2px; }
 }
 @media(max-height:620px){
   .ob3-vis { height:105px; }
   .ob3-slide { padding:12px 20px 10px; }
-  .ob3-title { font-size:17px; margin-bottom:7px; }
-  .ob3-body { font-size:12px; }
+  .ob3-title { font-size:1.21rem; margin-bottom:7px; }
+  .ob3-body { font-size:0.86rem; }
 }
     `;
     document.head.appendChild(s);
@@ -1038,7 +1038,7 @@ body.spk-tour3-lock { overflow:hidden !important; }
 /* step counter chip */
 .spk-t3-counter {
   display:inline-flex; align-items:center; gap:8px;
-  font-size:10px; font-weight:800; letter-spacing:.08em;
+  font-size:0.71rem; font-weight:800; letter-spacing:.08em;
   text-transform:uppercase; color:#5AE8C5;
   background:linear-gradient(135deg,rgba(90,232,197,.12) 0%,rgba(90,232,197,.04) 100%);
   border:1px solid rgba(90,232,197,.25);
@@ -1055,12 +1055,12 @@ body.spk-tour3-lock { overflow:hidden !important; }
 @keyframes t3CounterPulse { 0%,100%{opacity:1;transform:scale(1);box-shadow:0 0 4px #5AE8C5} 50%{opacity:.4;transform:scale(0.7);box-shadow:none} }
 
 .spk-t3-title {
-  font-size:16.5px; font-weight:800; color:#EEF0FF;
+  font-size:1.18rem; font-weight:800; color:#EEF0FF;
   font-family:'Syne',sans-serif; margin-bottom:10px; line-height:1.25;
   letter-spacing:-0.01em;
 }
 .spk-t3-body {
-  font-size:13px; color:rgba(180,185,215,.85); line-height:1.65;
+  font-size:0.93rem; color:rgba(180,185,215,.85); line-height:1.65;
   font-family:'DM Sans',sans-serif; margin-bottom:18px;
 }
 
@@ -1080,7 +1080,7 @@ body.spk-tour3-lock { overflow:hidden !important; }
   padding:0 24px; position:relative; z-index:3;
 }
 .spk-t3-btn {
-  padding:10px 18px; border-radius:10px; cursor:pointer; font-size:12.5px;
+  padding:10px 18px; border-radius:10px; cursor:pointer; font-size:0.89rem;
   font-family:'Syne',sans-serif; font-weight:700; line-height:1;
   border:1px solid rgba(255,255,255,.08);
   background:rgba(255,255,255,.03); color:rgba(255,255,255,.5);
@@ -1125,7 +1125,7 @@ body.spk-tour3-lock { overflow:hidden !important; }
   background:transparent;
   border-color:transparent;
   color:rgba(255,255,255,.3);
-  font-size:11.5px;
+  font-size:0.82rem;
 }
 .spk-t3-btn.skip:hover {
   color:rgba(255,255,255,.6);
@@ -1142,7 +1142,7 @@ body.spk-tour3-lock { overflow:hidden !important; }
 .spk-t3-lang-btn {
   padding:4px 10px; border-radius:6px; border:none;
   background:transparent; color:rgba(255,255,255,.35);
-  font-family:'Syne',sans-serif; font-size:10px; font-weight:700;
+  font-family:'Syne',sans-serif; font-size:0.71rem; font-weight:700;
   cursor:pointer; transition:all .25s cubic-bezier(0.4, 0, 0.2, 1);
   letter-spacing:.05em;
 }

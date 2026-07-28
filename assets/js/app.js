@@ -593,7 +593,7 @@ function setBtnLoading(idOrEl, isLoading) {
             '<circle class="btn-timer-track" cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.5" style="opacity: 0.15;"></circle>' +
             '<circle class="btn-timer-progress" cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.5" stroke-dasharray="56.55" stroke-dashoffset="56.55" stroke-linecap="round"></circle>' +
           '</svg>' +
-          '<span class="btn-timer-text" style="font-family: var(--fh); font-weight: 700; font-size: 13px; min-width: 22px; text-align: left;">' + duration + 's</span>' +
+          '<span class="btn-timer-text" style="font-family: var(--fh); font-weight: 700; font-size: 0.93rem; min-width: 22px; text-align: left;">' + duration + 's</span>' +
         '</span>';
 
       var progressCircle = btn.querySelector('.btn-timer-progress');
@@ -1111,7 +1111,7 @@ async function loadIdeasFromDB() {
   console.log('[loadIdeasFromDB Debug] Called');
   // Show loading state in feed
   var cl = document.getElementById('cardsList');
-  if (cl) cl.innerHTML = '<div style="text-align:center;color:var(--mu);padding:40px 20px;font-size:14px">Loading ideas...</div>';
+  if (cl) cl.innerHTML = '<div style="text-align:center;color:var(--mu);padding:40px 20px;font-size:1rem">Loading ideas...</div>';
 
   if (!supa) {
     // No DB — show empty state
@@ -1297,7 +1297,7 @@ function renderTrends() {
 
   function buildHtml(list) {
     if (list.length === 0) {
-      return '<div style="color:var(--mu);font-size:12px;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных — опубликуйте первую идею!' : 'No data yet — publish the first idea!') + '</div>';
+      return '<div style="color:var(--mu);font-size:0.86rem;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных — опубликуйте первую идею!' : 'No data yet — publish the first idea!') + '</div>';
     }
     return list.map(function(tag, i) {
       var total = tagTotals[tag];
@@ -1361,7 +1361,7 @@ async function renderLeaders(limit) {
   }
 
   if (!supa) {
-    var emptyHtml = '<div style="color:var(--mu);font-size:12px;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных' : 'No data yet') + '</div>';
+    var emptyHtml = '<div style="color:var(--mu);font-size:0.86rem;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных' : 'No data yet') + '</div>';
     var ld = document.getElementById('leaderListDesk');
     if (ld) ld.innerHTML = emptyHtml + selfHtml;
     var lm = document.getElementById('leaderListMob');
@@ -1414,7 +1414,7 @@ async function renderLeaders(limit) {
         + '</div>';
     }).join('');
   } else {
-    html = '<div style="color:var(--mu);font-size:12px;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных' : 'No data yet') + '</div>';
+    html = '<div style="color:var(--mu);font-size:0.86rem;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных' : 'No data yet') + '</div>';
   }
 
   html += selfHtml;
@@ -1464,7 +1464,7 @@ async function renderLeadersFull() {
   }
 
   if (!supa) {
-    var emptyHtml = '<div style="color:var(--mu);font-size:12px;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных' : 'No data yet') + '</div>';
+    var emptyHtml = '<div style="color:var(--mu);font-size:0.86rem;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных' : 'No data yet') + '</div>';
     var lf = document.getElementById('leaderListFull');
     if (lf) lf.innerHTML = emptyHtml + selfHtml;
     return;
@@ -1514,7 +1514,7 @@ async function renderLeadersFull() {
         + '</div>';
     }).join('');
   } else {
-    html = '<div style="color:var(--mu);font-size:12px;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных' : 'No data yet') + '</div>';
+    html = '<div style="color:var(--mu);font-size:0.86rem;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных' : 'No data yet') + '</div>';
   }
 
   html += selfHtml;
@@ -1564,17 +1564,17 @@ async function renderTopInvestments() {
       
       console.log('[Leaders Debug] Top Investments:', i + 1, 'User ID:', p.id, 'Username:', uname, 'Count:', invCount);
       return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0">'
-        + '<div style="width:24px;height:24px;border-radius:50%;background:' + avatarGradient + ';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;overflow:hidden">' + avatarDisplay + '</div>'
+        + '<div style="width:24px;height:24px;border-radius:50%;background:' + avatarGradient + ';display:flex;align-items:center;justify-content:center;font-size:0.71rem;font-weight:700;color:#fff;overflow:hidden">' + avatarDisplay + '</div>'
         + '<div style="flex:1">'
-        + '<div style="font-size:11px;font-weight:500;color:var(--mu2)">' + uname + '</div>'
-        + '<div style="font-size:10px;color:var(--mu)">' + invCount + ' ' + (LANG === 'ru' ? 'вложений' : 'investments') + '</div>'
+        + '<div style="font-size:0.79rem;font-weight:500;color:var(--mu2)">' + uname + '</div>'
+        + '<div style="font-size:0.71rem;color:var(--mu)">' + invCount + ' ' + (LANG === 'ru' ? 'вложений' : 'investments') + '</div>'
         + '</div>'
         + '</div>';
     }).join('');
     el.innerHTML = html;
   } else {
     console.log('[Leaders Debug] Top Investments: No data, response:', r);
-    el.innerHTML = '<div style="color:var(--mu);font-size:11px;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных' : 'No data yet') + '</div>';
+    el.innerHTML = '<div style="color:var(--mu);font-size:0.79rem;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных' : 'No data yet') + '</div>';
   }
 }
 
@@ -1610,10 +1610,10 @@ async function renderTopAccuracy() {
       var accuracy = Number(p.accuracy) || 0;
       console.log('[Leaders Debug] Top Accuracy:', i + 1, 'User ID:', p.user_id, 'Username:', uname, 'Accuracy:', accuracy + '%');
       return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0">'
-        + '<div style="width:24px;height:24px;border-radius:50%;background:' + avatarGradient + ';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff">' + letter + '</div>'
+        + '<div style="width:24px;height:24px;border-radius:50%;background:' + avatarGradient + ';display:flex;align-items:center;justify-content:center;font-size:0.71rem;font-weight:700;color:#fff">' + letter + '</div>'
         + '<div style="flex:1">'
-        + '<div style="font-size:11px;font-weight:500;color:var(--mu2)">' + uname + '</div>'
-        + '<div style="font-size:10px;color:var(--ac)">' + accuracy.toFixed(1) + '% ' + (LANG === 'ru' ? 'точность' : 'accuracy') + '</div>'
+        + '<div style="font-size:0.79rem;font-weight:500;color:var(--mu2)">' + uname + '</div>'
+        + '<div style="font-size:0.71rem;color:var(--ac)">' + accuracy.toFixed(1) + '% ' + (LANG === 'ru' ? 'точность' : 'accuracy') + '</div>'
         + '</div>'
         + '</div>';
     }).join('');
@@ -1621,7 +1621,7 @@ async function renderTopAccuracy() {
   } else {
     // Fallback: show message that RPC needs to be created
     console.log('[Leaders Debug] Top Accuracy: No data, RPC response:', r);
-    el.innerHTML = '<div style="color:var(--mu);font-size:10px;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных' : 'No data') + '</div>';
+    el.innerHTML = '<div style="color:var(--mu);font-size:0.71rem;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных' : 'No data') + '</div>';
   }
 }
 
@@ -1657,13 +1657,13 @@ async function renderUserProgress() {
     var changeSign = change >= 0 ? '+' : '';
     
     el.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%">'
-      + '<div style="font-size:24px;font-weight:700;color:' + changeColor + '">' + changeSign + change.toLocaleString() + ' SPK</div>'
-      + '<div style="font-size:12px;color:var(--mu)">' + changeSign + changePercent + '% ' + (LANG === 'ru' ? 'за 30 дней' : 'in 30 days') + '</div>'
+      + '<div style="font-size:1.71rem;font-weight:700;color:' + changeColor + '">' + changeSign + change.toLocaleString() + ' SPK</div>'
+      + '<div style="font-size:0.86rem;color:var(--mu)">' + changeSign + changePercent + '% ' + (LANG === 'ru' ? 'за 30 дней' : 'in 30 days') + '</div>'
       + '</div>';
   } else {
     el.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%">'
-      + '<div style="font-size:13px;font-weight:500;color:var(--mu2)">' + (LANG === 'ru' ? 'Нет истории' : 'No history') + '</div>'
-      + '<div style="font-size:10px;color:var(--mu)">' + (LANG === 'ru' ? 'История начнётся после первой транзакции' : 'History starts after first transaction') + '</div>'
+      + '<div style="font-size:0.93rem;font-weight:500;color:var(--mu2)">' + (LANG === 'ru' ? 'Нет истории' : 'No history') + '</div>'
+      + '<div style="font-size:0.71rem;color:var(--mu)">' + (LANG === 'ru' ? 'История начнётся после первой транзакции' : 'History starts after first transaction') + '</div>'
       + '</div>';
   }
 }
@@ -1699,17 +1699,17 @@ async function renderRisingStars() {
       var growth = Number(p.growth) || 0;
       console.log('[Leaders Debug] Rising Star:', i + 1, 'User ID:', p.user_id, 'Username:', uname, 'Growth:', growth);
       return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0">'
-        + '<div style="width:24px;height:24px;border-radius:50%;background:' + avatarGradient + ';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff">' + letter + '</div>'
+        + '<div style="width:24px;height:24px;border-radius:50%;background:' + avatarGradient + ';display:flex;align-items:center;justify-content:center;font-size:0.71rem;font-weight:700;color:#fff">' + letter + '</div>'
         + '<div style="flex:1">'
-        + '<div style="font-size:11px;font-weight:500;color:var(--mu2)">' + uname + '</div>'
-        + '<div style="font-size:10px;color:var(--ac)">+' + growth.toLocaleString() + ' SPK</div>'
+        + '<div style="font-size:0.79rem;font-weight:500;color:var(--mu2)">' + uname + '</div>'
+        + '<div style="font-size:0.71rem;color:var(--ac)">+' + growth.toLocaleString() + ' SPK</div>'
         + '</div>'
         + '</div>';
     }).join('');
     el.innerHTML = html;
   } else {
     console.log('[Leaders Debug] Rising Stars: No data, RPC response:', r);
-    el.innerHTML = '<div style="color:var(--mu);font-size:10px;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных' : 'No data') + '</div>';
+    el.innerHTML = '<div style="color:var(--mu);font-size:0.71rem;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных' : 'No data') + '</div>';
   }
 }
 
@@ -1803,7 +1803,7 @@ async function renderLeadersByPeriod(period) {
     } else {
       noDataMessage = LANG === 'ru' ? 'Данные накапливаются — загляните через несколько дней' : 'Data accumulating — check back in a few days';
     }
-    el.innerHTML = '<div style="color:var(--mu);font-size:12px;padding:8px 0">' + noDataMessage + '</div>' + selfHtml;
+    el.innerHTML = '<div style="color:var(--mu);font-size:0.86rem;padding:8px 0">' + noDataMessage + '</div>' + selfHtml;
   }
 }
 
@@ -1903,12 +1903,12 @@ function renderActivityFeed() {
     var timeStr = formatRelativeTime(item.created_at);
     
     return '<div style="padding:7px 0;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:8px;animation:slideIn 0.3s ease-out">'
-      + '<div style="width:28px;height:28px;border-radius:50%;background:' + avatarGradient + ';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0">' + letter + '</div>'
+      + '<div style="width:28px;height:28px;border-radius:50%;background:' + avatarGradient + ';display:flex;align-items:center;justify-content:center;font-size:0.79rem;font-weight:700;color:#fff;flex-shrink:0">' + letter + '</div>'
       + '<div style="flex:1;min-width:0">'
-      + '<div style="font-size:12px;font-weight:500;color:var(--mu2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + username + ' вложил ' + amount.toLocaleString() + ' SPK</div>'
-      + '<div style="font-size:11px;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">в "' + ideaTitle + '" (' + ideaAuthor + ')</div>'
+      + '<div style="font-size:0.86rem;font-weight:500;color:var(--mu2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + username + ' вложил ' + amount.toLocaleString() + ' SPK</div>'
+      + '<div style="font-size:0.79rem;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">в "' + ideaTitle + '" (' + ideaAuthor + ')</div>'
       + '</div>'
-      + '<div style="font-size:10px;color:var(--ac);flex-shrink:0">' + timeStr + '</div>'
+      + '<div style="font-size:0.71rem;color:var(--ac);flex-shrink:0">' + timeStr + '</div>'
       + '</div>';
   }).join('');
   
