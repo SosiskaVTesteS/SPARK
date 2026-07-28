@@ -6,6 +6,9 @@ var _pendingAdminSignIn = null; // holds { email, password } while 2FA modal is 
 var _activePanel = 'feed';
 
 document.addEventListener('DOMContentLoaded', function () {
+  // Apply saved font size
+  applySavedFontSize();
+  
   // Capture ?auto= param so profile.html / leaderboard.html redirects survive
   // the auth flow (enterApp() reads this after login).
   try {
@@ -2949,6 +2952,98 @@ function openLangModal() {
 function selectLang(lang) {
   setLang(lang);
   closeMo('moLang');
+}
+
+function toggleFontSize() {
+  openFontSizeModal();
+}
+
+function openFontSizeModal() {
+  // Update modal UI to show current font size
+  var fontSizeSmall = document.getElementById('fontSizeSmall');
+  var fontSizeNormal = document.getElementById('fontSizeNormal');
+  var fontSizeLarge = document.getElementById('fontSizeLarge');
+  var fontSizeXLarge = document.getElementById('fontSizeXLarge');
+  
+  if (fontSizeSmall) fontSizeSmall.classList.remove('selected');
+  if (fontSizeNormal) fontSizeNormal.classList.remove('selected');
+  if (fontSizeLarge) fontSizeLarge.classList.remove('selected');
+  if (fontSizeXLarge) fontSizeXLarge.classList.remove('selected');
+  
+  var currentFontSize = window.currentFontSize || 'normal';
+  
+  if (currentFontSize === 'small' && fontSizeSmall) {
+    fontSizeSmall.classList.add('selected');
+  } else if (currentFontSize === 'normal' && fontSizeNormal) {
+    fontSizeNormal.classList.add('selected');
+  } else if (currentFontSize === 'large' && fontSizeLarge) {
+    fontSizeLarge.classList.add('selected');
+  } else if (currentFontSize === 'xlarge' && fontSizeXLarge) {
+    fontSizeXLarge.classList.add('selected');
+  }
+  
+  openMo('moFontSize');
+}
+
+function setFontSize(size) {
+  var root = document.documentElement;
+  var fontSizeMap = {
+    'small': '12px',
+    'normal': '14px',
+    'large': '16px',
+    'xlarge': '18px'
+  };
+  
+  root.style.setProperty('--base-font-size', fontSizeMap[size] || '14px');
+  window.currentFontSize = size;
+  
+  // Save to localStorage as fallback
+  localStorage.setItem('spark_font_size', size);
+  
+  // Save to Supabase
+  saveFontSizeToSupabase(size);
+  
+  closeMo('moFontSize');
+}
+
+function saveFontSizeToSupabase(size) {
+  if (!window.PROFILE || !window.PROFILE.id) return;
+  
+  var supabase = window.supabase;
+  if (!supabase) return;
+  
+  supabase
+    .from('profiles')
+    .update({ font_size_preference: size })
+    .eq('id', window.PROFILE.id)
+    .then(function(result) {
+      if (result.error) {
+        console.error('[Font Size] Failed to save to Supabase:', result.error);
+      }
+    });
+}
+
+function applySavedFontSize() {
+  // First try localStorage for immediate load
+  var savedSize = localStorage.getItem('spark_font_size');
+  
+  // Then check Supabase profile if available
+  if (window.PROFILE && window.PROFILE.font_size_preference) {
+    savedSize = window.PROFILE.font_size_preference;
+  }
+  
+  if (savedSize) {
+    var root = document.documentElement;
+    var fontSizeMap = {
+      'small': '12px',
+      'normal': '14px',
+      'large': '16px',
+      'xlarge': '18px'
+    };
+    
+    root.style.setProperty('--base-font-size', fontSizeMap[savedSize] || '14px');
+    window.currentFontSize = savedSize;
+  }
 }
 
 /* Специальные бейджи (ICC: BETA TESTER / BETA TESTER PRO) из profiles.special_badges */

@@ -1107,6 +1107,43 @@ html.auth-active, html.auth-active body { overflow: hidden !important; height: 1
   </div>
 </div>
 
+<!-- ════ МОДАЛКА ВЫБОРА РАЗМЕРА ШРИФТА ════ -->
+<div class="mo" id="moFontSize" role="dialog" aria-modal="true" aria-labelledby="fontSizeTitle">
+  <div class="mo-box">
+    <div class="mo-handle"></div>
+    <button class="mo-close-btn" onclick="closeMo('moFontSize')" aria-label="Закрыть">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
+    
+    <!-- Заголовок -->
+    <div class="mo-title" id="fontSizeTitle">Выберите размер шрифта</div>
+    
+    <!-- Список размеров -->
+    <div class="font-size-list">
+      <div class="font-size-option" onclick="setFontSize('small')" id="fontSizeSmall">
+        <span class="font-size-preview" style="font-size: 12px;">A</span>
+        <span class="font-size-name">Мелкий</span>
+        <span class="font-size-check" id="fontSizeCheckSmall">✓</span>
+      </div>
+      <div class="font-size-option" onclick="setFontSize('normal')" id="fontSizeNormal">
+        <span class="font-size-preview" style="font-size: 14px;">A</span>
+        <span class="font-size-name">Обычный</span>
+        <span class="font-size-check" id="fontSizeCheckNormal">✓</span>
+      </div>
+      <div class="font-size-option" onclick="setFontSize('large')" id="fontSizeLarge">
+        <span class="font-size-preview" style="font-size: 16px;">A</span>
+        <span class="font-size-name">Крупный</span>
+        <span class="font-size-check" id="fontSizeCheckLarge">✓</span>
+      </div>
+      <div class="font-size-option" onclick="setFontSize('xlarge')" id="fontSizeXLarge">
+        <span class="font-size-preview" style="font-size: 18px;">A</span>
+        <span class="font-size-name">Очень крупный</span>
+        <span class="font-size-check" id="fontSizeCheckXLarge">✓</span>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ════ МОДАЛКА ВЫБОРА ЯЗЫКА ════ -->
 <div class="mo" id="moLang" role="dialog" aria-modal="true" aria-labelledby="langTitle">
   <div class="mo-box">

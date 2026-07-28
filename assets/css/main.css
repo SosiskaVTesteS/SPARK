@@ -50,6 +50,7 @@
   --fh: 'Syne', sans-serif;
   --fb: 'DM Sans', sans-serif;
   --ff: 'DM Sans', sans-serif;
+  --base-font-size: 14px;
 }
 
 /* ════ SHARED KEYFRAMES ════ */
@@ -4098,6 +4099,66 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
 }
 
 .lang-option.selected .lang-check {
+  opacity: 1;
+}
+
+/* ════════════════════════════════════════════════
+   FONT SIZE MODAL
+   ════════════════════════════════════════════════ */
+#moFontSize .mo-box {
+  max-width: 360px;
+  padding: 28px 24px;
+}
+
+.font-size-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.font-size-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.font-size-option:hover {
+  background: rgba(123,92,250,0.08);
+}
+
+.font-size-option.selected {
+  background: rgba(123,92,250,0.12);
+  border-color: rgba(123,92,250,0.3);
+}
+
+.font-size-preview {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ac);
+  width: 24px;
+  text-align: center;
+}
+
+.font-size-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--tx);
+  flex: 1;
+}
+
+.font-size-check {
+  font-size: 16px;
+  color: var(--vl2);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.font-size-option.selected .font-size-check {
   opacity: 1;
 }
 
