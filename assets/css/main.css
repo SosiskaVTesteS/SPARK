@@ -848,9 +848,9 @@ header {
   border: 1px solid rgba(123,92,250,0.15);
 }
 .obs-stub-inner { display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; padding:14px 20px; }
-.obs-stub-icon  { font-size:32px; line-height:1; animation: obsFloat 3s ease-in-out infinite; }
-.obs-stub-title { font-size:14px; font-weight:600; color:var(--tx); letter-spacing:0.02em; }
-.obs-stub-sub   { font-size:10px; color:var(--ac2); letter-spacing:0.1em; text-transform:uppercase; background:rgba(90,232,197,0.1); border:1px solid rgba(90,232,197,0.2); border-radius:20px; padding:2px 10px; }
+.obs-stub-icon  { font-size:2.29rem; line-height:1; animation: obsFloat 3s ease-in-out infinite; }
+.obs-stub-title { font-size:1rem; font-weight:600; color:var(--tx); letter-spacing:0.02em; }
+.obs-stub-sub   { font-size:0.71rem; color:var(--ac2); letter-spacing:0.1em; text-transform:uppercase; background:rgba(90,232,197,0.1); border:1px solid rgba(90,232,197,0.2); border-radius:20px; padding:2px 10px; }
 
 .obs-shell {
   position: relative;
@@ -891,7 +891,7 @@ header {
 .obs-shell.has-focus .obs-system:not(.focused) { opacity:0.36; }
 .obs-system.focused { left:50%; top:50%; bottom:auto; right:auto; transform:translate(-50%,-50%) scale(1.15); z-index:4; opacity:1 !important; }
 .obs-sun { position:absolute; top:50%; left:50%; width:22px; height:22px; transform:translate(-50%,-50%); border-radius:50%; background:linear-gradient(135deg,#E8C55A,#C8A030); box-shadow:0 0 22px rgba(232,197,90,0.5); }
-.obs-system-label { position:absolute; bottom:10px; left:0; right:0; text-align:center; font-size:9px; color:var(--ac); letter-spacing:0.16em; text-transform:uppercase; opacity:0.65; }
+.obs-system-label { position:absolute; bottom:10px; left:0; right:0; text-align:center; font-size:0.64rem; color:var(--ac); letter-spacing:0.16em; text-transform:uppercase; opacity:0.65; }
 .obs-system.focused .obs-system-label { opacity:0.15; }
 .obs-orbit { position:absolute; top:50%; left:50%; border:1px solid rgba(255,255,255,0.07); border-radius:50%; transform:translate(-50%,-50%); animation:obsSpin var(--obs-dur,22s) linear infinite; }
 .obs-orbit.orbit-1 { width:56px; height:56px; --obs-dur:14s; }
@@ -900,8 +900,8 @@ header {
 .obs-planet { position:absolute; width:8px; height:8px; top:50%; left:50%; border-radius:50%; }
 .obs-planet .obs-info { position:absolute; top:-8px; left:12px; background:rgba(5,6,15,0.97); border:1px solid rgba(123,92,250,0.3); border-radius:6px; padding:4px 7px; white-space:nowrap; opacity:0; transform:translateX(8px); transition:opacity 0.25s ease, transform 0.25s ease; }
 .obs-system.focused .obs-info { opacity:1; transform:translateX(0); }
-.obs-n { display:block; font-size:8px; color:var(--mu2); line-height:1.1; text-transform:uppercase; }
-.obs-v { display:block; font-size:10px; color:var(--ac); font-weight:700; line-height:1.2; }
+.obs-n { display:block; font-size:0.57rem; color:var(--mu2); line-height:1.1; text-transform:uppercase; }
+.obs-v { display:block; font-size:0.71rem; color:var(--ac); font-weight:700; line-height:1.2; }
 .obs-orbit.orbit-1 .p-45  { transform:rotate(45deg)  translate(28px) rotate(-45deg); }
 .obs-orbit.orbit-1 .p-90  { transform:rotate(90deg)  translate(28px) rotate(-90deg); }
 .obs-orbit.orbit-1 .p-220 { transform:rotate(220deg) translate(28px) rotate(-220deg); }
