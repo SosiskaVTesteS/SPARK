@@ -210,7 +210,7 @@ body::after {
   background: transparent;
   color: var(--mu2);
   font-family: var(--fh);
-  font-size: 12px;
+  font-size: 0.86rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -223,7 +223,7 @@ body::after {
 
 .auth-err {
   color: var(--red);
-  font-size: 12px;
+  font-size: 0.86rem;
   min-height: 18px;
   margin-bottom: 10px;
   text-align: center;
@@ -262,7 +262,7 @@ body::after {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: 0.86rem;
   color: var(--mu2);
   margin-bottom: 20px;
   cursor: pointer;
@@ -657,7 +657,7 @@ header {
   background: transparent;
   color: var(--mu);
   font-family: var(--fb);
-  font-size: 12px;
+  font-size: 0.86rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -791,8 +791,8 @@ header {
 .trend-item:hover { background: rgba(123,92,250,0.08); transform: translateX(3px); }
 .t-rank { font-family:var(--fh); font-size:11px; color:var(--mu); width:14px; flex-shrink:0; }
 .t-tag  { font-size:13px; font-weight:500; flex:1; line-height:1.4; }
-.t-cnt  { font-size:11px; color:var(--mu2); }
-.t-hot  { font-size:10px; color:var(--ac); background:rgba(232,197,90,0.1); border-radius:4px; padding:1px 5px; }
+.t-cnt  { font-size:0.79rem; color:var(--mu2); }
+.t-hot  { font-size:0.71rem; color:var(--ac); background:rgba(232,197,90,0.1); border-radius:4px; padding:1px 5px; }
 
 .li {
   display: flex;
@@ -807,15 +807,15 @@ header {
 .li:hover { background: rgba(123,92,250,0.08); transform: translateX(3px); }
 .li-self { background: rgba(123,92,250,0.07); border: 1px solid rgba(123,92,250,0.22); cursor: default; }
 .li-self:hover { background: rgba(123,92,250,0.12); transform: none; }
-.lrank { font-family:var(--fh); font-size:13px; font-weight:800; width:19px; text-align:center; flex-shrink:0; }
+.lrank { font-family:var(--fh); font-size:0.93rem; font-weight:800; width:19px; text-align:center; flex-shrink:0; }
 .lrank.gold   { color:#FFD700; text-shadow:0 0 8px rgba(255,215,0,0.5); }
 .lrank.silver { color:#C0C0C0; text-shadow:0 0 8px rgba(192,192,192,0.4); }
 .lrank.bronze { color:#CD7F32; text-shadow:0 0 8px rgba(205,127,50,0.4); }
-.lav    { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; flex-shrink:0; }
+.lav    { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.93rem; font-weight:700; flex-shrink:0; }
 .linf   { flex:1; min-width:0; }
-.lname  { font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.4; }
-.lsub   { font-size:11px; color:var(--mu2); line-height:1.4; }
-.lprofit{ font-family:var(--fh); font-size:14px; font-weight:700; color:var(--ac2); flex-shrink:0; }
+.lname  { font-size:0.93rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.4; }
+.lsub   { font-size:0.79rem; color:var(--mu2); line-height:1.4; }
+.lprofit{ font-family:var(--fh); font-size:1rem; font-weight:700; color:var(--ac2); flex-shrink:0; }
 
 .divider { height:1px; background:rgba(255,255,255,0.05); margin:14px 0; }
 
@@ -978,7 +978,7 @@ header {
   background: transparent;
   color: var(--mu2);
   font-family: var(--fb);
-  font-size: 12px;
+  font-size: 0.86rem;
   cursor: pointer;
   transition: all 0.18s ease;
   white-space: nowrap;
@@ -1252,7 +1252,7 @@ header {
   text-overflow: ellipsis;
 }
 .share-card-body {
-  font-size: 12px;
+  font-size: 0.86rem;
   color: rgba(155,160,195,0.8);
   line-height: 1.5;
   margin-bottom: 8px;
@@ -1288,7 +1288,7 @@ header {
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 10px;
   color: var(--mu);
-  font-size: 12px;
+  font-size: 0.86rem;
   font-family: var(--ff);
   outline: none;
   white-space: nowrap;
@@ -1452,7 +1452,7 @@ svg.igsvg { width:100%; height:68px; display:block; overflow:visible; }
   border-radius: 10px;
 }
 .streak-label {
-  font-size: 12px;
+  font-size: 0.86rem;
   font-weight: 600;
   color: var(--vl2);
 }
@@ -2033,7 +2033,7 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
    V3 — PROFILE BIO
    ════════════════════════════════════════════════ */
 .pbio {
-  font-size: 12px;
+  font-size: 0.86rem;
   color: var(--mu2);
   text-align: center;
   line-height: 1.6;
@@ -2353,7 +2353,7 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
   border: 1px dashed rgba(255,255,255,0.2);
   border-radius: 8px;
   color: var(--mu2);
-  font-size: 12px;
+  font-size: 0.86rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -2984,7 +2984,7 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
 .ach-reward {
   flex-shrink: 0;
   font-family: var(--fh);
-  font-size: 12px;
+  font-size: 0.86rem;
   font-weight: 800;
   color: var(--ac);
   border: 1px solid rgba(232,197,90,0.28);
@@ -3038,7 +3038,7 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
   border-radius: 10px;
   border: none;
   font-family: var(--fb);
-  font-size: 12px;
+  font-size: 0.86rem;
   font-weight: 700;
   cursor: pointer;
   transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.18s ease, opacity 0.15s;
@@ -3087,7 +3087,7 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
   background: transparent;
   border: none;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 0.86rem;
   font-weight: 600;
   font-family: var(--fb);
   color: var(--ac2);
@@ -3253,7 +3253,7 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
   border: 1px solid rgba(90,232,197,0.35);
   background: rgba(90,232,197,0.1);
   color: var(--ac2);
-  font-size: 12px;
+  font-size: 0.86rem;
   font-weight: 700;
   font-family: var(--fb);
   cursor: pointer;
@@ -3315,13 +3315,13 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
   align-items: center;
   gap: 8px;
   padding: 14px 10px;
-  font-size: 12px;
+  font-size: 0.86rem;
   color: var(--mu2);
 }
 
 .ach-empty {
   padding: 14px 10px;
-  font-size: 12px;
+  font-size: 0.86rem;
   color: var(--mu2);
   text-align: center;
 }
@@ -3848,7 +3848,7 @@ input[type=range].inv-sl::-webkit-slider-thumb { -webkit-appearance:none; width:
   align-items: center;
   margin: 24px 0;
   color: var(--mu2);
-  font-size: 12px;
+  font-size: 0.86rem;
 }
 
 .donate-divider::before,
