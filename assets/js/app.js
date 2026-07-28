@@ -2997,6 +2997,27 @@ function setFontSize(size) {
   root.style.setProperty('--base-font-size', fontSizeMap[size] || '14px');
   window.currentFontSize = size;
   
+  // Update modal UI immediately
+  var fontSizeSmall = document.getElementById('fontSizeSmall');
+  var fontSizeNormal = document.getElementById('fontSizeNormal');
+  var fontSizeLarge = document.getElementById('fontSizeLarge');
+  var fontSizeXLarge = document.getElementById('fontSizeXLarge');
+  
+  if (fontSizeSmall) fontSizeSmall.classList.remove('selected');
+  if (fontSizeNormal) fontSizeNormal.classList.remove('selected');
+  if (fontSizeLarge) fontSizeLarge.classList.remove('selected');
+  if (fontSizeXLarge) fontSizeXLarge.classList.remove('selected');
+  
+  if (size === 'small' && fontSizeSmall) {
+    fontSizeSmall.classList.add('selected');
+  } else if (size === 'normal' && fontSizeNormal) {
+    fontSizeNormal.classList.add('selected');
+  } else if (size === 'large' && fontSizeLarge) {
+    fontSizeLarge.classList.add('selected');
+  } else if (size === 'xlarge' && fontSizeXLarge) {
+    fontSizeXLarge.classList.add('selected');
+  }
+  
   // Save to localStorage as fallback
   localStorage.setItem('spark_font_size', size);
   
@@ -3009,10 +3030,10 @@ function setFontSize(size) {
 function saveFontSizeToSupabase(size) {
   if (!window.PROFILE || !window.PROFILE.id) return;
   
-  var supabase = window.supabase;
-  if (!supabase) return;
+  var supa = window.supa;
+  if (!supa) return;
   
-  supabase
+  supa
     .from('profiles')
     .update({ font_size_preference: size })
     .eq('id', window.PROFILE.id)
