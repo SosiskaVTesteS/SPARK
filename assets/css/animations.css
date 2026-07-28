@@ -368,7 +368,7 @@ body.intro-active #launchOverlay { display: none !important; }
 /* Wordmark: all letters appear simultaneously as scan passes */
 .si-wordmark {
   font-family: 'Syne', sans-serif;
-  font-size: 44px;
+  font-size: 3.14rem;
   font-weight: 800;
   letter-spacing: 0.22em;
   padding-right: 0.22em; /* balance right side */
@@ -383,7 +383,7 @@ body.intro-active #launchOverlay { display: none !important; }
 /* Tagline: letter-spacing condenses from wide to normal */
 .si-tagline {
   font-family: 'DM Sans', sans-serif;
-  font-size: 11px;
+  font-size: 0.79rem;
   font-weight: 300;
   letter-spacing: 0.28em;
   text-transform: uppercase;

@@ -67,7 +67,7 @@
 
 .pwa-banner__title {
   font-family: var(--fh, 'Syne', sans-serif);
-  font-size: 14px;
+  font-size: 1rem;
   font-weight: 700;
   color: #fff;
   letter-spacing: -0.01em;
@@ -76,7 +76,7 @@
 
 .pwa-banner__sub {
   font-family: var(--fb, 'DM Sans', sans-serif);
-  font-size: 11px;
+  font-size: 0.79rem;
   color: rgba(255,255,255,0.5);
   line-height: 1.4;
 }
@@ -94,7 +94,7 @@
   border: none;
   cursor: pointer;
   font-family: var(--fh, 'Syne', sans-serif);
-  font-size: 12px;
+  font-size: 0.86rem;
   font-weight: 700;
   letter-spacing: 0.02em;
   transition: transform 0.18s ease, box-shadow 0.18s ease;
@@ -171,7 +171,7 @@
 .pwa-toast__msg {
   flex: 1;
   font-family: var(--fb, 'DM Sans', sans-serif);
-  font-size: 13px;
+  font-size: 0.93rem;
   color: rgba(255,255,255,0.85);
 }
 
@@ -188,7 +188,7 @@
   background: linear-gradient(135deg, #7B5CFA, #9B5FFF);
   color: #fff;
   font-family: var(--fh, 'Syne', sans-serif);
-  font-size: 12px;
+  font-size: 0.86rem;
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
@@ -254,7 +254,7 @@
 
 .pwa-ios__title {
   font-family: var(--fh, 'Syne', sans-serif);
-  font-size: 16px;
+  font-size: 1.14rem;
   font-weight: 800;
   color: #fff;
   letter-spacing: -0.01em;
@@ -303,7 +303,7 @@
   background: linear-gradient(135deg, #7B5CFA, #9B5FFF);
   color: #fff;
   font-family: var(--fh, 'Syne', sans-serif);
-  font-size: 12px;
+  font-size: 0.86rem;
   font-weight: 800;
   display: flex;
   align-items: center;
@@ -314,7 +314,7 @@
 
 .pwa-ios__step-text {
   font-family: var(--fb, 'DM Sans', sans-serif);
-  font-size: 13px;
+  font-size: 0.93rem;
   color: rgba(255,255,255,0.8);
   line-height: 1.45;
 }
@@ -364,7 +364,7 @@
   border-radius: 10px;
   cursor: pointer;
   font-family: var(--fh, 'Syne', sans-serif);
-  font-size: 12px;
+  font-size: 0.86rem;
   font-weight: 700;
   letter-spacing: 0.02em;
   transition: background 0.18s ease, border-color 0.18s ease;
@@ -407,7 +407,7 @@
 
 .pwa-wv__title {
   font-family: var(--fh, 'Syne', sans-serif);
-  font-size: 16px;
+  font-size: 1.14rem;
   font-weight: 800;
   color: #E8C55A;
   letter-spacing: -0.01em;
@@ -456,7 +456,7 @@
   background: linear-gradient(135deg, #C87A10, #E8C55A);
   color: #080C1C;
   font-family: var(--fh, 'Syne', sans-serif);
-  font-size: 12px;
+  font-size: 0.86rem;
   font-weight: 800;
   display: flex;
   align-items: center;
@@ -467,7 +467,7 @@
 
 .pwa-wv__step-text {
   font-family: var(--fb, 'DM Sans', sans-serif);
-  font-size: 13px;
+  font-size: 0.93rem;
   color: rgba(255,255,255,0.8);
   line-height: 1.5;
   padding-top: 3px;

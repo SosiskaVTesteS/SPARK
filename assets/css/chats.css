@@ -873,7 +873,7 @@
   min-width: 0;
   padding: 12px 20px !important;
   border-radius: 12px !important;
-  font-size: 14px !important;
+  font-size: 1rem !important;
   font-weight: 600 !important;
   height: 46px !important;
   display: inline-flex !important;
@@ -975,7 +975,7 @@
 }
 
 .chat-multiselect-count {
-  font-size: 12px !important;
+  font-size: 0.86rem !important;
   font-weight: 800 !important;
   color: #fff !important;
   font-family: var(--fh) !important;
@@ -988,7 +988,7 @@
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   border-radius: 10px !important; /* Sleek Squircle Buttons */
   padding: 6px 12px !important;
-  font-size: 11px !important;
+  font-size: 0.79rem !important;
   font-weight: 700 !important;
   color: var(--tx) !important;
   display: inline-flex !important;
