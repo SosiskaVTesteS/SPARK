@@ -57,6 +57,13 @@ function applyAboutLang() {
   });
 }
 
+function applySavedFontSize() {
+  const savedSize = localStorage.getItem('spark_font_size');
+  if (savedSize) {
+    document.documentElement.style.setProperty('--base-font-size', savedSize);
+  }
+}
+
 
 /* ═══════════════════════════════════════════════════════════════════════════
    1. STARFIELD ENGINE
@@ -694,6 +701,7 @@ function init() {
   // Сначала проверяем reduced motion
   respectReducedMotion();
   applyAboutLang();
+  applySavedFontSize();
 
   // Запускаем все модули
   StarfieldEngine.init();
