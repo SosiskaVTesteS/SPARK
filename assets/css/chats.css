@@ -43,7 +43,7 @@
 
 .chat-sidebar-title {
   font-family: var(--fh);
-  font-size: 19px;
+  font-size: 1.36rem;
   font-weight: 800;
   letter-spacing: 0.02em;
   background: linear-gradient(135deg, var(--ac), #fff);
@@ -89,7 +89,7 @@
   border-radius: 8px;
   padding: 8px 12px 8px 30px;
   color: #fff;
-  font-size: 12px;
+  font-size: 0.86rem;
   transition: all 0.2s ease;
 }
 .chat-search-input:focus {
@@ -107,7 +107,7 @@
 
 .chat-sidebar-section-title {
   font-family: var(--fh);
-  font-size: 11px;
+  font-size: 0.79rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   color: var(--mu2);
@@ -119,7 +119,7 @@
   text-align: center;
   padding: 24px 16px;
   color: var(--mu2);
-  font-size: 11px;
+  font-size: 0.79rem;
   line-height: 1.6;
   border: 1px dashed rgba(255, 255, 255, 0.05);
   border-radius: 8px;
@@ -178,7 +178,7 @@
   align-items: center;
   justify-content: center;
   font-weight: 750;
-  font-size: 14px;
+  font-size: 1rem;
   color: #fff;
   flex-shrink: 0;
   box-shadow: 0 3px 10px rgba(0,0,0,0.2);
@@ -195,7 +195,7 @@
   margin-bottom: 2px;
 }
 .chat-item-name {
-  font-size: 13px;
+  font-size: 0.93rem;
   font-weight: 600;
   color: #fff;
   white-space: nowrap;
@@ -203,11 +203,11 @@
   text-overflow: ellipsis;
 }
 .chat-item-time {
-  font-size: 10px;
+  font-size: 0.71rem;
   color: var(--mu);
 }
 .chat-item-preview {
-  font-size: 11px;
+  font-size: 0.79rem;
   color: var(--mu2);
   white-space: nowrap;
   overflow: hidden;
@@ -221,7 +221,7 @@
   border-radius: 8px;
   background: var(--ac);
   color: var(--bg);
-  font-size: 9px;
+  font-size: 0.64rem;
   font-weight: 800;
   display: flex;
   align-items: center;
@@ -251,7 +251,7 @@
   text-align: center;
 }
 .chat-empty-icon {
-  font-size: 48px;
+  font-size: 3.43rem;
   margin-bottom: 16px;
   opacity: 0.7;
   filter: drop-shadow(0 0 15px rgba(123, 92, 250, 0.4));
@@ -263,13 +263,13 @@
 }
 .chat-empty-title {
   font-family: var(--fh);
-  font-size: 17px;
+  font-size: 1.21rem;
   font-weight: 700;
   color: #fff;
   margin-bottom: 6px;
 }
 .chat-empty-text {
-  font-size: 12px;
+  font-size: 0.86rem;
   color: var(--mu2);
   max-width: 320px;
   line-height: 1.5;
@@ -312,12 +312,12 @@
   min-width: 0;
 }
 .chat-header-name {
-  font-size: 14px;
+  font-size: 1rem;
   font-weight: 700;
   color: #fff;
 }
 .chat-header-status {
-  font-size: 10px;
+  font-size: 0.71rem;
   color: var(--ac2);
   display: flex;
   align-items: center;
@@ -368,7 +368,7 @@
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 20px;
   padding: 4px 14px;
-  font-size: 10.5px;
+  font-size: 0.75rem;
   color: var(--mu2);
   letter-spacing: 0.02em;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
@@ -404,7 +404,7 @@
   height: 28px;
   border-radius: 50%;
   font-weight: 700;
-  font-size: 11px;
+  font-size: 0.79rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -421,7 +421,7 @@
 }
 
 .chat-msg-sender-name {
-  font-size: 10px;
+  font-size: 0.71rem;
   color: var(--mu2);
   margin-left: 6px;
   margin-bottom: -2px;
@@ -438,7 +438,7 @@
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.06);
   color: var(--tx);
-  font-size: 13px;
+  font-size: 0.93rem;
   line-height: 1.45;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
   position: relative;
@@ -459,7 +459,7 @@
 }
 
 .chat-msg-time {
-  font-size: 9px;
+  font-size: 0.64rem;
   color: var(--mu);
   align-self: flex-end;
   margin-top: 2px;
@@ -478,7 +478,7 @@
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 10px;
   padding: 2px 6px;
-  font-size: 10px;
+  font-size: 0.71rem;
   display: flex;
   align-items: center;
   gap: 3px;
@@ -546,7 +546,7 @@
   border: none;
   cursor: pointer;
   padding: 2px;
-  font-size: 13px;
+  font-size: 0.93rem;
   transition: transform 0.2s;
 }
 .chat-context-react-btn:hover {
@@ -572,7 +572,7 @@
 }
 .chat-media-meta {
   padding: 8px 12px;
-  font-size: 11px;
+  font-size: 0.79rem;
 }
 .chat-media-title {
   font-weight: 700;
@@ -581,7 +581,7 @@
 }
 .chat-media-sub {
   color: var(--mu2);
-  font-size: 9.5px;
+  font-size: 0.68rem;
 }
 
 /* --- BOTTOM CHAT INPUT BAR --- */
@@ -614,7 +614,7 @@
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 20px;
   padding: 6px 14px;
-  font-size: 11px;
+  font-size: 0.79rem;
   color: var(--mu2);
   display: flex;
   align-items: center;
@@ -657,7 +657,7 @@
   background: transparent;
   border: none;
   color: #fff;
-  font-size: 13px;
+  font-size: 0.93rem;
   /* БАГ #12: при глобальном box-sizing:border-box вертикальный padding 8px
      не помещался в height:20px и срезал/смещал placeholder ещё до ввода.
      Отступы даёт родительский .chat-input-row, textarea — чистые 20px строки. */
@@ -710,7 +710,7 @@
   display: none;
   align-items: center;
   justify-content: space-between;
-  font-size: 11px;
+  font-size: 0.79rem;
   color: var(--ac2);
   border: 1px dashed rgba(var(--ac2-rgb), 0.3);
   animation: popIn 0.2s ease-out;
@@ -809,7 +809,7 @@
   background: var(--red);
   color: #fff;
   font-family: var(--fh);
-  font-size: 8px;
+  font-size: 0.57rem;
   font-weight: 800;
   display: flex;
   align-items: center;
@@ -851,7 +851,7 @@
   border: none;
   cursor: pointer;
   padding: 2px;
-  font-size: 13px;
+  font-size: 0.93rem;
   transition: transform 0.2s;
   display: flex;
   align-items: center;

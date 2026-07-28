@@ -1689,22 +1689,22 @@ svg.igsvg { width:100%; height:68px; display:block; overflow:visible; }
    ════════════════════════════════════════════════ */
 .chat-hub { display:flex; flex-direction:column; height:100%; padding:0; }
 .chat-tabs { display:flex; border-bottom:1px solid rgba(255,255,255,0.06); padding:0 16px; flex-shrink:0; background:rgba(5,6,15,0.7); backdrop-filter:blur(8px); position:sticky; top:0; z-index:2; }
-.chat-tab-btn { flex:1; padding:13px 8px; border:none; background:transparent; color:var(--mu2); font-family:var(--fh); font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer; transition:color 0.2s; border-bottom:2px solid transparent; margin-bottom:-1px; }
+.chat-tab-btn { flex:1; padding:13px 8px; border:none; background:transparent; color:var(--mu2); font-family:var(--fh); font-size:0.79rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer; transition:color 0.2s; border-bottom:2px solid transparent; margin-bottom:-1px; }
 .chat-tab-btn.active { color:var(--ac); border-bottom-color:var(--ac); }
 .chat-section { display:none; flex-direction:column; gap:1px; padding:8px 0; }
 .chat-section.active { display:flex; }
 .chat-row { display:flex; align-items:center; gap:12px; padding:12px 16px; cursor:pointer; transition:background 0.15s; border-radius:10px; }
 .chat-row:hover { background:rgba(123,92,250,0.07); }
-.chat-av { width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; flex-shrink:0; position:relative; }
+.chat-av { width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1rem; flex-shrink:0; position:relative; }
 .chat-av::after { content:''; position:absolute; bottom:1px; right:1px; width:9px; height:9px; border-radius:50%; background:var(--ac2); border:2px solid var(--bg); }
 .chat-av.offline::after { background:var(--mu); }
 .chat-info { flex:1; min-width:0; }
-.chat-name    { font-size:13px; font-weight:600; line-height:1.3; }
-.chat-preview { font-size:11px; color:var(--mu2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.4; margin-top:1px; }
+.chat-name    { font-size:0.93rem; font-weight:600; line-height:1.3; }
+.chat-preview { font-size:0.79rem; color:var(--mu2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.4; margin-top:1px; }
 .chat-meta { display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0; }
-.chat-time   { font-size:10px; color:var(--mu); }
-.chat-unread { min-width:18px; height:18px; border-radius:9px; background:var(--vl); color:#fff; font-size:10px; font-weight:700; font-family:var(--fh); display:flex; align-items:center; justify-content:center; padding:0 5px; }
-.chat-topic-tag { font-size:10px; color:var(--ac2); background:rgba(90,232,197,0.1); border-radius:4px; padding:1px 6px; font-family:var(--fh); font-weight:600; letter-spacing:0.04em; display:inline-block; margin-top:2px; }
+.chat-time   { font-size:0.71rem; color:var(--mu); }
+.chat-unread { min-width:18px; height:18px; border-radius:9px; background:var(--vl); color:#fff; font-size:0.71rem; font-weight:700; font-family:var(--fh); display:flex; align-items:center; justify-content:center; padding:0 5px; }
+.chat-topic-tag { font-size:0.71rem; color:var(--ac2); background:rgba(90,232,197,0.1); border-radius:4px; padding:1px 6px; font-family:var(--fh); font-weight:600; letter-spacing:0.04em; display:inline-block; margin-top:2px; }
 
 /* ════════════════════════════════════════════════
    MODALS (bottom sheets on mobile, centred on desktop)
