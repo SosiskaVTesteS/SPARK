@@ -281,15 +281,11 @@ var ProfileEditEngine = (function () {
       if (avatarPhoto) {
         updateData.avatar_photo = avatarPhoto;
       }
-      console.log('[ProfileEdit] Sending to Supabase:', updateData);
       var res = await window.supa.from('profiles').update(updateData).eq('id', window.ME.id);
-      console.log('[ProfileEdit] Supabase response:', res);
 
       if (res.error) {
-        console.error('[ProfileEdit] Supabase error:', res.error);
         _status(status, '✗ ' + res.error.message, 'error');
       } else {
-        console.log('[ProfileEdit] Save successful, applying locally');
         _applyProfileLocally('@' + newNick, newBio, avatarColor, avatarEmoji, avatarPhoto);
         _status(status, lblProfUpdated, 'success');
         if (window.toast) window.toast(lblProfUpdated, 'var(--ac2)');
@@ -376,70 +372,18 @@ var ProfileEditEngine = (function () {
 
   /* ────── Wire up a rendered edit section ────── */
   function initSection(sfx) {
-    console.log('[ProfileEdit] initSection called with sfx:', sfx);
-    
     /* Set up global event delegation once */
     if (!globalDelegationSetup) {
-      console.log('[ProfileEdit] Setting up global event delegation');
       document.addEventListener('click', function (e) {
         var toggle = e.target.closest('.pedit-toggle');
         if (!toggle) return;
-        console.log('[ProfileEdit] Toggle clicked via delegation! Event:', e);
         e.preventDefault();
         e.stopPropagation();
         
-        var sfxMatch = toggle.id.match(/peditToggle-(.+)/);
-        if (!sfxMatch) return;
-        var currentSfx = sfxMatch[1];
-        
-        // Open profile edit modal instead of inline section
+        // Open standalone profile edit modal
         openProfileEditModal();
-        
-        var body = document.getElementById('peditBody-' + currentSfx);
-        console.log('[ProfileEdit] Found body:', body);
-        if (body) {
-          var open = body.classList.contains('open');
-          console.log('[ProfileEdit] Current open state:', open);
-          body.classList.toggle('open', !open);
-          toggle.classList.toggle('open', !open);
-          console.log('[ProfileEdit] Body classes after toggle:', body.className);
-          console.log('[ProfileEdit] Toggle state changed. open:', !open);
-          
-          // Log computed styles for debugging
-          var computed = getComputedStyle(body);
-          console.log('[ProfileEdit] Computed styles:');
-          console.log('  max-height:', computed.maxHeight);
-          console.log('  height:', computed.height);
-          console.log('  display:', computed.display);
-          console.log('  overflow:', computed.overflow);
-          console.log('  opacity:', computed.opacity);
-          console.log('  visibility:', computed.visibility);
-          console.log('  innerHTML length:', body.innerHTML.length);
-          
-          // Log bounding rect and dimensions
-          console.log('[ProfileEdit] BoundingRect:', JSON.stringify(body.getBoundingClientRect()));
-          console.log('[ProfileEdit] offsetWidth:', body.offsetWidth, 'offsetHeight:', body.offsetHeight);
-          
-          // Check parent containers for overflow issues
-          var parent = body.parentElement;
-          var depth = 0;
-          console.log('[ProfileEdit] Parent containers:');
-          while (parent && depth < 5) {
-            var parentStyle = getComputedStyle(parent);
-            console.log('  Parent ' + depth + ' (' + (parent.className || parent.tagName) + '):', 
-              'overflow:', parentStyle.overflow, 
-              'height:', parentStyle.height, 
-              'max-height:', parentStyle.maxHeight,
-              'display:', parentStyle.display);
-            parent = parent.parentElement;
-            depth++;
-          }
-        } else {
-          console.error('[ProfileEdit] Body element not found for sfx:', currentSfx);
-        }
       });
       globalDelegationSetup = true;
-      console.log('[ProfileEdit] Global event delegation set up');
     }
 
     /* Emoji selection */

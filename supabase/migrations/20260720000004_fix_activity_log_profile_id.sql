@@ -44,8 +44,10 @@ DROP FUNCTION IF EXISTS public.log_investment_to_activity(UUID, UUID, BIGINT);
 CREATE OR REPLACE FUNCTION public.log_investment_to_activity(p_profile_id UUID, p_idea_id UUID, p_amount BIGINT)
 RETURNS VOID AS $$
 BEGIN
-  INSERT INTO public.investment_activity_log (profile_id, idea_id, amount, created_at)
-  VALUES (p_profile_id, p_idea_id, p_amount, NOW());
+  IF EXISTS (SELECT 1 FROM public.ideas WHERE id = p_idea_id) THEN
+    INSERT INTO public.investment_activity_log (profile_id, idea_id, amount, created_at)
+    VALUES (p_profile_id, p_idea_id, p_amount, NOW());
+  END IF;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 

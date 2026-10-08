@@ -11,7 +11,11 @@ SET search_path = public
 AS $$
 BEGIN
   -- User can access messages if:
-  -- 1. They are the sender of the message (checked separately in policy)
+  -- 1. Direct message where the channel_id is the user's ID
+  IF p_channel_id = p_user_id::TEXT THEN
+    RETURN TRUE;
+  END IF;
+
   -- 2. They are a member of the channel
   RETURN EXISTS (
     SELECT 1 FROM public.channel_members

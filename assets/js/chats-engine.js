@@ -12,6 +12,17 @@ var ChatsEngine = (function () {
   // Avoids re-calling presenceChannel.presenceState() which can return stale {} mid-lifecycle.
   var _onlineUserIds = new Set();
 
+  function _getMe() {
+    return window.ME || (typeof ME !== 'undefined' ? ME : null);
+  }
+  function _getMyId() {
+    var u = _getMe();
+    return u ? (u.id || '') : '';
+  }
+  function _getSupa() {
+    return window.supa || (typeof supa !== 'undefined' ? supa : null);
+  }
+
   // State Model
   var state = {
     activeChannelId: null,              // e.g. '@maria_builds' or 'defi-prophets'
@@ -133,13 +144,14 @@ var ChatsEngine = (function () {
 
   // Fetch team channels the current user belongs to from channel_members table
   async function loadTeamsFromSupabase() {
-    if (!window.supa || !window.ME) return;
+    var myId = _getMyId();
+    var supaClient = _getSupa();
+    if (!supaClient || !myId) return;
     try {
-      console.log('[loadTeamsFromSupabase] Loading teams for user:', ME.id);
-      var res = await window.supa
+      var res = await supaClient
         .from('channel_members')
         .select('channel_id')
-        .eq('user_id', window.ME.id);
+        .eq('user_id', myId);
       if (res.error) throw res.error;
       console.log('[loadTeamsFromSupabase] Channel members response:', res);
       if (res.data && res.data.length > 0) {
@@ -907,16 +919,17 @@ var ChatsEngine = (function () {
         return '<div class="chat-system-message" data-msg-id="' + m.id + '">' + _esc(content) + '</div>';
       }
 
-      var isSent = m.sender_id === 'me' || (window.ME && m.sender_id === ME.id);
+      var myId = _getMyId();
+      var isSent = m.sender_id === 'me' || (myId && m.sender_id === myId);
       var rowClass = isSent ? ' sent' : '';
-      var avText = isSent ? (window.PROFILE && PROFILE.username || '@user').replace('@', '').charAt(0).toUpperCase() : m.sender_name.replace('@', '').charAt(0).toUpperCase();
-      var avColor = isSent ? (window.PROFILE && PROFILE.avatar_color || 0) : m.sender_avatar_color;
+      var avText = isSent ? ((window.PROFILE && window.PROFILE.username) || '@user').replace('@', '').charAt(0).toUpperCase() : (m.sender_name || '?').replace('@', '').charAt(0).toUpperCase();
+      var avColor = isSent ? ((window.PROFILE && window.PROFILE.avatar_color) || 0) : (m.sender_avatar_color || 0);
       var avGrad = ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avColor) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
       
       // Determine avatar display
       var avatarDisplay = avText;
       if (isSent && window.PROFILE) {
-        if (PROFILE.avatar_photo) {
+        if (window.PROFILE.avatar_photo) {
           avatarDisplay = '<img src="' + PROFILE.avatar_photo + '" alt="Avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
         } else if (PROFILE.avatar_emoji) {
           avatarDisplay = PROFILE.avatar_emoji;
@@ -997,7 +1010,7 @@ var ChatsEngine = (function () {
         + '  </button>'
         + '</div>';
 
-      var triggerId = isSent ? (window.ME ? ME.id : '') : m.sender_id;
+      var triggerId = isSent ? _getMyId() : m.sender_id;
       var avatarTriggerAttr = triggerId ? ' class="chat-msg-avatar mp-trigger" data-user-id="' + triggerId + '"' : ' class="chat-msg-avatar"';
       var senderTriggerAttr = triggerId ? ' class="chat-msg-sender-name mp-trigger" data-user-id="' + triggerId + '"' : ' class="chat-msg-sender-name"';
       return ''
@@ -1286,13 +1299,15 @@ var ChatsEngine = (function () {
 
     if (!isDM) {
       try {
-        state.activeChannelSubscription = supa.channel('messages-group-' + channelId)
+        var supaClient = _getSupa();
+        if (!supaClient) return;
+        state.activeChannelSubscription = supaClient.channel('messages-group-' + channelId)
           .on('postgres_changes', {
             event: 'INSERT', schema: 'public', table: 'messages',
             filter: 'channel_id=eq.' + channelId
           }, function (payload) {
             var newRow = payload.new;
-            if (!newRow || newRow.sender_id === ME.id) return;
+            if (!newRow || newRow.sender_id === _getMyId()) return;
 
             var msgs = getCachedMessages();
             if (!msgs[channelId]) msgs[channelId] = [];
@@ -1379,11 +1394,13 @@ var ChatsEngine = (function () {
 
   // Query Supabase for any unread direct messages sent to ME and update badges
   async function updateUnreadBadge() {
-    if (!window.supa || !window.ME) return;
+    var myId = _getMyId();
+    var supaClient = _getSupa();
+    if (!supaClient || !myId) return;
     try {
-      var res = await supa.from('messages')
+      var res = await supaClient.from('messages')
         .select('id', { count: 'exact', head: true })
-        .eq('channel_id', ME.id)
+        .eq('channel_id', myId)
         .eq('read', false);
       
       var hasUnread = res.count > 0;
@@ -1408,7 +1425,9 @@ var ChatsEngine = (function () {
 
   // Mark all unread messages from this contact as read in DB and local cache
   async function markMessagesAsRead(contactId) {
-    if (!window.supa || !window.ME || !contactId) return;
+    var myId = _getMyId();
+    var supaClient = _getSupa();
+    if (!supaClient || !myId || !contactId) return;
 
     var isDM = isDMChannel(contactId);
     if (!isDM) return;
@@ -1416,9 +1435,9 @@ var ChatsEngine = (function () {
 
     try {
       // 1. Update in Supabase
-      var res = await supa.from('messages')
+      var res = await supaClient.from('messages')
         .update({ read: true })
-        .eq('channel_id', ME.id) // Sent to me
+        .eq('channel_id', myId) // Sent to me
         .eq('sender_id', contactId) // From this contact
         .eq('read', false);
 
@@ -1427,7 +1446,7 @@ var ChatsEngine = (function () {
       var thread = msgs[contactId] || [];
       var updated = false;
       thread.forEach(function (m) {
-        if (m.sender_id !== 'me' && m.sender_id !== ME.id && !m.read) {
+        if (m.sender_id !== 'me' && m.sender_id !== myId && !m.read) {
           m.read = true;
           updated = true;
         }
@@ -1446,18 +1465,20 @@ var ChatsEngine = (function () {
 
   // Load historical messages from Supabase database
   async function loadSupabaseHistory(id) {
-    if (!window.supa || !window.ME) return;
+    var myId = _getMyId();
+    var supaClient = _getSupa();
+    if (!supaClient || !myId) return;
     try {
       var isDM = isDMChannel(id);
       if (isDM && !isValidUUID(id)) return; // Skip mock DMs
       var res;
       if (isDM) {
-        res = await supa.from('messages')
+        res = await supaClient.from('messages')
           .select('*')
-          .or('and(channel_id.eq.' + ME.id + ',sender_id.eq.' + id + '),and(channel_id.eq.' + id + ',sender_id.eq.' + ME.id + ')')
+          .or('and(channel_id.eq.' + myId + ',sender_id.eq.' + id + '),and(channel_id.eq.' + id + ',sender_id.eq.' + myId + ')')
           .order('created_at', { ascending: true });
       } else {
-        res = await supa.from('messages')
+        res = await supaClient.from('messages')
           .select('*')
           .eq('channel_id', id)
           .order('created_at', { ascending: true });
@@ -1475,7 +1496,7 @@ var ChatsEngine = (function () {
           .map(function(row) {
             return {
               id:                  row.id,
-              sender_id:           row.sender_id === ME.id ? 'me' : row.sender_id,
+              sender_id:           row.sender_id === myId ? 'me' : row.sender_id,
               sender_name:         row.sender_name,
               sender_avatar_color: row.sender_avatar_color,
               content:             row.content,
@@ -1565,7 +1586,7 @@ var ChatsEngine = (function () {
       try {
         var dbMsg = {
           channel_id:          channel,
-          sender_id:           ME.id,
+          sender_id:           senderId,
           sender_name:         senderName,
           sender_avatar_color: senderColor,
           content:             newMsg.content,
@@ -1988,11 +2009,14 @@ var ChatsEngine = (function () {
   }
 
   // Poll database for new messages if WebSockets are unavailable or in polling mode
+  // Poll database for new messages if WebSockets are unavailable or in polling mode
   function _initPollingSubscription() {
     if (pollingInterval) clearInterval(pollingInterval);
     pollingInterval = setInterval(async function () {
       if (!state.isTabActive) return; // Completely pause polling when tab is backgrounded!
-      if (!window.supa || !window.ME) return;
+      var myId = _getMyId();
+      var supaClient = _getSupa();
+      if (!supaClient || !myId) return;
       try {
         // 1. If a chat is open, refresh its history to load new messages and read status
         if (state.activeChannelId) {
@@ -2000,9 +2024,9 @@ var ChatsEngine = (function () {
         }
         
         // 2. Poll for other DMs sent to us to update sidebar badges / previews
-        var res = await supa.from('messages')
+        var res = await supaClient.from('messages')
           .select('*')
-          .eq('channel_id', ME.id)
+          .eq('channel_id', myId)
           .order('created_at', { ascending: false })
           .limit(10);
         if (res.data && res.data.length > 0) {
@@ -2032,7 +2056,7 @@ var ChatsEngine = (function () {
 
               msgs[threadId].push({
                 id:                  row.id,
-                sender_id:           row.sender_id === ME.id ? 'me' : row.sender_id,
+                sender_id:           row.sender_id === myId ? 'me' : row.sender_id,
                 sender_name:         row.sender_name,
                 sender_avatar_color: row.sender_avatar_color,
                 content:             row.content,
@@ -2067,27 +2091,29 @@ var ChatsEngine = (function () {
       return;
     }
 
-    if (!window.supa || !window.ME || state.realtimeChannel) return;
+    var myId = _getMyId();
+    var supaClient = _getSupa();
+    if (!supaClient || !myId || state.realtimeChannel) return;
     try {
-      // Filter to channel_id = ME.id so each client only receives messages
+      // Filter to channel_id = myId so each client only receives messages
       // addressed TO them. Without this filter every client receives every
       // message from every conversation — O(users × messages) websocket
       // traffic that crashes the client and overloads the DB under load.
-      state.realtimeChannel = supa.channel('messages-inbox-' + ME.id)
+      state.realtimeChannel = supaClient.channel('messages-inbox-' + myId)
         .on('postgres_changes', {
           event: 'INSERT', schema: 'public', table: 'messages',
-          filter: 'channel_id=eq.' + ME.id
+          filter: 'channel_id=eq.' + myId
         }, function (payload) {
           var newRow = payload.new;
           if (!newRow) return;
 
           // Avoid duplicating messages sent by oneself (rare edge case on
-          // multi-device sessions where both devices share the same ME.id)
-          if (newRow.sender_id === ME.id) return;
+          // multi-device sessions where both devices share the same myId)
+          if (newRow.sender_id === myId) return;
 
           // For DMs addressed to ME: the logical thread is the sender's id
           var threadId = newRow.channel_id;
-          if (newRow.channel_id === ME.id) {
+          if (newRow.channel_id === myId) {
             threadId = newRow.sender_id;
 
             // Auto-append incoming contacts to local sidebar list if missing
@@ -2144,14 +2170,14 @@ var ChatsEngine = (function () {
         })
         .on('postgres_changes', {
           event: 'UPDATE', schema: 'public', table: 'messages',
-          filter: 'channel_id=eq.' + ME.id
+          filter: 'channel_id=eq.' + myId
         }, function (payload) {
           var updatedRow = payload.new;
           if (!updatedRow) return;
 
           // thread is always keyed by sender when channel = ME
           var threadId = updatedRow.channel_id;
-          if (updatedRow.channel_id === ME.id) {
+          if (updatedRow.channel_id === myId) {
             threadId = updatedRow.sender_id;
           }
 
@@ -2191,7 +2217,7 @@ var ChatsEngine = (function () {
         })
         .on('postgres_changes', {
           event: 'INSERT', schema: 'public', table: 'channel_members',
-          filter: 'user_id=eq.' + ME.id
+          filter: 'user_id=eq.' + myId
         }, function (payload) {
           var newRow = payload.new;
           if (!newRow) return;
@@ -2200,7 +2226,7 @@ var ChatsEngine = (function () {
         })
         .on('postgres_changes', {
           event: 'DELETE', schema: 'public', table: 'channel_members',
-          filter: 'user_id=eq.' + ME.id
+          filter: 'user_id=eq.' + myId
         }, function (payload) {
           var oldRow = payload.old;
           if (!oldRow) return;
@@ -2222,10 +2248,12 @@ var ChatsEngine = (function () {
       return;
     }
 
-    if (!window.supa || !window.ME || state.presenceChannel) return;
+    var myId = _getMyId();
+    var supaClient = _getSupa();
+    if (!supaClient || !myId || state.presenceChannel) return;
     try {
-      state.presenceChannel = supa.channel('online-presence', {
-        config: { presence: { key: ME.id } }
+      state.presenceChannel = supaClient.channel('online-presence', {
+        config: { presence: { key: myId } }
       });
 
       state.presenceChannel
@@ -2236,7 +2264,7 @@ var ChatsEngine = (function () {
         .subscribe(async function (status) {
           if (status === 'SUBSCRIBED') {
             await state.presenceChannel.track({
-              username: window.PROFILE ? PROFILE.username : '@user',
+              username: window.PROFILE ? window.PROFILE.username : '@user',
               online_at: new Date().toISOString()
             });
           }
@@ -2787,7 +2815,7 @@ var ChatsEngine = (function () {
           message_id: mId,
           content: msg.content,
           for_everyone: false,
-          pinned_by: window.ME ? ME.id : 'me'
+          pinned_by: _getMyId() || 'me'
         });
       }
     });
@@ -2943,12 +2971,14 @@ var ChatsEngine = (function () {
         var mId = state.selectedPinMessages[i];
         
         if (forEveryone) {
-          if (window.supa && window.ME && !mId.startsWith('m_local_')) {
+          var myId = _getMyId();
+          var supaClient = _getSupa();
+          if (supaClient && myId && !mId.startsWith('m_local_')) {
             try {
-              await supa.from('pinned_messages').insert({
+              await supaClient.from('pinned_messages').insert({
                 channel_id: channelId,
                 message_id: mId,
-                pinned_by: ME.id,
+                pinned_by: myId,
                 for_everyone: true
               });
             } catch (e) {
@@ -3202,7 +3232,8 @@ var ChatsEngine = (function () {
         // 2. Reconcile ticks and time
         var timeEl = existingRow.querySelector('.chat-msg-time');
         if (timeEl) {
-          var isSent = m.sender_id === 'me' || (window.ME && m.sender_id === ME.id);
+          var myId = _getMyId();
+          var isSent = m.sender_id === 'me' || (myId && m.sender_id === myId);
           var statusTicks = '';
           if (isSent) {
             if (m.id.startsWith('m_local_')) {

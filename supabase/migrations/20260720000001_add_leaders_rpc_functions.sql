@@ -60,18 +60,18 @@ BEGIN
   RETURN QUERY
   WITH balance_changes AS (
     SELECT 
-      user_id,
-      SUM(balance_change) AS total_growth
-    FROM spk_balance_history
-    WHERE created_at >= v_cutoff_date
-      AND balance_change > 0
-    GROUP BY user_id
+      sbh.user_id,
+      SUM(sbh.balance_change) AS total_growth
+    FROM spk_balance_history sbh
+    WHERE sbh.created_at >= v_cutoff_date
+      AND sbh.balance_change > 0
+    GROUP BY sbh.user_id
   )
   SELECT 
     p.id AS user_id,
     p.username,
     p.avatar_color,
-    COALESCE(bc.total_growth, 0) AS growth
+    COALESCE(bc.total_growth, 0)::INTEGER AS growth
   FROM profiles p
   LEFT JOIN balance_changes bc ON bc.user_id = p.id
   WHERE p.is_admin IS NULL OR p.is_admin = false
@@ -81,7 +81,7 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.get_rising_stars(INTEGER, INTEGER) FROM public;
-GRANT EXECUTE ON FUNCTION public.get_rising_stars(INTEGER, INTEGER) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_rising_stars(INTEGER, INTEGER) TO anon, authenticated;
 
 -- ═══ RPC: get_leaders_by_period ═══
 -- Get leaders ranked by SPK growth in specified period
@@ -106,6 +106,8 @@ BEGIN
     v_cutoff_date := NOW() - '7 days'::INTERVAL;
   ELSIF period = 'month' THEN
     v_cutoff_date := NOW() - '30 days'::INTERVAL;
+  ELSIF period = 'day' THEN
+    v_cutoff_date := NOW() - '1 day'::INTERVAL;
   ELSE
     v_cutoff_date := NULL; -- All time
   END IF;
@@ -128,13 +130,13 @@ BEGIN
   ELSE
     -- Period-based: calculate growth in period from balance history
     RETURN QUERY
-    WITH period_growth AS (
+    WITH pg_stats AS (
       SELECT 
-        user_id,
-        SUM(balance_change) AS total_growth
-      FROM spk_balance_history
-      WHERE created_at >= v_cutoff_date
-      GROUP BY user_id
+        sbh.user_id,
+        SUM(sbh.balance_change) AS total_growth
+      FROM spk_balance_history sbh
+      WHERE sbh.created_at >= v_cutoff_date
+      GROUP BY sbh.user_id
     )
     SELECT 
       p.id AS user_id,
@@ -144,7 +146,7 @@ BEGIN
       p.investments_count,
       COALESCE(pg.total_growth, 0::BIGINT) AS period_growth
     FROM profiles p
-    LEFT JOIN period_growth pg ON pg.user_id = p.id
+    LEFT JOIN pg_stats pg ON pg.user_id = p.id
     WHERE (p.is_admin IS NULL OR p.is_admin = false)
       AND p.spk_balance IS NOT NULL
     ORDER BY COALESCE(pg.total_growth, 0::BIGINT) DESC, p.spk_balance DESC
@@ -154,7 +156,7 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.get_leaders_by_period(TEXT, INTEGER) FROM public;
-GRANT EXECUTE ON FUNCTION public.get_leaders_by_period(TEXT, INTEGER) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_leaders_by_period(TEXT, INTEGER) TO anon, authenticated;
 
 -- Verification
 SELECT 'function: get_top_by_accuracy' AS check_name, 'OK' AS status

@@ -654,6 +654,7 @@ async function doSignIn() {
     var r = res.data;
     if (r && r.error) throw r.error;
     ME = r.data.user;
+    window.ME = ME;
 
     if (ME && !ME.email_confirmed_at) {
       PENDING_EMAIL = email;
@@ -766,6 +767,7 @@ async function doAdminCodeConfirm() {
 
     // Step 3: Code verified server-side — proceed into the app
     ME = loginRes.data.data.user;
+    window.ME = ME;
     closeAdminCodeModal();
     await fetchProfile();
     enterApp();
@@ -880,14 +882,18 @@ async function doVerifyRegistration() {
     // Transition IMMEDIATELY to application since database setup succeeded!
     toast(T('regComplete'), 'var(--ac2)');
 
+    PROFILE.id = (verified.data && verified.data.user_id) || '';
     PROFILE.username = '@' + PENDING_NICK;
     PROFILE.spk_balance = 500;
+    window.PROFILE = PROFILE;
 
     var tempUser = {
+      id: (verified.data && verified.data.user_id) || '',
       email: PENDING_EMAIL,
       user_metadata: { username: '@' + PENDING_NICK }
     };
     ME = tempUser;
+    window.ME = ME;
 
     showRegistrationForm();
     enterApp();
@@ -904,6 +910,7 @@ async function doVerifyRegistration() {
           });
           if (!verifyRes.error && verifyRes.data && verifyRes.data.user) {
             ME = verifyRes.data.user;
+            window.ME = ME;
             established = true;
             await fetchProfile();
             updateHeader();
@@ -916,6 +923,7 @@ async function doVerifyRegistration() {
           });
           if (signIn.error) throw signIn.error;
           ME = signIn.data.user;
+          window.ME = ME;
           await fetchProfile();
           updateHeader();
         }
@@ -975,13 +983,8 @@ async function fetchProfile() {
     return supa.from('profiles').select('*').eq('id', ME.id).single();
   }, { silent: true, timeout: 25000 });
 
-  console.log('[fetchProfile Debug] Supabase response:', r);
-
   if (r.ok && r.data && r.data.data) {
     var row = r.data.data;
-    console.log('[fetchProfile Debug] Row data:', row);
-    console.log('[fetchProfile Debug] avatar_emoji from DB:', row.avatar_emoji);
-    console.log('[fetchProfile Debug] avatar_photo from DB:', row.avatar_photo);
     PROFILE.id = ME.id;
     PROFILE.username = row.username || '@user';
     PROFILE.spk_balance = Number(row.spk_balance) || 0;
@@ -991,8 +994,6 @@ async function fetchProfile() {
     PROFILE.avatar_color = row.avatar_color || 0;
     PROFILE.avatar_emoji = row.avatar_emoji || '';
     PROFILE.avatar_photo = row.avatar_photo || '';
-    console.log('[fetchProfile Debug] PROFILE.avatar_emoji after assignment:', PROFILE.avatar_emoji);
-    console.log('[fetchProfile Debug] PROFILE.avatar_photo after assignment:', PROFILE.avatar_photo);
     PROFILE.is_admin = row.is_admin === true;
     if (PROFILE.is_admin) ADMIN_USER_IDS.add(ME.id);
     // БАГ #1: онбординг показывается только один раз — статус хранится в БД
@@ -1010,6 +1011,8 @@ async function fetchProfile() {
       }
     }
     PROFILE.special_badges = Array.isArray(badges) ? badges : [];
+    window.PROFILE = PROFILE;
+    window.ME = ME;
     if (PROFILE.onboarding_completed) {
       try { localStorage.setItem('spark_tour3_seen', '1'); localStorage.setItem('spark_ob3_seen', '1'); } catch (e) {}
     }
@@ -1107,9 +1110,7 @@ window.claimDailyBonus = async function() {
 };
 
 // ═══ Load ideas from DB and populate LIVE array ═══
-async function loadIdeasFromDB() {
-  console.log('[loadIdeasFromDB Debug] Called');
-  // Show loading state in feed
+async function loadIdeasFromDB() {  // Show loading state in feed
   var cl = document.getElementById('cardsList');
   if (cl) cl.innerHTML = '<div style="text-align:center;color:var(--mu);padding:40px 20px;font-size:1rem">Loading ideas...</div>';
 
@@ -1128,8 +1129,6 @@ async function loadIdeasFromDB() {
       .order('created_at', { ascending: false })
       .limit(50);
   }, { silent: true, timeout: 25000 });
-  console.log('[loadIdeasFromDB Debug] Ideas response:', r);
-
   if (r.ok && r.data && r.data.data) {
     var rows = r.data.data;
     // Fetch author usernames from profiles
@@ -1139,10 +1138,8 @@ async function loadIdeasFromDB() {
       var pRes = await safeSupabaseCall('database', function () {
         return supa.from('profiles').select('id, username, avatar_color, avatar_emoji, avatar_photo, is_admin').in('id', authorIds);
       }, { silent: true, timeout: 25000 });
-      console.log('[Feed Profiles Debug] Supabase profiles response:', pRes);
       if (pRes.ok && pRes.data && pRes.data.data) {
         pRes.data.data.forEach(function(p) {
-          console.log('[Feed Profiles Debug] Profile ID:', p.id, 'Username:', p.username, 'avatar_emoji:', p.avatar_emoji, 'avatar_photo:', p.avatar_photo);
           profilesMap[p.id] = {
             username: p.username || '@user',
             avatar_color: p.avatar_color || 0,
@@ -1151,7 +1148,6 @@ async function loadIdeasFromDB() {
           };
           if (p.is_admin === true) ADMIN_USER_IDS.add(p.id);
         });
-        console.log('[Feed Profiles Debug] profilesMap:', profilesMap);
       }
     }
 
@@ -1182,15 +1178,12 @@ function countUniqueInvestors(investorIds, history) {
 
 // ═══ Convert a DB ideas row to LIVE array object ═══
 function dbRowToLiveIdea(row, profilesMap) {
-  console.log('[dbRowToLiveIdea Debug] Called with row.author_id:', row.author_id, 'profilesMap:', profilesMap);
   var profile = profilesMap && profilesMap[row.author_id];
-  console.log('[dbRowToLiveIdea Debug] profile for author:', profile);
   var uname = profile && profile.username || '@user';
   var letter = uname.replace('@', '').charAt(0).toUpperCase();
   var avatarColor = profile && profile.avatar_color || 0;
   var avatarEmoji = profile && profile.avatar_emoji || '';
   var avatarPhoto = profile && profile.avatar_photo || '';
-  console.log('[dbRowToLiveIdea Debug] avatarEmoji:', avatarEmoji, 'avatarPhoto:', avatarPhoto);
   var history = Array.isArray(row.investment_history) ? row.investment_history : [];
   // БАГ #7: считаем УНИКАЛЬНЫХ инвесторов (investor_ids), а не число транзакций.
   // Для старых идей (до миграции investor_ids) фолбэк — длина истории.
@@ -1268,7 +1261,6 @@ function dbRowToLiveIdea(row, profilesMap) {
     expires_at: row.expires_at,
     status: row.status || 'active'
   };
-  console.log('[dbRowToLiveIdea Debug] Returning idea object:', ideaObj);
   return ideaObj;
 }
 
@@ -1384,9 +1376,7 @@ async function renderLeaders(limit) {
       var uname = escapeHTML(p.username || '@user');
       var letter = uname.replace('@', '').charAt(0).toUpperCase();
       var avatarColor = p.avatar_color || 0;
-      var avatarGradient = window.ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avatarColor) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
-      console.log('[Avatar Debug] Leader:', i + 1, 'User ID:', p.id, 'Username:', uname, 'Avatar Color:', avatarColor, 'Gradient:', avatarGradient);
-      var rankClass = rankColors[i] ? 'lrank ' + rankColors[i] : 'lrank';
+      var avatarGradient = window.ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avatarColor) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';      var rankClass = rankColors[i] ? 'lrank ' + rankColors[i] : 'lrank';
       var rankStyle = i >= 3 ? ' style="color:var(--mu)"' : '';
       var bal = Number(p.spk_balance) || 0;
       var invCount = Number(p.investments_count) || 0;
@@ -1485,9 +1475,7 @@ async function renderLeadersFull() {
       var uname = escapeHTML(p.username || '@user');
       var letter = uname.replace('@', '').charAt(0).toUpperCase();
       var avatarColor = p.avatar_color || 0;
-      var avatarGradient = window.ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avatarColor) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
-      console.log('[Avatar Debug] Leaders Page Leader:', i + 1, 'User ID:', p.id, 'Username:', uname, 'Avatar Color:', avatarColor, 'Gradient:', avatarGradient);
-      var rankClass = rankColors[i] ? 'lrank ' + rankColors[i] : 'lrank';
+      var avatarGradient = window.ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avatarColor) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';      var rankClass = rankColors[i] ? 'lrank ' + rankColors[i] : 'lrank';
       var rankStyle = i >= 3 ? ' style="color:var(--mu)"' : '';
       var bal = Number(p.spk_balance) || 0;
       var invCount = Number(p.investments_count) || 0;
@@ -1528,23 +1516,15 @@ async function renderTopInvestments() {
   if (!supa) return;
   
   var el = document.getElementById('topInvestmentsList');
-  if (!el) {
-    console.log('[Leaders Debug] Top Investments: Element not found');
-    return;
-  }
-  
-  console.log('[Leaders Debug] Calling profiles query for top investments...');
-  
+  if (!el) {    return;
+  }  
   var r = await safeSupabaseCall('database', function () {
     return supa.from('profiles')
       .select('id, username, investments_count, avatar_color, avatar_emoji, avatar_photo')
       .or('is_admin.is.null,is_admin.eq.false')
       .order('investments_count', { ascending: false })
       .limit(5);
-  }, { silent: true, timeout: 25000 });
-  
-  console.log('[Leaders Debug] Top Investments response:', r);
-  
+  }, { silent: true, timeout: 25000 });  
   if (r.ok && r.data && r.data.data && r.data.data.length > 0) {
     var leaders = r.data.data;
     var html = leaders.map(function(p, i) {
@@ -1560,10 +1540,7 @@ async function renderTopInvestments() {
         avatarDisplay = '<img src="' + p.avatar_photo + '" alt="Avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
       } else if (p.avatar_emoji) {
         avatarDisplay = p.avatar_emoji;
-      }
-      
-      console.log('[Leaders Debug] Top Investments:', i + 1, 'User ID:', p.id, 'Username:', uname, 'Count:', invCount);
-      return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0">'
+      }      return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0">'
         + '<div style="width:24px;height:24px;border-radius:50%;background:' + avatarGradient + ';display:flex;align-items:center;justify-content:center;font-size:0.71rem;font-weight:700;color:#fff;overflow:hidden">' + avatarDisplay + '</div>'
         + '<div style="flex:1">'
         + '<div style="font-size:0.79rem;font-weight:500;color:var(--mu2)">' + uname + '</div>'
@@ -1572,9 +1549,7 @@ async function renderTopInvestments() {
         + '</div>';
     }).join('');
     el.innerHTML = html;
-  } else {
-    console.log('[Leaders Debug] Top Investments: No data, response:', r);
-    el.innerHTML = '<div style="color:var(--mu);font-size:0.79rem;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных' : 'No data yet') + '</div>';
+  } else {    el.innerHTML = '<div style="color:var(--mu);font-size:0.79rem;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных' : 'No data yet') + '</div>';
   }
 }
 
@@ -1583,21 +1558,13 @@ async function renderTopAccuracy() {
   if (!supa) return;
   
   var el = document.getElementById('topAccuracyList');
-  if (!el) {
-    console.log('[Leaders Debug] Top Accuracy: Element not found');
-    return;
-  }
-  
-  console.log('[Leaders Debug] Calling get_top_by_accuracy...');
-  
+  if (!el) {    return;
+  }  
   // Calculate accuracy: successful ideas / total ideas
   // Successful = ideas with total_invested > min_bet * 3 (at least 3x return)
   var r = await safeSupabaseCall('database', function () {
     return supa.rpc('get_top_by_accuracy', { limit_count: 5 });
-  }, { silent: true, timeout: 25000 });
-  
-  console.log('[Leaders Debug] Top Accuracy RPC response:', r);
-  
+  }, { silent: true, timeout: 25000 });  
   // Supabase RPC returns data in r.data.data for SETOF functions
   var leaders = r.ok && r.data && r.data.data ? r.data.data : (r.ok && r.data ? r.data : []);
   
@@ -1607,9 +1574,7 @@ async function renderTopAccuracy() {
       var letter = uname.replace('@', '').charAt(0).toUpperCase();
       var avatarColor = p.avatar_color || 0;
       var avatarGradient = window.ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avatarColor) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
-      var accuracy = Number(p.accuracy) || 0;
-      console.log('[Leaders Debug] Top Accuracy:', i + 1, 'User ID:', p.user_id, 'Username:', uname, 'Accuracy:', accuracy + '%');
-      return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0">'
+      var accuracy = Number(p.accuracy) || 0;      return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0">'
         + '<div style="width:24px;height:24px;border-radius:50%;background:' + avatarGradient + ';display:flex;align-items:center;justify-content:center;font-size:0.71rem;font-weight:700;color:#fff">' + letter + '</div>'
         + '<div style="flex:1">'
         + '<div style="font-size:0.79rem;font-weight:500;color:var(--mu2)">' + uname + '</div>'
@@ -1619,9 +1584,7 @@ async function renderTopAccuracy() {
     }).join('');
     el.innerHTML = html;
   } else {
-    // Fallback: show message that RPC needs to be created
-    console.log('[Leaders Debug] Top Accuracy: No data, RPC response:', r);
-    el.innerHTML = '<div style="color:var(--mu);font-size:0.71rem;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных' : 'No data') + '</div>';
+    // Fallback: show message that RPC needs to be created    el.innerHTML = '<div style="color:var(--mu);font-size:0.71rem;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных' : 'No data') + '</div>';
   }
 }
 
@@ -1649,10 +1612,7 @@ async function renderUserProgress() {
     var startBalance = Number(history[0].balance_after) || 0;
     var endBalance = Number(history[history.length - 1].balance_after) || 0;
     var change = endBalance - startBalance;
-    var changePercent = startBalance > 0 ? ((change / startBalance) * 100).toFixed(1) : 0;
-    
-    console.log('[Leaders Debug] User Progress: Start:', startBalance, 'End:', endBalance, 'Change:', change, 'Percent:', changePercent + '%');
-    
+    var changePercent = startBalance > 0 ? ((change / startBalance) * 100).toFixed(1) : 0;    
     var changeColor = change >= 0 ? 'var(--ac)' : 'var(--er)';
     var changeSign = change >= 0 ? '+' : '';
     
@@ -1673,20 +1633,12 @@ async function renderRisingStars() {
   if (!supa) return;
   
   var el = document.getElementById('risingStarsList');
-  if (!el) {
-    console.log('[Leaders Debug] Rising Stars: Element not found');
-    return;
-  }
-  
-  console.log('[Leaders Debug] Calling get_rising_stars...');
-  
+  if (!el) {    return;
+  }  
   // Get users with highest balance growth in last 7 days
   var r = await safeSupabaseCall('database', function () {
     return supa.rpc('get_rising_stars', { days_ago: 7, limit_count: 5 });
-  }, { silent: true, timeout: 25000 });
-  
-  console.log('[Leaders Debug] Rising Stars RPC response:', r);
-  
+  }, { silent: true, timeout: 25000 });  
   // Supabase RPC returns data in r.data.data for SETOF functions
   var stars = r.ok && r.data && r.data.data ? r.data.data : (r.ok && r.data ? r.data : []);
   
@@ -1696,9 +1648,7 @@ async function renderRisingStars() {
       var letter = uname.replace('@', '').charAt(0).toUpperCase();
       var avatarColor = p.avatar_color || 0;
       var avatarGradient = window.ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avatarColor) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
-      var growth = Number(p.growth) || 0;
-      console.log('[Leaders Debug] Rising Star:', i + 1, 'User ID:', p.user_id, 'Username:', uname, 'Growth:', growth);
-      return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0">'
+      var growth = Number(p.growth) || 0;      return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0">'
         + '<div style="width:24px;height:24px;border-radius:50%;background:' + avatarGradient + ';display:flex;align-items:center;justify-content:center;font-size:0.71rem;font-weight:700;color:#fff">' + letter + '</div>'
         + '<div style="flex:1">'
         + '<div style="font-size:0.79rem;font-weight:500;color:var(--mu2)">' + uname + '</div>'
@@ -1707,30 +1657,20 @@ async function renderRisingStars() {
         + '</div>';
     }).join('');
     el.innerHTML = html;
-  } else {
-    console.log('[Leaders Debug] Rising Stars: No data, RPC response:', r);
-    el.innerHTML = '<div style="color:var(--mu);font-size:0.71rem;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных' : 'No data') + '</div>';
+  } else {    el.innerHTML = '<div style="color:var(--mu);font-size:0.71rem;padding:8px 0">' + (LANG === 'ru' ? 'Нет данных' : 'No data') + '</div>';
   }
 }
 
 // ═══ Render leaders by period (week/month/all-time) ═══
 async function renderLeadersByPeriod(period) {
-  if (!supa) return;
-  
-  console.log('[Leaders Debug] Calling get_leaders_by_period with period:', period);
-  
+  if (!supa) return;  
   var rankColors = ['gold', 'silver', 'bronze'];
   
   var r = await safeSupabaseCall('database', function () {
     return supa.rpc('get_leaders_by_period', { period: period, limit_count: 10 });
-  }, { silent: true, timeout: 25000 });
-  
-  console.log('[Leaders Debug] Period Filter RPC response:', period, r);
-  
+  }, { silent: true, timeout: 25000 });  
   var el = document.getElementById('leaderListFull');
-  if (!el) {
-    console.log('[Leaders Debug] Period Filter: Element not found');
-    return;
+  if (!el) {    return;
   }
   
   // Build self-row
@@ -1769,9 +1709,7 @@ async function renderLeadersByPeriod(period) {
       var avatarGradient = window.ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avatarColor) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
       var bal = Number(p.spk_balance) || 0;
       var invCount = Number(p.investments_count) || 0;
-      var periodGrowth = Number(p.period_growth) || 0;
-      console.log('[Leaders Debug] Period Filter:', period, 'Leader:', i + 1, 'User ID:', p.user_id, 'Username:', uname, 'Period Growth:', periodGrowth);
-      var rankClass = rankColors[i] ? 'lrank ' + rankColors[i] : 'lrank';
+      var periodGrowth = Number(p.period_growth) || 0;      var rankClass = rankColors[i] ? 'lrank ' + rankColors[i] : 'lrank';
       var rankStyle = i >= 3 ? ' style="color:var(--mu)"' : '';
       var profitColor = i < 3 ? '' : ' style="color:var(--ac)"';
       var triggerId = p.user_id;
@@ -1795,9 +1733,7 @@ async function renderLeadersByPeriod(period) {
     }).join('');
     html += selfHtml;
     el.innerHTML = html;
-  } else {
-    console.log('[Leaders Debug] Period Filter: No data, RPC response:', r);
-    var noDataMessage;
+  } else {    var noDataMessage;
     if (period === 'all') {
       noDataMessage = LANG === 'ru' ? 'Нет данных' : 'No data yet';
     } else {
@@ -2024,7 +1960,9 @@ async function doLogout(skipSignOut) {
 
   // Explicitly reset session state to guarantee immediate redirection to sign-in page
   ME = null;
+  window.ME = null;
   PROFILE = { username: '@user', spk_balance: 0, ideas_count: 0, rank: null, investments_count: 0, bio: '', avatar_color: 0, is_admin: false, special_badges: [] };
+  window.PROFILE = PROFILE;
   ADMIN_USER_IDS.clear();
   appEntered = false;
   try {
@@ -2547,9 +2485,7 @@ function updateHeader() {
   var bal = document.getElementById('invBal');
   if (av) {
     var avIdx = Number(PROFILE.avatar_color) || 0;
-    var avGrad = window.ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avIdx) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
-    console.log('[Avatar Debug] Header User ID:', ME.id, 'Username:', PROFILE.username, 'Avatar Color:', avIdx, 'Gradient:', avGrad);
-    av.style.background = avGrad;
+    var avGrad = window.ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avIdx) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';    av.style.background = avGrad;
     
     // Determine avatar display
     if (PROFILE.avatar_photo) {
@@ -3075,11 +3011,7 @@ function profileHTML(sfx) {
   var safeUser  = escapeHTML(PROFILE.username);
   var safeBio   = PROFILE.bio ? escapeHTML(PROFILE.bio) : '';
   var avIdx     = Number(PROFILE.avatar_color) || 0;
-  var avGrad    = window.ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avIdx) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
-  console.log('[Avatar Debug] Profile Page User ID:', ME.id, 'Username:', PROFILE.username, 'Avatar Color:', avIdx, 'Gradient:', avGrad);
-  console.log('[Avatar Debug] PROFILE.avatar_emoji:', PROFILE.avatar_emoji);
-  console.log('[Avatar Debug] PROFILE.avatar_photo:', PROFILE.avatar_photo);
-  var activeTheme = window.ThemeEngine ? ThemeEngine.getActive() : {};
+  var avGrad    = window.ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avIdx) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';  var activeTheme = window.ThemeEngine ? ThemeEngine.getActive() : {};
   var themeIcon = activeTheme.icon || '🌌';
   var adminBadgeHtml = PROFILE.is_admin
     ? ' <span class="admin-badge">CORE TEAM</span>'
@@ -3095,8 +3027,6 @@ function profileHTML(sfx) {
   } else {
     avatarDisplay = L;
   }
-  console.log('[Avatar Debug] avatarDisplay:', avatarDisplay);
-
   return '<div class="phero">'
     + '<div class="pav-lg" style="background:' + avGrad + '">' + avatarDisplay + '</div>'
     + '<div class="pname">' + safeUser + adminBadgeHtml + specialBadgesHtml + '</div>'
@@ -3787,25 +3717,19 @@ function achSparkEffect() {
   setTimeout(function () { overlay.remove(); }, 1200);
 }
 
-async function getUserIdeas() {
-  console.log('[getUserIdeas Debug] Called');
-  if (supa && ME) {
+async function getUserIdeas() {  if (supa && ME) {
     try {
       var r = await supa.from('ideas')
         .select('id, title, description, min_bet, total_invested, investment_history, investor_ids, expires_at, created_at, author_id, reactions, status')
         .eq('author_id', ME.id)
-        .order('created_at', { ascending: false });
-      console.log('[getUserIdeas Debug] Supabase response:', r);
-      if (r.data && ME) {
+        .order('created_at', { ascending: false });      if (r.data && ME) {
         var profilesMap = {};
         profilesMap[ME.id] = {
           username: PROFILE.username,
           avatar_color: PROFILE.avatar_color || 0,
           avatar_emoji: PROFILE.avatar_emoji || '',
           avatar_photo: PROFILE.avatar_photo || ''
-        };
-        console.log('[getUserIdeas Debug] profilesMap:', profilesMap);
-        return r.data.map(function(row) {
+        };        return r.data.map(function(row) {
           return dbRowToLiveIdea(row, profilesMap);
         });
       }
@@ -4228,9 +4152,7 @@ function _contactBtnHTML(x) {
   return '<button class="bcontact" data-contact-author-id="' + aid + '" data-contact-author-name="' + escapeHTML(x.u) + '">' + label + '</button>';
 }
 
-function cardHTML(x, isProfile) {
-  console.log('[cardHTML Debug] Received idea object:', x);
-  var fire = (getRS(x.id).counts['🔥'] || 0) >= FIRE_T;
+function cardHTML(x, isProfile) {  var fire = (getRS(x.id).counts['🔥'] || 0) >= FIRE_T;
   var safeUser = escapeHTML(x.u);
   var safeTag = escapeHTML(x.tag);
   var safeTitle = escapeHTML(x.title);
@@ -4239,9 +4161,7 @@ function cardHTML(x, isProfile) {
   var safeBg = sanitizeCssBackground(x.bg);
   var safeAv = safeAvatar(x.av);
   var avatarColor = x.avatar_color || 0;
-  var avatarGradient = window.ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avatarColor) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
-  console.log('[Avatar Debug] Card ID:', x.id, 'Author ID:', x.author_id, 'Username:', x.u, 'Avatar Color:', avatarColor, 'Gradient:', avatarGradient, 'Avatar Emoji:', x.avatar_emoji, 'Avatar Photo:', x.avatar_photo);
-  
+  var avatarGradient = window.ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avatarColor) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';  
   // Determine avatar display
   var avatarDisplay = safeAv;
   if (x.avatar_photo) {
@@ -5400,7 +5320,9 @@ function bindAuthListener() {
   supa.auth.onAuthStateChange(function (event, session) {
     if (event === 'SIGNED_OUT') {
       ME = null;
+      window.ME = null;
       PROFILE = { username: '@user', spk_balance: 0, ideas_count: 0, rank: null, investments_count: 0, bio: '', avatar_color: 0, is_admin: false, special_badges: [] };
+      window.PROFILE = PROFILE;
       ADMIN_USER_IDS.clear();
       appEntered = false;
       _repostCodeCache = null;
@@ -5414,6 +5336,7 @@ function bindAuthListener() {
     }
     if (!session || !session.user) return;
     ME = session.user;
+    window.ME = ME;
     if (event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
       return;
     }
@@ -5443,6 +5366,7 @@ async function restoreSession() {
       if (hashSession.data && hashSession.data.session && hashSession.data.session.user) {
         window.history.replaceState(null, '', window.location.pathname + window.location.search);
         ME = hashSession.data.session.user;
+        window.ME = ME;
         if (!ME.email_confirmed_at) {
           showVerify(ME.email || '', PENDING_NICK);
           return true;
@@ -5467,6 +5391,7 @@ async function restoreSession() {
     }
     if (r.data && r.data.session && r.data.session.user) {
       ME = r.data.session.user;
+      window.ME = ME;
       if (!ME.email_confirmed_at) {
         showVerify(ME.email || '', PENDING_NICK);
         return true;

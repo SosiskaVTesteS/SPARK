@@ -1,5 +1,5 @@
-/* SPARK Service Worker — v2 */
-var CACHE_NAME = 'spark-static-v2';
+/* SPARK Service Worker — v3 */
+var CACHE_NAME = 'spark-static-v3';
 
 var PRECACHE_URLS = [
   '/',
