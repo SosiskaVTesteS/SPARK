@@ -5,21 +5,11 @@
 (function (global) {
   var DEFAULTS = {
     SUPABASE_URL: 'https://ppehttbtrlavnrytoweu.supabase.co',
-    SUPABASE_ANON_KEY: 'sb_publishable_9uAFLjS4AaElHus4hiUuQQ_PMSFNkb8',
+    SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBwZWh0dGJ0cmxhdm5yeXRvd2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0Nzk0MzMsImV4cCI6MjA5MTA1NTQzM30.FXYL9UGnW3zhvwapbyYfD5aCoS8R-iNguS3_6Ba_mbY',
     ALLOW_LEGACY_INVEST_FALLBACK: true,
     ENABLE_CLIENT_TELEMETRY: false,
     REALTIME_MODE: 'websocket'
   };
-
-  var raw = global.SPARK_CONFIG || {};
-  var cfg = {};
-  Object.keys(DEFAULTS).forEach(function (key) {
-    if (raw[key] !== undefined && raw[key] !== null) {
-      cfg[key] = raw[key];
-    } else {
-      cfg[key] = DEFAULTS[key];
-    }
-  });
 
   function isPlaceholder(value) {
     if (!value || typeof value !== 'string') return true;
@@ -28,9 +18,21 @@
     return (
       v.indexOf('your-') === 0 ||
       v.indexOf('YOUR_') === 0 ||
-      v === 'https://your-project-ref.supabase.co'
+      v.indexOf('<') === 0 ||
+      v === 'https://your-project-ref.supabase.co' ||
+      v === 'YOUR_SUPABASE_ANON_KEY_HERE'
     );
   }
+
+  var raw = global.SPARK_CONFIG || {};
+  var cfg = {};
+  Object.keys(DEFAULTS).forEach(function (key) {
+    if (raw[key] !== undefined && raw[key] !== null && !isPlaceholder(raw[key])) {
+      cfg[key] = raw[key];
+    } else {
+      cfg[key] = DEFAULTS[key];
+    }
+  });
 
   function isValidSupabaseUrl(url) {
     if (!url || typeof url !== 'string') return false;
@@ -81,6 +83,7 @@
       };
     }
   };
+  global.SPARK_CONFIG = cfg;
 })(window);
 
 var supa = null;
@@ -88,7 +91,7 @@ var SUPABASE_URL = '';
 var SUPABASE_ANON_KEY = '';
 var ALLOW_LEGACY_INVEST_FALLBACK = true;
 var ENABLE_CLIENT_TELEMETRY = false;
-var REALTIME_MODE = 'polling'; // 'websocket' | 'polling' | 'none'
+var REALTIME_MODE = 'websocket'; // 'websocket' | 'polling' | 'none'
 var SUPABASE_CONFIGURED = false;
 
 var runtime = window.SPARK_RUNTIME;
@@ -97,9 +100,10 @@ if (runtime) {
   SUPABASE_ANON_KEY = runtime.get('SUPABASE_ANON_KEY') || '';
   ALLOW_LEGACY_INVEST_FALLBACK = runtime.get('ALLOW_LEGACY_INVEST_FALLBACK') !== false;
   ENABLE_CLIENT_TELEMETRY = !!runtime.get('ENABLE_CLIENT_TELEMETRY');
-  REALTIME_MODE = runtime.get('REALTIME_MODE') || 'polling';
+  REALTIME_MODE = runtime.get('REALTIME_MODE') || 'websocket';
   SUPABASE_CONFIGURED = runtime.isSupabaseConfigured();
 }
+window.SUPABASE_CONFIGURED = SUPABASE_CONFIGURED;
 
 try {
   if (SUPABASE_CONFIGURED && typeof supabase !== 'undefined') {

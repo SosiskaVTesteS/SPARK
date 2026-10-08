@@ -1,5 +1,5 @@
-/* SPARK Service Worker — v4 */
-var CACHE_NAME = 'spark-static-v4';
+/* SPARK Service Worker — v5 */
+var CACHE_NAME = 'spark-static-v5';
 
 var PRECACHE_URLS = [
   '/',
@@ -35,8 +35,9 @@ var PRECACHE_URLS = [
   '/assets/icons/icon-512.png',
 ];
 
-// ── Install: precache static shell ──────────────────────────────────────────
+// ── Install: precache static shell & activate immediately ─────────────────────
 self.addEventListener('install', function (event) {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then(function (cache) {
       return Promise.allSettled(
@@ -112,6 +113,22 @@ self.addEventListener('fetch', function (event) {
         return caches.match(event.request).then(function (cached) {
           return cached || caches.match('/index.html');
         });
+      })
+    );
+    return;
+  }
+
+  // Network-First for config & data: ensure config is always fresh
+  if (url.pathname.includes('/config.') || url.pathname.endsWith('/data.js')) {
+    event.respondWith(
+      fetch(event.request).then(function (response) {
+        if (response && response.status === 200) {
+          var clone = response.clone();
+          caches.open(CACHE_NAME).then(function (cache) { cache.put(event.request, clone); });
+        }
+        return response;
+      }).catch(function () {
+        return caches.match(event.request);
       })
     );
     return;
