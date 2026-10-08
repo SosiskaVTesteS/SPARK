@@ -1,5 +1,5 @@
-/* SPARK Service Worker — v3 */
-var CACHE_NAME = 'spark-static-v3';
+/* SPARK Service Worker — v4 */
+var CACHE_NAME = 'spark-static-v4';
 
 var PRECACHE_URLS = [
   '/',
@@ -18,6 +18,7 @@ var PRECACHE_URLS = [
   '/assets/css/about.css',
   '/assets/css/404.css',
   '/assets/css/pwa.css',
+  '/assets/js/config.js',
   '/assets/js/theme.js',
   '/assets/js/spark-onboarding.js',
   '/assets/js/animations.js',
