@@ -1,0 +1,8 @@
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/assets/js/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/assets/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800

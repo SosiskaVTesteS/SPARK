@@ -1198,6 +1198,26 @@ header {
 .bshare:hover  { background: rgba(155, 95, 255, 0.12); color: var(--pr); transform: translateY(-1px); }
 .bshare:active { transform: translateY(0) scale(0.97); }
 
+/* Bookmark button on card */
+.bsave {
+  padding: 11px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(155, 95, 255, 0.25);
+  background: transparent;
+  color: var(--mu);
+  font-size: 0.93rem;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease, transform 0.22s var(--ease-spring);
+}
+.bsave:hover  { background: rgba(155, 95, 255, 0.12); color: var(--pr); transform: translateY(-1px); }
+.bsave:active { transform: translateY(0) scale(0.97); }
+.bsave.active {
+  background: rgba(232, 197, 90, 0.15);
+  border-color: rgba(232, 197, 90, 0.4);
+  color: #e8c55a;
+}
+
 /* Share modal */
 .share-modal-title {
   font-family: var(--fh);

@@ -248,6 +248,18 @@ document.addEventListener('DOMContentLoaded', function () {
         react(reactBtn.dataset.id, reactBtn.dataset.e, reactBtn);
         return;
       }
+      var saveBtn = event.target.closest('.bsave[data-save-id]');
+      if (saveBtn) {
+        event.stopPropagation();
+        toggleSaveIdea(saveBtn.dataset.saveId);
+        return;
+      }
+      var dropSaveBtn = event.target.closest('.cmen-save-btn[data-save-id]');
+      if (dropSaveBtn) {
+        document.querySelectorAll('.cmen-dropdown').forEach(function (d) { d.remove(); });
+        toggleSaveIdea(dropSaveBtn.dataset.saveId);
+        return;
+      }
       var shareBtn = event.target.closest('.bshare[data-share-id]');
       if (shareBtn) {
         doShareIdea(shareBtn.dataset.shareId);
@@ -301,6 +313,62 @@ document.addEventListener('DOMContentLoaded', function () {
     var container = document.getElementById(containerId);
     if (!container) return;
     container.addEventListener('click', function (event) {
+      // Collapsible profile sections
+      var myToggle = event.target.closest('.myideas-toggle');
+      if (myToggle) {
+        event.stopPropagation();
+        var sec = myToggle.closest('.myideas-section');
+        var body = sec ? sec.querySelector('.myideas-body') : null;
+        if (body) {
+          var open = body.classList.contains('open');
+          body.classList.toggle('open', !open);
+          myToggle.classList.toggle('open', !open);
+          if (!open) renderMyIdeas();
+        }
+        return;
+      }
+      var savedToggle = event.target.closest('.savedideas-toggle');
+      if (savedToggle) {
+        event.stopPropagation();
+        var sec = savedToggle.closest('.savedideas-section');
+        var body = sec ? sec.querySelector('.savedideas-body') : null;
+        if (body) {
+          var open = body.classList.contains('open');
+          body.classList.toggle('open', !open);
+          savedToggle.classList.toggle('open', !open);
+          if (!open) renderSavedIdeas();
+        }
+        return;
+      }
+      var achTog = event.target.closest('.ach-toggle');
+      if (achTog) {
+        event.stopPropagation();
+        var sec = achTog.closest('.ach-section');
+        var body = sec ? sec.querySelector('.ach-body') : null;
+        if (body) {
+          var open = body.classList.contains('open');
+          body.classList.toggle('open', !open);
+          achTog.classList.toggle('open', !open);
+          if (!open) {
+            var m = sec.id ? sec.id.match(/-([DMF])$/) : null;
+            renderAchievements(m ? m[1] : 'D');
+          }
+        }
+        return;
+      }
+      var saveBtn = event.target.closest('.bsave[data-save-id]');
+      if (saveBtn) {
+        event.stopPropagation();
+        toggleSaveIdea(saveBtn.dataset.saveId);
+        return;
+      }
+      var dropSaveBtn = event.target.closest('.cmen-save-btn[data-save-id]');
+      if (dropSaveBtn) {
+        document.querySelectorAll('.cmen-dropdown').forEach(function (d) { d.remove(); });
+        toggleSaveIdea(dropSaveBtn.dataset.saveId);
+        return;
+      }
+
       var investBtn = event.target.closest('[data-invest-id]');
       if (investBtn && !investBtn.disabled) {
         openInvest(investBtn.dataset.investId);
@@ -1829,20 +1897,23 @@ function renderActivityFeed() {
   
   console.log('[Activity Feed] Rendering', activityItems.length, 'activity items');
   var html = activityItems.map(function(item) {
-    var username = item.profiles ? item.profiles.username : '@user';
+    var rawUsername = item.profiles ? item.profiles.username : '@user';
+    var safeUsername = escapeHTML(rawUsername);
     var avatarColor = item.profiles ? item.profiles.avatar_color || 0 : 0;
     var avatarGradient = window.ProfileEditEngine ? ProfileEditEngine.getAvatarGradient(avatarColor) : 'linear-gradient(135deg,#7B5CFA,#E85AA0)';
-    var letter = username.replace('@', '').charAt(0).toUpperCase();
+    var letter = rawUsername.replace('@', '').charAt(0).toUpperCase();
     var amount = Number(item.amount) || 0;
-    var ideaTitle = item.ideas ? item.ideas.title : 'Unknown idea';
-    var ideaAuthor = item.ideas && item.ideas.profiles ? item.ideas.profiles.username : '@user';
+    var rawIdeaTitle = item.ideas ? item.ideas.title : 'Unknown idea';
+    var safeIdeaTitle = escapeHTML(rawIdeaTitle);
+    var rawIdeaAuthor = item.ideas && item.ideas.profiles ? item.ideas.profiles.username : '@user';
+    var safeIdeaAuthor = escapeHTML(rawIdeaAuthor);
     var timeStr = formatRelativeTime(item.created_at);
     
     return '<div style="padding:7px 0;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:8px;animation:slideIn 0.3s ease-out">'
       + '<div style="width:28px;height:28px;border-radius:50%;background:' + avatarGradient + ';display:flex;align-items:center;justify-content:center;font-size:0.79rem;font-weight:700;color:#fff;flex-shrink:0">' + letter + '</div>'
       + '<div style="flex:1;min-width:0">'
-      + '<div style="font-size:0.86rem;font-weight:500;color:var(--mu2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + username + ' вложил ' + amount.toLocaleString() + ' SPK</div>'
-      + '<div style="font-size:0.79rem;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">в "' + ideaTitle + '" (' + ideaAuthor + ')</div>'
+      + '<div style="font-size:0.86rem;font-weight:500;color:var(--mu2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + safeUsername + ' ' + (LANG === 'ru' ? 'вложил' : 'invested') + ' ' + amount.toLocaleString() + ' SPK</div>'
+      + '<div style="font-size:0.79rem;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (LANG === 'ru' ? 'в' : 'in') + ' "' + safeIdeaTitle + '" (' + safeIdeaAuthor + ')</div>'
       + '</div>'
       + '<div style="font-size:0.71rem;color:var(--ac);flex-shrink:0">' + timeStr + '</div>'
       + '</div>';
@@ -3184,6 +3255,109 @@ function renderDailyStreakHTML() {
     + '</div>';
 }
 
+function getSavedIdeaIds() {
+  try {
+    var uid = window.ME && window.ME.id ? window.ME.id : 'anon';
+    var raw = localStorage.getItem('spark_saved_ideas_' + uid);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function setSavedIdeaIds(ids) {
+  try {
+    var uid = window.ME && window.ME.id ? window.ME.id : 'anon';
+    localStorage.setItem('spark_saved_ideas_' + uid, JSON.stringify(ids));
+  } catch (e) {}
+}
+
+function isIdeaSaved(ideaId) {
+  var ids = getSavedIdeaIds();
+  return ids.indexOf(String(ideaId)) !== -1;
+}
+
+function toggleSaveIdea(ideaId) {
+  var ids = getSavedIdeaIds();
+  var sId = String(ideaId);
+  var idx = ids.indexOf(sId);
+  var isSaved = false;
+  if (idx === -1) {
+    ids.unshift(sId);
+    isSaved = true;
+  } else {
+    ids.splice(idx, 1);
+    isSaved = false;
+  }
+  setSavedIdeaIds(ids);
+
+  // Sync all bookmark buttons across the DOM
+  document.querySelectorAll('.bsave[data-save-id="' + sId + '"]').forEach(function (btn) {
+    btn.classList.toggle('active', isSaved);
+    btn.title = isSaved ? (window.LANG === 'ru' ? 'В сохранённых' : 'Saved') : (window.LANG === 'ru' ? 'Сохранить' : 'Save');
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="' + (isSaved ? 'currentColor' : 'none') + '" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>';
+  });
+
+  toast(
+    isSaved ? (window.LANG === 'ru' ? '✓ Идея сохранена в профиль' : '✓ Idea saved') : (window.LANG === 'ru' ? 'Идея удалена из сохранённых' : 'Idea removed from saved'),
+    isSaved ? 'var(--ac)' : 'var(--mu)'
+  );
+
+  renderSavedIdeas();
+  return isSaved;
+}
+
+function _saveBtnHTML(x) {
+  var saved = isIdeaSaved(x.id);
+  var title = saved ? (window.LANG === 'ru' ? 'В сохранённых' : 'Saved') : (window.LANG === 'ru' ? 'Сохранить' : 'Save');
+  return '<button class="bsave' + (saved ? ' active' : '') + '" data-save-id="' + x.id + '" title="' + title + '">'
+    + '<svg width="14" height="14" viewBox="0 0 24 24" fill="' + (saved ? 'currentColor' : 'none') + '" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>'
+    + '</button>';
+}
+
+async function renderSavedIdeas() {
+  var savedIds = getSavedIdeaIds();
+  var savedList = [];
+  if (savedIds.length > 0) {
+    savedList = LIVE.filter(function (x) { return savedIds.indexOf(String(x.id)) !== -1; });
+    if (savedList.length < savedIds.length && supa) {
+      try {
+        var missingIds = savedIds.filter(function (id) {
+          return !savedList.some(function (x) { return String(x.id) === String(id); });
+        });
+        if (missingIds.length > 0) {
+          var res = await supa.from('ideas')
+            .select('id, title, description, min_bet, total_invested, investment_history, investor_ids, expires_at, created_at, author_id, reactions, status')
+            .in('id', missingIds);
+          if (res.data) {
+            var extra = res.data.map(function (row) { return dbRowToLiveIdea(row); });
+            savedList = savedList.concat(extra);
+          }
+        }
+      } catch (e) {
+        console.warn('renderSavedIdeas fetch error:', e);
+      }
+    }
+  }
+
+  ['D', 'M', 'F'].forEach(function (sfx) {
+    var el = document.getElementById('savedIdeasList-' + sfx);
+    if (!el) return;
+
+    if (savedList.length === 0) {
+      el.innerHTML = '<div style="text-align:center;padding:24px 0;color:var(--mu);font-size:13px">' + (window.LANG === 'ru' ? 'Нет сохранённых идей' : 'No saved ideas') + '</div>';
+      return;
+    }
+
+    var slides = savedList.map(function (x) {
+      return '<div class="si-slide" style="margin-bottom:12px;">' + cardHTML(x, true) + '</div>';
+    }).join('');
+
+    el.innerHTML = slides;
+    if (typeof animateAllGraphs === 'function') animateAllGraphs(el);
+  });
+}
+
 function renderProfile() {
   var dp = document.getElementById('dpPanel');
   if (dp) {
@@ -3197,28 +3371,35 @@ function renderProfile() {
   if (mb) {
     mb.innerHTML = profileHTML('M');
     if (window.ProfileEditEngine) ProfileEditEngine.initSection('M');
+    initMyIdeasToggle('M');
+    initSavedIdeasToggle('M');
+    initAchievementsToggle('M');
   }
   var pf = document.getElementById('profileContentFull');
   if (pf) {
-    pf.innerHTML = profileHTML('D');
-    if (window.ProfileEditEngine) ProfileEditEngine.initSection('D');
-    initMyIdeasToggle('D');
-    initSavedIdeasToggle('D');
-    initAchievementsToggle('D');
+    pf.innerHTML = profileHTML('F');
+    if (window.ProfileEditEngine) ProfileEditEngine.initSection('F');
+    initMyIdeasToggle('F');
+    initSavedIdeasToggle('F');
+    initAchievementsToggle('F');
   }
   renderMyIdeas();
-  renderAchievements('D');
-  renderAchievements('M');
+  renderSavedIdeas();
+  ['D', 'M', 'F'].forEach(function (s) {
+    renderAchievements(s);
+  });
 }
 
 function initMyIdeasToggle(sfx) {
   var toggle = document.getElementById('myideasToggle-' + sfx);
   var body   = document.getElementById('myideasBody-' + sfx);
   if (toggle && body) {
-    toggle.onclick = function () {
+    toggle.onclick = function (e) {
+      if (e) e.stopPropagation();
       var open = body.classList.contains('open');
       body.classList.toggle('open', !open);
       toggle.classList.toggle('open', !open);
+      if (!open) renderMyIdeas();
     };
   }
 }
@@ -3227,10 +3408,12 @@ function initSavedIdeasToggle(sfx) {
   var toggle = document.getElementById('savedideasToggle-' + sfx);
   var body   = document.getElementById('savedideasBody-' + sfx);
   if (toggle && body) {
-    toggle.onclick = function () {
+    toggle.onclick = function (e) {
+      if (e) e.stopPropagation();
       var open = body.classList.contains('open');
       body.classList.toggle('open', !open);
       toggle.classList.toggle('open', !open);
+      if (!open) renderSavedIdeas();
     };
   }
 }
@@ -3243,10 +3426,12 @@ function initAchievementsToggle(sfx) {
   var toggle = document.getElementById('achToggle-' + sfx);
   var body   = document.getElementById('achBody-' + sfx);
   if (toggle && body) {
-    toggle.onclick = function () {
+    toggle.onclick = function (e) {
+      if (e) e.stopPropagation();
       var open = body.classList.contains('open');
       body.classList.toggle('open', !open);
       toggle.classList.toggle('open', !open);
+      if (!open) renderAchievements(sfx);
     };
   }
 }
@@ -3569,8 +3754,7 @@ async function doClaimAchievement(achId, rank) {
     var rankLabels = ['I', 'II', 'III', 'IV', 'V'];
     var label = rankLabels[(result.rank || rank) - 1] || rank;
     toast(T('achRankUnlocked').replace('{label}', label).replace('{reward}', result.reward), 'var(--ac)');
-    renderAchievements('D');
-    renderAchievements('M');
+    ['D', 'M', 'F'].forEach(function(s) { renderAchievements(s); });
   } else {
     var msg  = result && result.message;
     var need = result && result.required ? result.required - (result.current_count || 0) : '?';
@@ -3586,8 +3770,7 @@ async function doClaimAchievement(achId, rank) {
              : msg === 'condition_not_met_repost'      ? T('achErrRepost')
              : T('achErrGeneric');
     toast(text, 'var(--red)');
-    renderAchievements('D');
-    renderAchievements('M');
+    ['D', 'M', 'F'].forEach(function(s) { renderAchievements(s); });
   }
 }
 
@@ -3664,9 +3847,9 @@ async function doVerifyRepost(sfx) {
   // Репост одобрен (свежий или ранее одобренный) — ре-рендерим карточку,
   // затем вставляем вердикт в НОВЫЕ div'ы (старые уничтожены ре-рендером)
   if (isApproved || data.success) {
-    await Promise.all([renderAchievements('D'), renderAchievements('M')]);
+    await Promise.all(['D', 'M', 'F'].map(function(s) { return renderAchievements(s); }));
     var okMsg = '<span class="ach-verdict-ok">' + T('repostOkApproved') + '</span>';
-    ['D', 'M'].forEach(function (s) {
+    ['D', 'M', 'F'].forEach(function (s) {
       var v = document.getElementById('achRepostVerdict-' + s);
       if (v) v.innerHTML = okMsg;
     });
@@ -3675,9 +3858,9 @@ async function doVerifyRepost(sfx) {
 
   // Достигнут максимум (30 репостов) — ре-рендерим чтобы показать актуальный прогресс
   if (isMaxed) {
-    await Promise.all([renderAchievements('D'), renderAchievements('M')]);
+    await Promise.all(['D', 'M', 'F'].map(function(s) { return renderAchievements(s); }));
     var maxMsg = '<span class="ach-verdict-ok">' + T('repostMaxReached') + '</span>';
-    ['D', 'M'].forEach(function (s) {
+    ['D', 'M', 'F'].forEach(function (s) {
       var v = document.getElementById('achRepostVerdict-' + s);
       if (v) v.innerHTML = maxMsg;
     });
@@ -3717,19 +3900,19 @@ function achSparkEffect() {
   setTimeout(function () { overlay.remove(); }, 1200);
 }
 
-async function getUserIdeas() {  if (supa && ME) {
+async function getUserIdeas() {  if (supa && ME) {
     try {
       var r = await supa.from('ideas')
         .select('id, title, description, min_bet, total_invested, investment_history, investor_ids, expires_at, created_at, author_id, reactions, status')
         .eq('author_id', ME.id)
-        .order('created_at', { ascending: false });      if (r.data && ME) {
+        .order('created_at', { ascending: false });      if (r.data && ME) {
         var profilesMap = {};
         profilesMap[ME.id] = {
           username: PROFILE.username,
           avatar_color: PROFILE.avatar_color || 0,
           avatar_emoji: PROFILE.avatar_emoji || '',
           avatar_photo: PROFILE.avatar_photo || ''
-        };        return r.data.map(function(row) {
+        };        return r.data.map(function(row) {
           return dbRowToLiveIdea(row, profilesMap);
         });
       }
@@ -3745,7 +3928,7 @@ async function getUserIdeas() {  if (supa && ME) {
 
 async function renderMyIdeas() {
   var list = await getUserIdeas();
-  ['D', 'M'].forEach(function (sfx) {
+  ['D', 'M', 'F'].forEach(function (sfx) {
     var el = document.getElementById('myIdeasList-' + sfx);
     if (!el) return;
 
@@ -3809,7 +3992,7 @@ async function renderMyIdeas() {
   });
 
   // Animate SVG graphs for user ideas using IntersectionObserver
-  ['D', 'M'].forEach(function (sfx) {
+  ['D', 'M', 'F'].forEach(function (sfx) {
     var el = document.getElementById('myIdeasList-' + sfx);
     if (el) animateAllGraphs(el);
   });
@@ -4221,7 +4404,7 @@ function cardHTML(x, isProfile) {  var fire = (getRS(x.id).counts['🔥'] || 0)
     + (window.ME && x.author_id && x.author_id === ME.id
         ? '<button class="binv" disabled style="opacity:0.35;cursor:default">' + T('myIdea') + '</button>'
         : '<button class="binv" data-invest-id="' + x.id + '">' + T('binv') + '</button>')
-    + _contactBtnHTML(x) + '<button class="bshare" data-share-id="' + x.id + '" title="' + T('shareIdea') + '"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button></div>'
+    + _contactBtnHTML(x) + '<button class="bshare" data-share-id="' + x.id + '" title="' + T('shareIdea') + '"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>' + _saveBtnHTML(x) + '</div>'
     + '<div class="creact" id="rc-' + x.id + '">' + reactHTML(x.id) + '</div></div>';
 }
 
@@ -4670,17 +4853,22 @@ function openCmenDropdown(cmenEl) {
   var dd = document.createElement('div');
   dd.className = 'cmen-dropdown';
 
+  var isSaved = isIdeaSaved(ideaId);
+  var saveHtml = '<button class="cmen-dropdown-item cmen-save-btn" data-save-id="' + ideaId + '">'
+    + (isSaved ? '★ ' + (ru ? 'Удалить из сохранённых' : 'Remove from saved') : '☆ ' + (ru ? 'Сохранить идею' : 'Save idea'))
+    + '</button>';
+
   if (isImmune) {
-    dd.innerHTML = '<button class="cmen-dropdown-item cmen-dropdown-item--disabled" disabled>'
+    dd.innerHTML = saveHtml + '<button class="cmen-dropdown-item cmen-dropdown-item--disabled" disabled>'
       + '🛡 ' + (ru ? 'Защищено иммунитетом' : 'Protected by immunity') + '</button>';
   } else if (isReported) {
-    dd.innerHTML = '<button class="cmen-dropdown-item cmen-dropdown-item--disabled" disabled>'
+    dd.innerHTML = saveHtml + '<button class="cmen-dropdown-item cmen-dropdown-item--disabled" disabled>'
       + '✓ ' + (ru ? 'Вы пожаловались' : 'Reported') + '</button>';
   } else if (isOwnIdea) {
-    dd.innerHTML = '<button class="cmen-dropdown-item cmen-dropdown-item--disabled" disabled>'
+    dd.innerHTML = saveHtml + '<button class="cmen-dropdown-item cmen-dropdown-item--disabled" disabled>'
       + '🚫 ' + (ru ? 'Нельзя пожаловаться на свой пост' : 'Cannot report your own post') + '</button>';
   } else {
-    dd.innerHTML = '<button class="cmen-dropdown-item cmen-report-btn" data-report-id="' + ideaId + '">'
+    dd.innerHTML = saveHtml + '<button class="cmen-dropdown-item cmen-report-btn" data-report-id="' + ideaId + '">'
       + '⚠ ' + (ru ? 'Пожаловаться' : 'Report') + '</button>';
   }
 
@@ -4796,7 +4984,12 @@ function insertLive(row, uname, letter) {
   var ideaObj;
   if (row.author_id) {
     var fakeProfilesMap = {};
-    fakeProfilesMap[row.author_id] = uname;
+    fakeProfilesMap[row.author_id] = {
+      username: uname,
+      avatar_color: (window.PROFILE && window.PROFILE.avatar_color) || 0,
+      avatar_emoji: (window.PROFILE && window.PROFILE.avatar_emoji) || '',
+      avatar_photo: (window.PROFILE && window.PROFILE.avatar_photo) || ''
+    };
     ideaObj = dbRowToLiveIdea(row, fakeProfilesMap);
   } else {
     ideaObj = {
