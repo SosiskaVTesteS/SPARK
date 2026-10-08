@@ -1,12 +1,10 @@
-﻿# Local secrets - copy from .env.example
+# Local secrets - copy from .env.example
 .env
 .env.local
 .env.deploy
 .env.bak
 .env.*.bak
 
-# Local config (copy assets/js/config.example.js → assets/js/config.js)
-assets/js/config.js
 
 # Temporary Supabase CLI files
 supabase/.temp/

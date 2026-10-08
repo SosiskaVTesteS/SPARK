@@ -24,24 +24,14 @@ window.SPARK_CONFIG = {
   SUPABASE_URL: 'https://ppehttbtrlavnrytoweu.supabase.co',
 
   // Anon (публичный) ключ — безопасен для браузера; не service_role
-  // Получите из Supabase Dashboard → Project Settings → API
-  SUPABASE_ANON_KEY: 'YOUR_SUPABASE_ANON_KEY_HERE',
-
-
+  SUPABASE_ANON_KEY: 'sb_publishable_9uAFLjS4AaElHus4hiUuQQ_PMSFNkb8',
 
   // Устаревший путь инвестиций, если RPC invest_in_idea ещё не применён (в проде — false)
-
   ALLOW_LEGACY_INVEST_FALLBACK: true,
 
-
-
   // Телеметрия в public.client_events (нужна миграция 20260508_client_events_optional.sql)
-
   ENABLE_CLIENT_TELEMETRY: false,
 
-  // Способ получения данных в реальном времени.
-  // 'websocket' - для Deno / Cloudflare (использует WebSockets).
-  // 'polling' - для Netlify и других (использует легкие фоновые HTTP запросы).
-  REALTIME_MODE: 'polling'
-
+  // Способ получения данных в реальном времени ('websocket' | 'polling')
+  REALTIME_MODE: 'websocket'
 };
